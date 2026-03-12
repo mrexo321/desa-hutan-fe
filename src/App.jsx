@@ -5,6 +5,7 @@ import Login from "./Login";
 import Infografis from "./Infografis";
 import AboutUs from "./AboutUs";
 import Dashboard from "./dashboard/Dashboard";
+import DesaHutan from "./pages/DesaHutan";
 
 const App = () => {
   return (
@@ -14,6 +15,7 @@ const App = () => {
       <Route path="/infografis" element={<Infografis />} />
       <Route path="/about-us" element={<AboutUs />} />
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/desa-hutan" element={<DesaHutan />} />
     </Routes>
   );
 };

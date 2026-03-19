@@ -12,7 +12,7 @@ const axiosInstance = axios.create({
 axiosInstance.interceptors.request.use(
   (config) => {
     const state = reduxStore.getState();
-    const token = state.user.token;
+    const token = state.user.access_token;
 
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;

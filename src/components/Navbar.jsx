@@ -41,7 +41,7 @@ const Navbar = () => {
           >
             Beranda
           </Link>
-          <Link to="#" className="hover:text-yellow-300 transition-colors">
+          <Link to="/map" className="hover:text-yellow-300 transition-colors">
             Peta
           </Link>
           <Link

@@ -1,22 +1,29 @@
-# Logs
+# Dependencies (Wajib diabaikan karena ukurannya besar)
+node_modules/
+
+# Environment variables (Sangat penting agar error Mapbox Token tidak terulang)
+.env
+.env.*
+!.env.example
+
+# Build output (Folder hasil build Vite nantinya)
+dist/
+dist-ssr/
+
+# Logs (File log dari sistem atau NPM)
 logs
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# OS files (File sistem operasi yang tidak perlu diunggah)
 .DS_Store
+Thumbs.db
+
+# Editor directories and files (Konfigurasi text editor lokal)
+.vscode/
+.idea/
 *.suo
 *.ntvs*
 *.njsproj

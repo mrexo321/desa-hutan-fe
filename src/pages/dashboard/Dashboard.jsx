@@ -1,5 +1,5 @@
 import React from "react";
-import DashboardLayout from "../components/DashboardLayout";
+import DashboardLayout from "../../components/DashboardLayout";
 
 const Dashboard = () => {
   // --- MOCK DATA UNTUK TABEL ---

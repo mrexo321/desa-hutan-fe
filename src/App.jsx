@@ -13,6 +13,7 @@ import DesaHutan from "./pages/desaHutan/DesaHutan";
 import PerformaDesa from "./pages/PerfomaDesa/PerformaDesa";
 import EditPerformaDesa from "./pages/PerfomaDesa/EditPerformaDesa";
 import PotensiDesa from "./pages/PotensiDesa/PotensiDesa";
+import MapPage from "./MapPage";
 
 const App = () => {
   return (

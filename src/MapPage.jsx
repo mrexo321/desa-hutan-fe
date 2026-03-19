@@ -17,8 +17,10 @@ import {
   MapPin,
 } from "lucide-react";
 
+import environment from "./config/environment";
+
 export default function MapPage() {
-  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+  const MAPBOX_TOKEN = environment.MAPBOX_URL;
 
   // 1. State view posisi peta
   const [viewState, setViewState] = useState({

@@ -54,6 +54,7 @@ const Login = () => {
           <div className="w-full max-w-sm">
             {/* Bagian Logo */}
             <div className="flex flex-col items-center mb-8">
+              {/* Ganti div ini dengan <img src="/logo.png" alt="Logo" className="w-24 mb-2" /> */}
               <div className="w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center overflow-hidden relative mb-3 bg-gray-50">
                 <div className="absolute bottom-0 w-full h-1/3 bg-[#A47144]"></div>
                 <div className="absolute top-0 w-full h-2/3 bg-[#4E8E42] rounded-b-full"></div>

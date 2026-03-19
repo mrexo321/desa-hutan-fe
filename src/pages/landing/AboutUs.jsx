@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import HomeLayout from "./components/HomeLayout";
+import HomeLayout from "../../components/HomeLayout";
 
 const AboutUs = () => {
   const [activeTab, setActiveTab] = useState("struktur");

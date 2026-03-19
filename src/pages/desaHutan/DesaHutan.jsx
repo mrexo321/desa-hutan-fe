@@ -1,5 +1,5 @@
 import React from "react";
-import DashboardLayout from "../components/DashboardLayout";
+import DashboardLayout from "../../components/DashboardLayout";
 
 export default function DesaHutan() {
   // Mock data tabel baris pertama

@@ -1,6 +1,6 @@
 import React from "react";
-import Navbar from "./components/Navbar";
-import HomeLayout from "./components/HomeLayout";
+import Navbar from "../../components/Navbar";
+import HomeLayout from "../../components/HomeLayout";
 
 const Homepage = () => {
   return (

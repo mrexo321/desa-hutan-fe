@@ -1,5 +1,5 @@
 import React from "react";
-import HomeLayout from "./components/HomeLayout";
+import HomeLayout from "../../components/HomeLayout";
 
 const Infografis = () => {
   // Komponen pembantu untuk garis pemisah hijau (Green Divider/Banner)

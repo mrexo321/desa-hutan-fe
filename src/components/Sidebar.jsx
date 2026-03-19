@@ -13,214 +13,177 @@ import {
   ShieldCheck,
   MapPinned,
   Database,
+  ChevronLeft,
+  Menu,
+  X,
+  Leaf,
 } from "lucide-react";
 
 export default function Sidebar({ activeMenu }) {
-  // --- STATE UNTUK TOGGLE SIDEBAR ---
-  const [isCollapsed, setIsCollapsed] = useState(false); // Untuk desktop
-  const [isOpenMobile, setIsOpenMobile] = useState(false); // Untuk mobile
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isOpenMobile, setIsOpenMobile] = useState(false);
 
-  // --- DATA MENU HOME ---
+  // Ukuran dan ketebalan ikon diseragamkan agar lebih elegan
+  const iconProps = { size: 20, strokeWidth: 1.75 };
+
   const homeMenus = [
     {
       name: "Dashboard",
       path: "/dashboard",
-      icon: <LayoutDashboard size={18} />,
+      icon: <LayoutDashboard {...iconProps} />,
     },
     {
       name: "Desa Hutan",
-      path: "/desa-hutan",
-      icon: <Trees size={18} />, // Ikon pepohonan untuk hutan
+      path: "/dashboard/desa-hutan",
+      icon: <Trees {...iconProps} />,
     },
     {
-      name: "Performa Desa Hutan",
-      path: "/performa-desa",
-      icon: <LineChart size={18} />, // Ikon grafik naik untuk performa
+      name: "Performa Desa",
+      path: "/dashboard/performa-desa",
+      icon: <LineChart {...iconProps} />,
     },
     {
       name: "Potensi Desa",
-      path: "/potensi-desa",
-      icon: <Sprout size={18} />, // Ikon tunas tanaman untuk potensi yang berkembang
+      path: "/dashboard/potensi-desa",
+      icon: <Sprout {...iconProps} />,
     },
   ];
 
-  // --- DATA MENU METADATA ---
   const metadataMenus = [
+    { name: "Indikator", path: "#", icon: <Target {...iconProps} /> },
     {
-      name: "Indikator",
+      name: "Indikator Hitung",
       path: "#",
-      icon: <Target size={18} />, // Ikon target/sasaran untuk indikator
+      icon: <Calculator {...iconProps} />,
     },
-    {
-      name: "Indikator Perhitungan",
-      path: "#",
-      icon: <Calculator size={18} />, // Ikon kalkulator untuk perhitungan
-    },
-    {
-      name: "Klasifikasi",
-      path: "#",
-      icon: <Layers size={18} />, // Ikon tumpukan layer untuk klasifikasi
-    },
-    {
-      name: "Wilayah",
-      path: "#",
-      icon: <Map size={18} />, // Ikon peta dasar
-    },
-    {
-      name: "Manajemen User",
-      path: "#",
-      icon: <Users size={18} />, // Ikon multi-user
-    },
+    { name: "Klasifikasi", path: "#", icon: <Layers {...iconProps} /> },
+    { name: "Wilayah", path: "#", icon: <Map {...iconProps} /> },
+    { name: "Manajemen User", path: "#", icon: <Users {...iconProps} /> },
     {
       name: "Manajemen Roles",
       path: "#",
-      icon: <ShieldCheck size={18} />, // Ikon perisai keamanan untuk otorisasi/role
+      icon: <ShieldCheck {...iconProps} />,
     },
-    {
-      name: "Master Wilayah",
-      path: "#",
-      icon: <MapPinned size={18} />, // Ikon peta dengan pin untuk data master spasial
-    },
-    {
-      name: "Master Potensi",
-      path: "#",
-      icon: <Database size={18} />, // Ikon database untuk data master
-    },
+    { name: "Master Wilayah", path: "#", icon: <MapPinned {...iconProps} /> },
+    { name: "Master Potensi", path: "#", icon: <Database {...iconProps} /> },
   ];
 
   return (
     <>
-      {/* --- TOMBOL HAMBURGER (Hanya tampil di Mobile) --- */}
-      {/* Letaknya fixed agar selalu bisa diklik */}
+      {/* --- TOMBOL HAMBURGER MOBILE --- */}
       <button
         onClick={() => setIsOpenMobile(true)}
-        className="md:hidden fixed top-4 left-4 z-40 p-2 rounded-md bg-white shadow-md text-gray-700 hover:bg-gray-100 focus:outline-none"
+        className="md:hidden fixed top-4 left-4 z-40 p-2.5 rounded-xl bg-white/80 backdrop-blur-md border border-gray-100 shadow-sm text-gray-700 hover:bg-gray-50 transition-all"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          width="24"
-          height="24"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <line x1="3" y1="12" x2="21" y2="12"></line>
-          <line x1="3" y1="6" x2="21" y2="6"></line>
-          <line x1="3" y1="18" x2="21" y2="18"></line>
-        </svg>
+        <Menu size={20} />
       </button>
 
-      {/* --- OVERLAY GELAP (Hanya tampil di Mobile saat sidebar terbuka) --- */}
-      {isOpenMobile && (
-        <div
-          className="md:hidden fixed inset-0 bg-black/50 z-40 transition-opacity"
-          onClick={() => setIsOpenMobile(false)}
-        />
-      )}
+      {/* --- OVERLAY MOBILE DENGAN EFEK BLUR --- */}
+      <div
+        className={`md:hidden fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          isOpenMobile
+            ? "opacity-100 pointer-events-auto"
+            : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsOpenMobile(false)}
+      />
 
       {/* --- SIDEBAR UTAMA --- */}
       <aside
         className={`
-          fixed md:relative top-0 left-0 h-full z-50 flex flex-col flex-shrink-0
-          bg-[#FAFAFA] border-r border-gray-200 shadow-xl md:shadow-none
-          transition-all duration-300 ease-in-out
+          fixed md:relative top-0 left-0 h-screen z-50 flex flex-col flex-shrink-0
+          bg-white md:bg-[#FCFDFD] border-r border-gray-100 shadow-[4px_0_24px_rgba(0,0,0,0.02)]
+          transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
           ${isOpenMobile ? "translate-x-0" : "-translate-x-full"} md:translate-x-0
-          ${isCollapsed ? "md:w-20" : "md:w-64"} w-64
+          ${isCollapsed ? "md:w-20" : "md:w-[260px]"} w-[260px]
         `}
       >
-        {/* Header / Tombol Toggle */}
-        <div
-          className={`flex items-center p-4 border-b border-gray-100 ${isCollapsed ? "md:justify-center justify-between" : "justify-between"}`}
+        {/* --- FLOATING TOGGLE BUTTON (DESKTOP) --- */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="hidden md:flex absolute -right-3.5 top-8 items-center justify-center w-7 h-7 bg-white border border-gray-200 shadow-sm rounded-full text-gray-400 hover:text-[#2D7344] hover:scale-110 transition-all z-50"
         >
-          {/* Judul Aplikasi (Sembunyikan saat collapsed di desktop) */}
-          <span
-            className={`font-bold text-[#2D7344] text-lg ${isCollapsed ? "hidden md:hidden" : "block"}`}
-          >
-            LOGO DISINI
-          </span>
+          <ChevronLeft
+            size={16}
+            className={`transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
+          />
+        </button>
 
-          {/* Tombol Close untuk Mobile */}
+        {/* --- HEADER / LOGO SECTION --- */}
+        <div className="flex items-center justify-between h-20 px-5 mb-2">
+          <div
+            className={`flex items-center gap-3 overflow-hidden ${isCollapsed ? "justify-center w-full" : ""}`}
+          >
+            <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-br from-[#2D7344] to-[#1e5230] text-white shadow-md flex-shrink-0">
+              <Leaf size={22} strokeWidth={2} />
+            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col whitespace-nowrap">
+                <span className="font-bold text-gray-800 text-lg leading-tight tracking-wide">
+                  Desa Hutan
+                </span>
+                <span className="text-[10px] font-semibold text-[#2D7344] uppercase tracking-widest">
+                  Kemenhut RI
+                </span>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => setIsOpenMobile(false)}
-            className="md:hidden p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+            className="md:hidden p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-
-          {/* Tombol Expand/Collapse untuk Desktop */}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden md:flex p-1 text-gray-400 hover:text-gray-700 focus:outline-none rounded-md hover:bg-gray-200"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              className={`transform transition-transform duration-300 ${isCollapsed ? "rotate-180" : ""}`}
-            >
-              <polyline points="15 18 9 12 15 6"></polyline>
-            </svg>
+            <X size={20} />
           </button>
         </div>
 
-        {/* Daftar Menu */}
-        <div className="p-4 overflow-y-auto custom-scrollbar flex-grow">
-          {/* --- Bagian Home --- */}
-          <div className="mb-6">
-            {!isCollapsed ? (
-              <h3 className="text-xs font-bold text-gray-400 mb-3 tracking-wider px-2">
+        {/* --- DAFTAR MENU DENGAN SCROLLBAR DISEMBUNYIKAN --- */}
+        {/* Tambahkan class 'scrollbar-hide' di file CSS Anda jika perlu, atau gunakan styling inline ini */}
+        <div
+          className="flex-1 overflow-y-auto px-3 pb-8 space-y-8"
+          style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+        >
+          {/* BAGIAN HOME */}
+          <div>
+            <div
+              className={`px-3 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
+            >
+              <p className="text-[11px] font-bold tracking-[0.15em] text-gray-400 uppercase">
                 Home
-              </h3>
-            ) : (
-              <div className="h-px bg-gray-200 my-4 mx-2"></div>
-            )}
-            <ul className="space-y-1">
+              </p>
+            </div>
+            <ul className="space-y-1.5">
               {homeMenus.map((item, idx) => {
                 const isActive = activeMenu === item.name;
                 return (
                   <li key={idx}>
                     <Link
                       to={item.path}
-                      title={item.name} // Tooltip bawaan browser untuk mode collapse
-                      className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"} px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      title={isCollapsed ? item.name : ""}
+                      className={`relative flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                         isActive
-                          ? "bg-[#2D7344] text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-100"
+                          ? "bg-[#F3FBF5] text-[#2D7344]"
+                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                       }`}
                     >
+                      {/* Garis Indikator Aktif (Kiri) */}
+                      {isActive && !isCollapsed && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#2D7344] rounded-r-full" />
+                      )}
+
                       <div
-                        className={`flex-shrink-0 ${isActive ? "text-white" : "text-[#2D7344]"}`}
+                        className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
                       >
                         {item.icon}
                       </div>
-                      {/* Teks sembunyi saat mode collapsed di desktop */}
-                      <span
-                        className={`truncate ${isCollapsed ? "hidden md:hidden" : "block"}`}
-                      >
-                        {item.name}
-                      </span>
+
+                      {!isCollapsed && (
+                        <span
+                          className={`text-sm tracking-wide ${isActive ? "font-semibold" : "font-medium"}`}
+                        >
+                          {item.name}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );
@@ -228,47 +191,47 @@ export default function Sidebar({ activeMenu }) {
             </ul>
           </div>
 
-          {/* --- Bagian Metadata --- */}
+          {/* BAGIAN METADATA */}
           <div>
-            {!isCollapsed ? (
-              <h3 className="text-xs font-bold text-gray-700 mb-3 tracking-wide px-2">
+            <div
+              className={`px-3 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
+            >
+              <p className="text-[11px] font-bold tracking-[0.15em] text-gray-400 uppercase">
                 Metadata
-              </h3>
-            ) : (
-              <div className="h-px bg-gray-200 my-4 mx-2"></div>
-            )}
-            <ul className="space-y-1">
+              </p>
+            </div>
+            <ul className="space-y-1.5">
               {metadataMenus.map((item, idx) => {
                 const isActive = activeMenu === item.name;
                 return (
                   <li key={idx}>
                     <Link
                       to={item.path}
-                      title={item.name}
-                      className={`flex items-center ${isCollapsed ? "justify-center" : "gap-3"} px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      title={isCollapsed ? item.name : ""}
+                      className={`relative flex items-center gap-3.5 px-3 py-2.5 rounded-xl transition-all duration-200 group ${
                         isActive
-                          ? "bg-[#2D7344] text-white shadow-sm"
-                          : "text-gray-600 hover:bg-gray-100"
+                          ? "bg-[#F3FBF5] text-[#2D7344]"
+                          : "text-gray-500 hover:bg-gray-50 hover:text-gray-900"
                       }`}
                     >
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="flex-shrink-0"
-                        fill={isActive ? "currentColor" : "none"}
-                        stroke={isActive ? "none" : "#2D7344"}
-                        strokeWidth={isActive ? "0" : "2"}
+                      {/* Garis Indikator Aktif (Kiri) */}
+                      {isActive && !isCollapsed && (
+                        <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 bg-[#2D7344] rounded-r-full" />
+                      )}
+
+                      <div
+                        className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
                       >
                         {item.icon}
-                      </svg>
-                      <span
-                        className={`truncate ${isCollapsed ? "hidden md:hidden" : "block"}`}
-                      >
-                        {item.name}
-                      </span>
+                      </div>
+
+                      {!isCollapsed && (
+                        <span
+                          className={`text-sm tracking-wide ${isActive ? "font-semibold" : "font-medium"}`}
+                        >
+                          {item.name}
+                        </span>
+                      )}
                     </Link>
                   </li>
                 );

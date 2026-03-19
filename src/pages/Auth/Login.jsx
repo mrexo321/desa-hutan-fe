@@ -1,43 +1,63 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { authService } from "../../services/authService";
 import { setUserData } from "../../store/userSlice";
+import {
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  Loader2,
+  Leaf,
+  ArrowRight,
+  ShieldCheck,
+} from "lucide-react";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
+  const token = useSelector((state) => state.user.token);
+
+  useEffect(() => {
+    if (token) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [token, navigate]);
+
   const loginMutation = useMutation({
     mutationFn: authService.login,
-    onSuccess: (data) => {
+    onSuccess: ({ data }) => {
       dispatch(
         setUserData({
           userId: data?.user?.id || null,
-          name: data?.user?.name || null,
           username: data?.user?.username || null,
-          role: data?.user?.role || null,
-          token: data?.token || null,
+          role: data?.user?.roles || null,
+          token: data?.access_token || null,
         }),
       );
 
-      toast.success("Login berhasil!");
+      toast.success("Login berhasil! Selamat datang.");
       navigate("/dashboard");
     },
     onError: (error) => {
       console.error("Gagal login:", error);
+      toast.error(
+        error?.response?.data?.message || "Username atau password salah.",
+      );
     },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    // Validasi aja semisal username atau passwordnya kaga diisi
     if (!username || !password) {
       toast.warning("Username dan Password wajib diisi!");
       return;
@@ -46,127 +66,153 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white font-sans">
-      {/* Container Utama */}
-      <div className="flex w-full h-screen max-w-[1440px]">
-        {/* BAGIAN KIRI: Form Login */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center items-center px-8 sm:px-16 lg:px-24">
-          <div className="w-full max-w-sm">
-            {/* Bagian Logo */}
-            <div className="flex flex-col items-center mb-8">
-              <div className="w-24 h-24 rounded-full border-4 border-white shadow-md flex items-center justify-center overflow-hidden relative mb-3 bg-gray-50">
-                <div className="absolute bottom-0 w-full h-1/3 bg-[#A47144]"></div>
-                <div className="absolute top-0 w-full h-2/3 bg-[#4E8E42] rounded-b-full"></div>
-              </div>
+    <div className="min-h-screen flex w-full bg-white font-sans overflow-hidden">
+      <div className="w-full lg:w-[45%] flex flex-col justify-center px-8 sm:px-16 md:px-24 z-10 shadow-[20px_0_40px_rgba(0,0,0,0.04)] relative">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
+          <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-green-50 rounded-full blur-3xl opacity-50"></div>
+        </div>
 
-              <h1 className="text-[#367c3b] font-bold text-center text-sm tracking-wide leading-tight">
-                KEMENTERIAN
-                <br />
-                KEHUTANAN
-                <br />
-                <span className="font-medium text-xs">REPUBLIK INDONESIA</span>
-              </h1>
+        <div className="w-full max-w-sm mx-auto">
+          <div className="mb-10 text-center lg:text-left">
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-[#2D7344] to-[#154023] text-white shadow-lg shadow-green-900/20 mb-6">
+              <Leaf size={32} strokeWidth={1.5} />
             </div>
 
-            {/* Judul Form */}
-            <h2 className="text-3xl italic font-bold text-center mb-10 text-black">
+            <h1 className="text-[#2D7344] font-bold text-[11px] tracking-[0.2em] uppercase mb-2">
+              Kementerian Kehutanan RI
+            </h1>
+            <h2 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
               Desa Hutan
             </h2>
+            <p className="text-sm text-gray-500 mt-2 font-medium">
+              Masuk untuk mengelola data dan potensi kawasan hutan.
+            </p>
+          </div>
 
-            {/* Form Input */}
-            <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* Input Username */}
-              <div className="flex border border-gray-400 rounded-sm focus-within:border-[#367c3b] focus-within:ring-1 focus-within:ring-[#367c3b] transition-all">
-                <div className="w-12 flex items-center justify-center border-r border-gray-400 text-gray-500 bg-white">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                    <circle cx="12" cy="7" r="4"></circle>
-                  </svg>
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700 ml-1">
+                Username
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#2D7344] transition-colors">
+                  <User size={18} strokeWidth={2} />
                 </div>
                 <input
                   type="text"
-                  placeholder="Username"
+                  placeholder="Masukkan username Anda"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-4 py-3 outline-none text-sm placeholder-gray-400 text-gray-700"
+                  className="w-full pl-11 pr-4 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium transition-all focus:bg-white focus:outline-none focus:border-[#2D7344] focus:ring-4 focus:ring-green-500/10"
                 />
               </div>
+            </div>
 
-              {/* Input Password */}
-              <div className="flex border border-gray-400 rounded-sm focus-within:border-[#367c3b] focus-within:ring-1 focus-within:ring-[#367c3b] transition-all">
-                <div className="w-12 flex items-center justify-center border-r border-gray-400 text-gray-500 bg-white">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path>
-                  </svg>
+            <div className="space-y-1.5">
+              <label className="text-sm font-bold text-gray-700 ml-1">
+                Password
+              </label>
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#2D7344] transition-colors">
+                  <Lock size={18} strokeWidth={2} />
                 </div>
                 <input
-                  type="password"
-                  placeholder="Password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 outline-none text-sm placeholder-gray-400 text-gray-700"
+                  className="w-full pl-11 pr-12 py-3.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium transition-all focus:bg-white focus:outline-none focus:border-[#2D7344] focus:ring-4 focus:ring-green-500/10"
                 />
-              </div>
-
-              {/* Lupa Password & Tombol Login */}
-              <div className="flex items-center justify-between pt-4">
-                <a
-                  href="#"
-                  className="text-sm text-gray-500 hover:text-[#367c3b] transition-colors"
-                >
-                  Lupa Password ?
-                </a>
                 <button
-                  type="submit"
-                  disabled={loginMutation.isPending}
-                  className={`text-white text-sm font-medium py-2 px-8 rounded-sm transition-colors ${
-                    loginMutation.isPending
-                      ? "bg-gray-400 cursor-not-allowed"
-                      : "bg-[#2D7344] hover:bg-[#235e36]"
-                  }`}
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-none"
                 >
-                  {loginMutation.isPending ? "Memproses..." : "Login"}
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-
-        {/* BAGIAN KANAN: Ilustrasi */}
-        <div className="hidden lg:flex lg:w-1/2 bg-[#EAFBF0] rounded-l-[40px] items-center justify-center my-4 mr-4 relative overflow-hidden">
-          <div className="text-center">
-            <div className="w-[400px] h-[400px] bg-green-100/50 rounded-[100px] flex items-center justify-center border-4 border-dashed border-[#8bdba3] text-[#2D7344]">
-              <p className="font-semibold px-6">
-                Taruh Gambar Ilustrasi
-                <br />
-                Handphone & Avatar di sini
-                <br />
-                (Ganti dengan tag &lt;img /&gt;)
-              </p>
             </div>
+
+            <div className="flex items-center justify-between pt-1 pb-4">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-[#2D7344] border-gray-300 rounded focus:ring-[#2D7344]"
+                />
+                <span className="text-sm font-medium text-gray-600">
+                  Ingat saya
+                </span>
+              </label>
+              <a
+                href="#"
+                className="text-sm font-bold text-[#2D7344] hover:text-[#1a4a2a] transition-colors"
+              >
+                Lupa Password?
+              </a>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loginMutation.isPending}
+              className={`w-full flex items-center justify-center gap-2 text-white text-sm font-bold py-3.5 rounded-xl transition-all ${
+                loginMutation.isPending
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-[#2D7344] hover:bg-[#1f5631] hover:shadow-[0_8px_25px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0"
+              }`}
+            >
+              {loginMutation.isPending ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Memproses...
+                </>
+              ) : (
+                <>
+                  Masuk ke Sistem
+                  <ArrowRight size={18} />
+                </>
+              )}
+            </button>
+          </form>
+
+          <p className="text-center text-xs text-gray-400 font-medium mt-10">
+            &copy; {new Date().getFullYear()} Kementerian Kehutanan Republik
+            Indonesia.
+          </p>
+        </div>
+      </div>
+
+      <div className="hidden lg:flex lg:w-[55%] relative bg-gray-900 overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center transform hover:scale-105 transition-transform duration-1000 ease-out"
+          style={{
+            backgroundImage:
+              "url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2000&auto=format&fit=crop')",
+          }}
+        ></div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a1f11] via-[#154023]/60 to-transparent"></div>
+
+        <div className="absolute bottom-16 left-16 right-16">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 p-8 rounded-3xl shadow-2xl">
+            <div className="flex items-center gap-4 mb-4">
+              <div className="bg-[#A4D6B5]/20 p-3 rounded-2xl border border-white/10 text-green-300">
+                <ShieldCheck size={28} />
+              </div>
+              <div>
+                <h3 className="text-white text-xl font-bold tracking-wide">
+                  Sistem Informasi Manajemen
+                </h3>
+                <p className="text-green-200/80 text-sm font-medium">
+                  Terintegrasi & Aman
+                </p>
+              </div>
+            </div>
+            <p className="text-white/80 text-sm leading-relaxed font-medium">
+              Platform digital untuk pemantauan, evaluasi, dan pengelolaan
+              potensi sumber daya alam pada kawasan desa hutan secara
+              *real-time* di seluruh penjuru Nusantara.
+            </p>
           </div>
-          <div className="absolute top-32 right-32 w-2 h-2 bg-green-500 rounded-full"></div>
-          <div className="absolute top-48 left-32 w-1.5 h-1.5 bg-green-500 rounded-full"></div>
         </div>
       </div>
     </div>

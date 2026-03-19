@@ -1,28 +1,37 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// ✅ Ambil dari localStorage jika ada
 const savedUser = localStorage.getItem("user");
+
+// Sesuaikan struktur awal dengan format API
 const initialState = savedUser
   ? JSON.parse(savedUser)
-  : { userId: null, token: null, role: null, username: null, name: null };
+  : {
+      id: null,
+      username: null,
+      roles: [],
+      permissions: [],
+      access_token: null,
+      refresh_token: null,
+    };
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
     setUserData: (state, action) => {
-      // Simpan ke localStorage juga agar persist
       localStorage.setItem("user", JSON.stringify(action.payload));
       return action.payload;
     },
     clearUserData: () => {
       localStorage.removeItem("user");
+      // Kembalikan ke nilai kosong yang sesuai
       return {
-        userId: null,
-        token: null,
-        role: null,
+        id: null,
         username: null,
-        name: null,
+        roles: [],
+        permissions: [],
+        access_token: null,
+        refresh_token: null,
       };
     },
   },

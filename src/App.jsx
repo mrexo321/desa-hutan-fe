@@ -27,10 +27,13 @@ const App = () => {
 
       {/* Route Internal/Dashboard */}
       <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/desa-hutan" element={<DesaHutan />} />
-      <Route path="/performa-desa" element={<PerformaDesa />} />
-      <Route path="/performa-desa/edit" element={<EditPerformaDesa />} />
-      <Route path="/potensi-desa" element={<PotensiDesa />} />
+      <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
+      <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
+      <Route
+        path="/dashboard/performa-desa/edit"
+        element={<EditPerformaDesa />}
+      />
+      <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
     </Routes>
   );
 };

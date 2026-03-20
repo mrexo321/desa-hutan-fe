@@ -50,22 +50,46 @@ export default function Sidebar({ activeMenu }) {
   ];
 
   const metadataMenus = [
-    { name: "Indikator", path: "#", icon: <Target {...iconProps} /> },
     {
-      name: "Indikator Hitung",
-      path: "#",
+      name: "Indikator",
+      path: "/dashboard/indikator",
+      icon: <Target {...iconProps} />,
+    },
+    {
+      name: "Indikator Perhitungan",
+      path: "/dashboard/indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
     },
-    { name: "Klasifikasi", path: "#", icon: <Layers {...iconProps} /> },
-    { name: "Wilayah", path: "#", icon: <Map {...iconProps} /> },
-    { name: "Manajemen User", path: "#", icon: <Users {...iconProps} /> },
     {
-      name: "Manajemen Roles",
-      path: "#",
+      name: "Klasifikasi",
+      path: "/dashboard/klasifikasi",
+      icon: <Layers {...iconProps} />,
+    },
+    {
+      name: "Wilayah",
+      path: "/dashboard/wilayah",
+      icon: <Map {...iconProps} />,
+    },
+    {
+      name: "Manajemen User",
+      path: "/dashboard/manajemen-user",
+      icon: <Users {...iconProps} />,
+    },
+    {
+      name: "Manajemen Role",
+      path: "/dashboard/manajemen-role",
       icon: <ShieldCheck {...iconProps} />,
     },
-    { name: "Master Wilayah", path: "#", icon: <MapPinned {...iconProps} /> },
-    { name: "Master Potensi", path: "#", icon: <Database {...iconProps} /> },
+    {
+      name: "Master Wilayah",
+      path: "/dashboard/master-wilayah",
+      icon: <MapPinned {...iconProps} />,
+    },
+    {
+      name: "Master Potensi",
+      path: "/dashboard/master-potensi",
+      icon: <Database {...iconProps} />,
+    },
   ];
 
   return (

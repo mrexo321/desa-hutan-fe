@@ -14,6 +14,14 @@ import PerformaDesa from "./pages/PerfomaDesa/PerformaDesa";
 import EditPerformaDesa from "./pages/PerfomaDesa/EditPerformaDesa";
 import PotensiDesa from "./pages/PotensiDesa/PotensiDesa";
 import MapPage from "./MapPage";
+import Indikator from "./pages/Indikator/Indikator";
+import IndikatorPerhitungan from "./pages/Indikator/IndikatorPerhitungan";
+import Klasifikasi from "./pages/Klasifikasi/Klasifikasi";
+import Wilayah from "./pages/Wilayah/Wilayah";
+import ManajemenUser from "./pages/ManajemenUser/ManajemenUser";
+import ManajemenRoles from "./pages/ManajemenRole/ManajemenRole";
+import MasterWilayah from "./pages/MasterWilayah/MasterWilayah";
+import MasterPotensi from "./pages/MasterPotensi/MasterPotensi";
 
 const App = () => {
   return (
@@ -34,6 +42,24 @@ const App = () => {
         element={<EditPerformaDesa />}
       />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+      <Route path="/dashboard/indikator" element={<Indikator />} />
+      <Route
+        path="/dashboard/indikator-perhitungan"
+        element={<IndikatorPerhitungan />}
+      />
+
+      {/* Klasifikasi */}
+      <Route path="/dashboard/klasifikasi" element={<Klasifikasi />} />
+      {/* Wilayah */}
+      <Route path="/dashboard/wilayah" element={<Wilayah />} />
+      {/* Manajemen User */}
+      <Route path="/dashboard/manajemen-user" element={<ManajemenUser />} />
+      {/* Manajemen Role */}
+      <Route path="/dashboard/manajemen-role" element={<ManajemenRoles />} />
+      {/* Master Wilayah */}
+      <Route path="/dashboard/master-wilayah" element={<MasterWilayah />} />
+      {/* Master Potensi */}
+      <Route path="/dashboard/master-potensi" element={<MasterPotensi />} />
     </Routes>
   );
 };

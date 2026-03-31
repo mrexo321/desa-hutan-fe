@@ -4,22 +4,19 @@ import Header from "./Header";
 
 export default function DashboardLayout({ children, activeMenu }) {
   return (
-    <div className="flex h-screen bg-[#F5F6F8] font-sans overflow-hidden">
-      
-      {/* 1. Pasang Sidebar dan oper parameter activeMenu */}
+    <div className="flex h-screen bg-[#F8FAFC] font-sans overflow-hidden">
+      {/* Sidebar */}
       <Sidebar activeMenu={activeMenu} />
 
-      <main className="flex-1 flex flex-col h-full relative overflow-hidden">
-        
-        {/* 2. Pasang Header di atas */}
+      <div className="flex-1 flex flex-col h-full relative overflow-hidden">
+        {/* Header */}
         <Header />
 
-        {/* 3. Tempat memunculkan halaman (Desa Hutan / Performa Desa) */}
-        <div className="flex-1 overflow-y-auto px-8 pb-8 custom-scrollbar">
-          {children}
-        </div>
-        
-      </main>
+        {/* Area Konten Utama - Di sinilah halaman di-render */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
+          <div className="max-w-[1600px] mx-auto">{children}</div>
+        </main>
+      </div>
     </div>
   );
 }

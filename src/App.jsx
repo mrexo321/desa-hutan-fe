@@ -22,6 +22,7 @@ import ManajemenUser from "./pages/ManajemenUser/ManajemenUser";
 import ManajemenRoles from "./pages/ManajemenRole/ManajemenRole";
 import MasterWilayah from "./pages/MasterWilayah/MasterWilayah";
 import MasterPotensi from "./pages/MasterPotensi/MasterPotensi";
+import ProvinceDetail from "./pages/dashboard/ProvinceDetail";
 
 const App = () => {
   return (
@@ -35,6 +36,10 @@ const App = () => {
 
       {/* Route Internal/Dashboard */}
       <Route path="/dashboard" element={<Dashboard />} />
+      <Route
+        path="/dashboard/provinsi/:provinceName"
+        element={<ProvinceDetail />}
+      />
       <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
       <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
       <Route

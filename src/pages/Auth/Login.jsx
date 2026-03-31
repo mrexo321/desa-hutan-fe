@@ -3,7 +3,6 @@ import { useMutation } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { authService } from "../../services/authService";
 import { setUserData } from "../../store/userSlice";
 import {
   User,
@@ -15,6 +14,8 @@ import {
   ArrowRight,
   ShieldCheck,
 } from "lucide-react";
+
+import { authService } from "../../services/auth/authService";
 
 const Login = () => {
   const [username, setUsername] = useState("");

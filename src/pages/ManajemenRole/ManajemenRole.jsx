@@ -18,12 +18,18 @@ import {
   X,
   CheckSquare
 } from "lucide-react";
+<<<<<<< HEAD
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+=======
+import { useQuery } from "@tanstack/react-query";
+import { roleService } from "../../services/auth/roleService";
+>>>>>>> de916acf6b3043dc9346ad336dc518a34c6fe486
 
 const ManajemenRole = () => {
   const queryClient = useQueryClient();
 
+<<<<<<< HEAD
   // =========================================================
   // 1. STATE UNTUK MODAL & CHECKBOX
   // =========================================================
@@ -131,6 +137,15 @@ const ManajemenRole = () => {
     // 3. Tembak API
     updatePermissionsMutation.mutate(payload);
   };
+=======
+  const { data: roles, isLoading } = useQuery({
+    queryKey: ["roles"],
+    queryFn: roleService.getRoles,
+  });
+
+  console.log(roles);
+
+>>>>>>> de916acf6b3043dc9346ad336dc518a34c6fe486
   return (
     <DashboardLayout activeMenu="Manajemen Role">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">

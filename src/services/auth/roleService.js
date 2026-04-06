@@ -1,6 +1,7 @@
 import authInstance from "../../api/authInstance";
 
 export const roleService = {
+<<<<<<< HEAD
     async getRoles() {
         const response = await authInstance.get("/roles");
         console.log(response);
@@ -39,3 +40,10 @@ export const roleService = {
         return response.data;
     },
 };
+=======
+  async getRoles() {
+    const response = await authInstance.get("/roles");
+    return response.data;
+  },
+};
+>>>>>>> de916acf6b3043dc9346ad336dc518a34c6fe486

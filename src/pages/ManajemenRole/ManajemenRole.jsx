@@ -12,6 +12,8 @@ import {
   Eye,
   ShieldAlert,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { roleService } from "../../services/auth/roleService";
 
 const ManajemenRole = () => {
   // Mock Data untuk Manajemen Roles
@@ -52,6 +54,13 @@ const ManajemenRole = () => {
       permissions: ["manage_data_desa", "manage_indikator_perhitungan"],
     },
   ];
+
+  const { data: roles, isLoading } = useQuery({
+    queryKey: ["roles"],
+    queryFn: roleService.getRoles,
+  });
+
+  console.log(roles);
 
   return (
     <DashboardLayout activeMenu="Manajemen Role">

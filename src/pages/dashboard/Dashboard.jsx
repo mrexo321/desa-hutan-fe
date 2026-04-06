@@ -362,13 +362,9 @@ const Dashboard = () => {
             <thead>
               <tr className="bg-[#FAFAFA] text-[10px] uppercase tracking-wider font-bold text-gray-400 border-b border-gray-100">
                 <th className="py-4 px-6 w-16">NO</th>
-                <th className="py-4 px-4">NAMA DESA</th>
-                <th className="py-4 px-4">KECAMATAN</th>
-                <th className="py-4 px-4">KABUPATEN</th>
                 <th className="py-4 px-4">PROVINSI</th>
-                <th className="py-4 px-4">FUNGSI</th>
-                <th className="py-4 px-4">LUAS</th>
-                <th className="py-4 px-6 text-center w-20">AKSI</th>
+                <th className="py-4 px-4">TOTAL DESA HUTAN</th>
+                <th className="py-4 px-4">AKSI</th>
               </tr>
             </thead>
             <tbody className="text-sm font-medium text-gray-600">
@@ -380,85 +376,29 @@ const Dashboard = () => {
                   </td>
                 </tr>
               ) : (
-                [
-                  {
-                    no: 1,
-                    desa: "Desa Rimba Jaya",
-                    kec: "Kec. Hutan Timur",
-                    kab: "Kab. Hijau Lestari",
-                    prov: "Kalimantan Barat",
-                    fungsi: "KHDTK",
-                    luas: "1.250 Ha",
-                    color: "text-emerald-600 bg-emerald-50 ring-emerald-500/20",
-                  },
-                  {
-                    no: 2,
-                    desa: "Desa Pinus Indah",
-                    kec: "Kec. Gunung Merapi",
-                    kab: "Kab. Sumber Alam",
-                    prov: "Sumatera Barat",
-                    fungsi: "HK",
-                    luas: "890 Ha",
-                    color: "text-blue-600 bg-blue-50 ring-blue-500/20",
-                  },
-                  {
-                    no: 3,
-                    desa: "Desa Kayu Manis",
-                    kec: "Kec. Lembah Hijau",
-                    kab: "Kab. Nusa Hijau",
-                    prov: "Jawa Barat",
-                    fungsi: "HL",
-                    luas: "2.100 Ha",
-                    color: "text-orange-600 bg-orange-50 ring-orange-500/20",
-                  },
-                  {
-                    no: 4,
-                    desa: "Desa Bakau Permai",
-                    kec: "Kec. Pesisir Utara",
-                    kab: "Kab. Muara Enim",
-                    prov: "Sumatera Selatan",
-                    fungsi: "HP",
-                    luas: "675 Ha",
-                    color: "text-purple-600 bg-purple-50 ring-purple-500/20",
-                  },
-                  {
-                    no: 5,
-                    desa: "Desa Cemara Tinggi",
-                    kec: "Kec. Pegunungan",
-                    kab: "Kab. Batu Hijau",
-                    prov: "Sulawesi Tengah",
-                    fungsi: "HK",
-                    luas: "1.820 Ha",
-                    color: "text-blue-600 bg-blue-50 ring-blue-500/20",
-                  },
-                ].map((row, idx) => (
+                provinces?.map((row, idx) => (
                   <tr
                     key={idx}
                     className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group"
                   >
                     <td className="py-4 px-6 text-gray-400 font-medium">
-                      {row.no}
+                      {idx + 1}
                     </td>
                     <td className="py-4 px-4 text-gray-800 font-bold flex items-center gap-2">
                       <div className="w-6 h-6 rounded-full bg-emerald-100 flex items-center justify-center">
                         <TreePine size={12} className="text-emerald-600" />
                       </div>
-                      {row.desa}
+                      {row.provinsi}
                     </td>
-                    <td className="py-4 px-4 text-gray-500">{row.kec}</td>
-                    <td className="py-4 px-4 text-gray-500">{row.kab}</td>
-                    <td className="py-4 px-4 text-gray-500">{row.prov}</td>
-                    <td className="py-4 px-4">
-                      <span
-                        className={`text-[10px] font-bold px-2.5 py-1 rounded-full ring-1 inset-ring ${row.color}`}
-                      >
-                        {row.fungsi}
-                      </span>
+                    <td className="py-4 px-4 text-gray-500">
+                      {row.total_desa_hutan}
                     </td>
-                    <td className="py-4 px-4 text-gray-600">{row.luas}</td>
+
                     <td className="py-4 px-6 text-center">
                       <button
-                        onClick={() => handleGoToDetail(row.prov)}
+                        onClick={() =>
+                          handleGoToDetail(decodeURIComponent(row.provinsi))
+                        }
                         className="text-emerald-600 hover:text-white bg-emerald-50 hover:bg-emerald-500 p-2 rounded-xl transition-all shadow-sm opacity-0 group-hover:opacity-100"
                       >
                         <Eye size={16} />

@@ -8,10 +8,26 @@ export const analystSpatialService = {
     return response.data.data;
   },
 
-  async getProvinceDetail(province) {
+  async getProvinceDetail(province, page = 1, size = 10) {
     const response = await masterInstance.get(
       `/analisis-spasial/rekap/provinsi/${province}`,
+      {
+        params: {
+          page: page,
+          size: size,
+        },
+      },
     );
+    return response.data.data;
+  },
+
+  async getDetailMapInformation(lat, lng) {
+    const response = await masterInstance.get(`/public/map`, {
+      params: {
+        lat: lat,
+        lng: lng,
+      },
+    });
     return response.data.data;
   },
 };

@@ -41,7 +41,7 @@ const Login = () => {
           userId: data?.user?.id || null,
           username: data?.user?.username || null,
           role: data?.user?.roles || null,
-          token: data?.access_token || null,
+          access_token: data?.access_token || null,
         }),
       );
 

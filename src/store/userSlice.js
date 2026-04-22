@@ -1,8 +1,7 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, current } from "@reduxjs/toolkit";
 
 const savedUser = localStorage.getItem("user");
 
-// Sesuaikan struktur awal dengan format API
 const initialState = savedUser
   ? JSON.parse(savedUser)
   : {
@@ -10,8 +9,8 @@ const initialState = savedUser
       username: null,
       roles: [],
       permissions: [],
-      access_token: null,
-      refresh_token: null,
+      accessToken: null, // Ubah ke camelCase
+      refreshToken: null, // Ubah ke camelCase
     };
 
 const userSlice = createSlice({
@@ -22,20 +21,34 @@ const userSlice = createSlice({
       localStorage.setItem("user", JSON.stringify(action.payload));
       return action.payload;
     },
+    // Di dalam store/userSlice.js, ubah bagian setToken menjadi seperti ini:
+
+    setToken: (state, action) => {
+      const { accessToken, refreshToken } = action.payload;
+
+      // Update state jika nilainya dikirimkan
+      if (accessToken) state.accessToken = accessToken;
+      if (refreshToken) state.refreshToken = refreshToken;
+
+      // Baca data proxy menjadi objek JS biasa
+      const currentState = current(state);
+
+      // Gantikan/Timpa data di localStorage secara utuh
+      localStorage.setItem("user", JSON.stringify(currentState));
+    },
     clearUserData: () => {
       localStorage.removeItem("user");
-      // Kembalikan ke nilai kosong yang sesuai
       return {
         id: null,
         username: null,
         roles: [],
         permissions: [],
-        access_token: null,
-        refresh_token: null,
+        accessToken: null,
+        refreshToken: null,
       };
     },
   },
 });
 
-export const { setUserData, clearUserData } = userSlice.actions;
+export const { setUserData, clearUserData, setToken } = userSlice.actions;
 export default userSlice.reducer;

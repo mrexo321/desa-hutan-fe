@@ -25,28 +25,34 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  const token = useSelector((state) => state.user.token);
+  // PERBAIKAN: Gunakan accessToken
+  const token = useSelector((state) => state.user.accessToken);
 
   useEffect(() => {
     if (token) {
-      navigate("/dashboard", { replace: true });
+      // Beri sedikit jeda agar redux selesai menyimpan ke localstorage
+      const timer = setTimeout(() => {
+        navigate("/dashboard", { replace: true });
+      }, 300);
+      return () => clearTimeout(timer);
     }
   }, [token, navigate]);
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: ({ data }) => {
+      // PERBAIKAN: Tangkap data API dengan format camelCase
       dispatch(
         setUserData({
           userId: data?.user?.id || null,
           username: data?.user?.username || null,
           role: data?.user?.roles || null,
-          access_token: data?.access_token || null,
+          accessToken: data?.accessToken || null,
+          refreshToken: data?.refreshToken || null,
         }),
       );
 
       toast.success("Login berhasil! Selamat datang.");
-      navigate("/dashboard");
     },
     onError: (error) => {
       console.error("Gagal login:", error);

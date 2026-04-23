@@ -1,8 +1,10 @@
 import React from "react";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
+import { useBackgroundRefresh } from "../hooks/useBakgroundRefresh";
 
 export default function DashboardLayout({ children, activeMenu }) {
+  useBackgroundRefresh();
   return (
     <div className="flex h-screen bg-[#F8FAFC] font-sans overflow-hidden">
       {/* Sidebar */}

@@ -18,18 +18,12 @@ import {
   X,
   CheckSquare
 } from "lucide-react";
-<<<<<<< HEAD
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-=======
-import { useQuery } from "@tanstack/react-query";
-import { roleService } from "../../services/auth/roleService";
->>>>>>> de916acf6b3043dc9346ad336dc518a34c6fe486
 
 const ManajemenRole = () => {
   const queryClient = useQueryClient();
 
-<<<<<<< HEAD
   // =========================================================
   // 1. STATE UNTUK MODAL & CHECKBOX
   // =========================================================
@@ -58,9 +52,7 @@ const ManajemenRole = () => {
   // =========================================================
   const updatePermissionsMutation = useMutation({
     mutationFn: async (payload) => {
-      // Pastikan fungsi createBulkPermissions ada di permissionService
-      // ATAU gunakan fungsi assign bulk dari roleService, tergantung setup backend-mu.
-      // Saya asumsikan kita pakai createBulkPermissions dari permissionService yang kamu kasih di awal.
+      // Menggunakan fungsi assignPermissionToRoleBulk dari rolePermissionService
       return await rolePermissionService.assignPermissionToRoleBulk(payload); 
     },
     onSuccess: () => {
@@ -111,7 +103,7 @@ const ManajemenRole = () => {
     );
   };
 
- const handleSavePermissions = () => {
+  const handleSavePermissions = () => {
     if (!selectedRole) return;
 
     // 1. Dapatkan Array ID Permission yang diceklis
@@ -119,33 +111,16 @@ const ManajemenRole = () => {
       ?.filter((perm) => checkedPermissions.includes(perm.name))
       .map((perm) => perm.id) || [];
 
-    // 👇 2. UBAH PAYLOAD MENJADI BENTUK ARRAY OF OBJECTS
-    // Kita "memecah" data menjadi daftar pasangan role dan permission
+    // 2. UBAH PAYLOAD MENJADI BENTUK ARRAY OF OBJECTS (Menggunakan snake_case)
     const payload = selectedPermissionIds.map((permId) => ({
-      roleId: selectedRole.id,       // Coba pakai camelCase dulu
-      permissionId: permId           // Coba pakai camelCase dulu
+      role_id: selectedRole.id,       
+      permission_id: permId           
     }));
-
-    /* 
-      Hasil payload di atas akan menjadi Array seperti ini:
-      [
-        { roleId: "role1", permissionId: "permA" },
-        { roleId: "role1", permissionId: "permB" }
-      ]
-    */
 
     // 3. Tembak API
     updatePermissionsMutation.mutate(payload);
   };
-=======
-  const { data: roles, isLoading } = useQuery({
-    queryKey: ["roles"],
-    queryFn: roleService.getRoles,
-  });
 
-  console.log(roles);
-
->>>>>>> de916acf6b3043dc9346ad336dc518a34c6fe486
   return (
     <DashboardLayout activeMenu="Manajemen Role">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">

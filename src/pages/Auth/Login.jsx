@@ -46,9 +46,10 @@ const Login = () => {
         setUserData({
           userId: data?.user?.id || null,
           username: data?.user?.username || null,
-          role: data?.user?.roles || null,
           accessToken: data?.accessToken || null,
           refreshToken: data?.refreshToken || null,
+          roles: data?.user?.roles || [],
+          permissions: data?.user?.permissions || [],
         }),
       );
 

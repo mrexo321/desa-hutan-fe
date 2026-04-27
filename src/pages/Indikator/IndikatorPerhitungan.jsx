@@ -1,183 +1,229 @@
-import React from "react";
-import DashboardLayout from "../../components/DashboardLayout"; // Sesuaikan path
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import DashboardLayout from "../../components/DashboardLayout";
+import DataTable from "../../components/DataTable"; // Sesuaikan path
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { indikatorService } from "../../services/master/indikatorService"; // Sesuaikan path
+import { toast } from "sonner"; // Import Sonner
 import {
   Plus,
   Search,
   Eye,
   Edit2,
   Trash2,
-  ChevronLeft,
-  ChevronRight,
-  Filter,
   Calendar,
+  AlertTriangle,
 } from "lucide-react";
 
 const IndikatorPerhitungan = () => {
-  // Mock Data Tabel
-  const tableData = [
-    { id: 1, no: 1, tahun: "2025" },
-    { id: 2, no: 2, tahun: "2024" },
-    { id: 3, no: 3, tahun: "2023" },
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Fetch All Data
+  const {
+    data: responseData,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["allFormulaIndicators"],
+    queryFn: () => indikatorService.getAllFormula(),
+  });
+
+  const rawData = responseData?.data || responseData || [];
+
+  // Client-side search filtering
+  const filteredData = rawData.filter((item) =>
+    item.nama?.toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  // Mutation untuk Delete
+  const deleteMutation = useMutation({
+    mutationFn: (id) => indikatorService.deleteFormulaIndicator(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries(["allFormulaIndicators"]);
+      toast.success("Berhasil menghapus formula indikator.");
+    },
+    onError: () => {
+      toast.error("Gagal menghapus formula indikator. Silakan coba lagi.");
+    },
+  });
+
+  // Handler Trigger Sonner Confirmation
+  const handleDeleteConfirmation = (row) => {
+    // Generate custom toast id agar kita bisa dismiss toast-nya secara spesifik jika dibutuhkan
+    const toastId = toast.custom(
+      (t) => (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-red-900/5 p-5 w-full max-w-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0 text-red-500">
+              <AlertTriangle size={20} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-slate-800 mb-1">
+                Konfirmasi Penghapusan
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                Apakah Anda yakin ingin menghapus formula{" "}
+                <span className="font-bold text-slate-700">"{row.nama}"</span>?
+                Tindakan ini permanen dan tidak dapat dibatalkan.
+              </p>
+              <div className="flex items-center justify-end gap-2 mt-2">
+                <button
+                  onClick={() => toast.dismiss(t)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    toast.dismiss(t);
+                    deleteMutation.mutate(row.id);
+                  }}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      {
+        duration: 10000, // Akan tetap muncul selama 10 detik jika tidak direspon
+        position: "top-center", // Posisi konfirmasi yang baik agar langsung terlihat
+      },
+    );
+  };
+
+  // Definisi Kolom DataTable
+  const columns = [
+    {
+      header: "No",
+      accessor: "id",
+      className: "w-16 text-center text-slate-400",
+      render: (_, idx) => idx + 1,
+    },
+    {
+      header: "Nama Indikator",
+      accessor: "nama",
+      render: (row) => (
+        <span className="font-bold text-slate-800">{row.nama}</span>
+      ),
+    },
+    {
+      header: "Tahun",
+      accessor: "tahunIndikator",
+      render: (row) => (
+        <span className="px-3 py-1 bg-blue-50 text-blue-700 font-bold rounded-lg text-xs">
+          {row.tahunIndikator?.tahun || "-"}
+        </span>
+      ),
+    },
+    {
+      header: "Formula",
+      accessor: "formula",
+      render: (row) => (
+        <code className="text-xs bg-slate-100 text-slate-600 px-3 py-1.5 rounded-lg border border-slate-200 block truncate max-w-xs">
+          {row.formula}
+        </code>
+      ),
+    },
+    {
+      header: "Aksi",
+      className: "w-40 text-center",
+      render: (row) => (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            onClick={() =>
+              navigate(`/dashboard/indikator-perhitungan/${row.id}`)
+            }
+            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+            title="Lihat Detail"
+          >
+            <Eye size={16} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={() =>
+              navigate(`/dashboard/indikator-perhitungan/edit/${row.id}`)
+            }
+            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+            title="Edit"
+          >
+            <Edit2 size={16} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={() => handleDeleteConfirmation(row)}
+            disabled={deleteMutation.isLoading}
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+            title="Hapus"
+          >
+            <Trash2 size={16} strokeWidth={2.5} />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   return (
     <DashboardLayout activeMenu="Indikator Perhitungan">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
-        {/* SCROLLABLE KONTEN */}
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
-          {/* HEADER HALAMAN */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+            <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
               Indikator Perhitungan
             </h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Kelola data tahun untuk referensi perhitungan indikator desa
-              hutan.
+            <p className="text-sm text-slate-500 mt-1">
+              Kelola data formula dan tahun untuk referensi perhitungan
+              indikator.
             </p>
           </div>
 
-          {/* TABS (Modern Segmented Control) - Single tab for this page as per image */}
-          <div className="flex p-1 bg-gray-100/80 backdrop-blur-sm rounded-xl w-max mb-6 border border-gray-200/50">
-            <button className="px-6 py-2.5 text-sm font-semibold rounded-lg transition-all duration-300 bg-white text-[#2D7344] shadow-[0_2px_8px_rgb(0,0,0,0.06)]">
-              Tahun Indikator Perhitungan
-            </button>
-          </div>
-
-          {/* CARD KONTEN UTAMA */}
-          <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col">
-            {/* Header Toolbar (Title, Search, Add Button) */}
-            <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="bg-white rounded-[20px] shadow-sm border border-slate-100 flex flex-col">
+            <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2D7344]">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-700">
                   <Calendar size={20} strokeWidth={2} />
                 </div>
-                <h2 className="text-lg font-bold text-gray-800">
-                  Tahun Indikator
+                <h2 className="text-lg font-bold text-slate-800">
+                  Daftar Formula
                 </h2>
               </div>
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
-                {/* Search Bar Modern */}
                 <div className="relative w-full sm:w-64 group">
                   <Search
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors"
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-emerald-600 transition-colors"
                     size={16}
                   />
                   <input
                     type="text"
-                    placeholder="Cari tahun..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-[#2D7344] transition-all font-medium"
+                    placeholder="Cari formula..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all font-medium"
                   />
                 </div>
-
-                <button className="hidden sm:flex items-center justify-center p-2.5 text-gray-500 bg-gray-50 border border-gray-200 rounded-xl hover:bg-gray-100 hover:text-gray-700 transition-colors">
-                  <Filter size={18} />
-                </button>
-
-                {/* Tombol Tambah Data */}
-                <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md shadow-green-900/10 hover:shadow-lg hover:shadow-green-900/20 active:scale-[0.98]">
+                <button
+                  onClick={() =>
+                    navigate("/dashboard/indikator-perhitungan/tambah")
+                  }
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
+                >
                   <Plus size={18} strokeWidth={2.5} />
-                  Tambah Tahun
+                  Tambah Formula
                 </button>
               </div>
             </div>
 
-            {/* TABEL DATA */}
-            <div className="overflow-x-auto w-full">
-              <table className="w-full text-left border-collapse whitespace-nowrap">
-                <thead>
-                  <tr className="bg-gray-50/50 border-b border-gray-100 text-[11px] uppercase tracking-wider font-bold text-gray-500">
-                    <th className="py-4 px-6 w-20 text-center">No</th>
-                    <th className="py-4 px-6">Tahun</th>
-                    <th className="py-4 px-6 text-center w-40">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="text-sm font-medium text-gray-700">
-                  {tableData.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-gray-50/80 hover:bg-[#F9FBFA] transition-colors group"
-                    >
-                      <td className="py-4 px-6 text-gray-500 font-semibold text-center">
-                        {row.no}
-                      </td>
-                      <td className="py-4 px-6 text-gray-900 font-bold">
-                        {row.tahun}
-                      </td>
-                      <td className="py-4 px-6">
-                        <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                          <button
-                            className="p-2 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-lg transition-all"
-                            title="Lihat Detail"
-                          >
-                            <Eye size={16} strokeWidth={2} />
-                          </button>
-                          <button
-                            className="p-2 text-gray-400 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-lg transition-all"
-                            title="Edit"
-                          >
-                            <Edit2 size={16} strokeWidth={2} />
-                          </button>
-                          <button
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-                            title="Hapus"
-                          >
-                            <Trash2 size={16} strokeWidth={2} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-
-                  {/* State Kosong */}
-                  {tableData.length === 0 && (
-                    <tr>
-                      <td
-                        colSpan="3"
-                        className="py-12 text-center text-gray-500"
-                      >
-                        Belum ada data tahun yang ditambahkan.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-
-            {/* PAGINATION */}
-            <div className="p-4 md:p-6 border-t border-gray-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/30 rounded-b-2xl">
-              <p className="text-xs font-medium text-gray-500">
-                Menampilkan baris{" "}
-                <span className="font-bold text-gray-900">1 - 3</span> dari{" "}
-                <span className="font-bold text-gray-900">2000</span>
-              </p>
-
-              <div className="flex items-center gap-2">
-                <button className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 hover:bg-gray-50 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed">
-                  <ChevronLeft size={18} />
-                </button>
-
-                <div className="flex items-center gap-1 px-2">
-                  <button className="w-8 h-8 rounded-lg bg-[#2D7344] text-white text-xs font-bold shadow-md">
-                    1
-                  </button>
-                  <button className="w-8 h-8 rounded-lg text-gray-600 hover:bg-gray-100 text-xs font-bold transition-colors">
-                    2
-                  </button>
-                  <button className="w-8 h-8 rounded-lg text-gray-600 hover:bg-gray-100 text-xs font-bold transition-colors">
-                    3
-                  </button>
-                  <span className="text-gray-400 text-xs">...</span>
-                  <button className="w-8 h-8 rounded-lg text-gray-600 hover:bg-gray-100 text-xs font-bold transition-colors">
-                    400
-                  </button>
-                </div>
-
-                <button className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
-                  <ChevronRight size={18} />
-                </button>
-              </div>
-            </div>
+            <DataTable
+              columns={columns}
+              data={filteredData}
+              isLoading={isLoading}
+              isError={isError}
+              searchQuery={searchTerm}
+              emptyMessage="Belum ada formula yang ditambahkan."
+            />
           </div>
         </div>
       </main>

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useRef } from "react";
 import Map, {
   Marker,
   NavigationControl,
@@ -24,15 +24,21 @@ import {
   X,
   Activity,
   Info,
+  Loader2,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import environment from "./config/environment";
-// Sesuaikan import path ini dengan letak service Anda
 import { analystSpatialService } from "./services/master/analystSpatialService";
+// --- IMPORT SERVICE DESA ---
+// Pastikan path ini sesuai dengan struktur folder Anda
+import { wilayahDesaService } from "./services/master/wilayahDesaService";
 
 export default function MapPage() {
   const MAPBOX_TOKEN = environment.MAPBOX_URL;
+
+  // --- REFERENSI PETA UNTUK FLY-TO ---
+  const mapRef = useRef(null);
 
   // 1. State Posisi Peta
   const [initialViewState] = useState({
@@ -50,6 +56,36 @@ export default function MapPage() {
 
   // --- STATE INTERAKSI KLIK PETA ---
   const [clickedLocation, setClickedLocation] = useState(null);
+
+  // --- STATE PENCARIAN (LOKAL) ---
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  // --- FETCHING SEMUA DATA DESA DARI API INTERNAL UNTUK PENCARIAN ---
+  const { data: responseDesa, isLoading: isFetchingDesaData } = useQuery({
+    queryKey: ["allVillagesMap"],
+    queryFn: () => wilayahDesaService.getAllDesa(1, 1000), // Ambil banyak data sekaligus
+    staleTime: 60000,
+  });
+
+  const listDesa = responseDesa?.items || [];
+
+  console.log(listDesa);
+
+  // --- FILTERING LOKAL BERDASARKAN INPUT ---
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim() || searchQuery.length < 2) return [];
+
+    const query = searchQuery.toLowerCase();
+    return listDesa
+      .filter(
+        (desa) =>
+          desa.nama?.toLowerCase().includes(query) ||
+          desa.kecamatan?.toLowerCase().includes(query) ||
+          desa.kodeKemendagri?.toLowerCase().includes(query),
+      )
+      .slice(0, 8); // Batasi maksimal 8 hasil agar dropdown tidak terlalu panjang
+  }, [searchQuery, listDesa]);
 
   // 2. State Tema Peta
   const [mapStyle, setMapStyle] = useState(
@@ -132,10 +168,37 @@ export default function MapPage() {
       longitude: lngLat.lng,
       latitude: lngLat.lat,
     });
+    // Tutup dropdown jika peta diklik
+    setShowDropdown(false);
   }, []);
 
   const closePopup = () => {
     setClickedLocation(null);
+  };
+
+  // --- FUNGSI SAAT LOKASI DESA DIPILIH ---
+  const handleSelectLocation = (desa) => {
+    setSearchQuery(desa.nama);
+    setShowDropdown(false);
+
+    // Ambil koordinat dari data desa (sesuaikan dengan nama properti dari API Anda)
+    // Jika API tidak mengirimkan coord, fallback ke posisi saat ini agar tidak error
+    const lng = Number(desa.longitude) || Number(desa.lng) || 106.8229;
+    const lat = Number(desa.latitude) || Number(desa.lat) || -6.2088;
+
+    // Animasi terbang ke lokasi
+    mapRef.current?.flyTo({
+      center: [lng, lat],
+      zoom: 15,
+      duration: 2500,
+      essential: true,
+    });
+
+    // Otomatis pasang marker popup di lokasi desa
+    setClickedLocation({
+      longitude: lng,
+      latitude: lat,
+    });
   };
 
   if (!MAPBOX_TOKEN) {
@@ -146,12 +209,15 @@ export default function MapPage() {
     );
   }
 
+  console.log(detailData);
+
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-[#E8EDE9] font-sans selection:bg-[#2D7344]/30">
       {/* =========================================
           1. KANVAS PETA
       ========================================= */}
       <Map
+        ref={mapRef} // WAJIB untuk fitur flyTo
         initialViewState={initialViewState}
         onMove={handleMapMove}
         onClick={handleMapClick}
@@ -172,7 +238,6 @@ export default function MapPage() {
         <ScaleControl position="bottom-left" />
 
         {/* --- LAYER WMS: HUTAN --- */}
-        {/* Layer ini hanya dimuat jika Toggle Switch (showLayerHutan) bernilai TRUE */}
         {showLayerHutan && (
           <Source
             id="geoserver-hutan"
@@ -184,8 +249,8 @@ export default function MapPage() {
               id="layer-hutan"
               type="raster"
               paint={{
-                "raster-opacity": opacityHutan / 100, // Diatur oleh Slider
-                "raster-fade-duration": 0, // Real-time slider (tanpa jeda transisi)
+                "raster-opacity": opacityHutan / 100,
+                "raster-fade-duration": 0,
                 "raster-resampling": "linear",
               }}
             />
@@ -204,8 +269,8 @@ export default function MapPage() {
               id="layer-desa"
               type="raster"
               paint={{
-                "raster-opacity": opacityDesa / 100, // Diatur oleh Slider
-                "raster-fade-duration": 0, // Real-time slider
+                "raster-opacity": opacityDesa / 100,
+                "raster-fade-duration": 0,
                 "raster-resampling": "linear",
               }}
             />
@@ -213,7 +278,6 @@ export default function MapPage() {
         )}
 
         {/* --- MARKER & POPUP INTERAKTIF --- */}
-        {/* (SAMA SEPERTI SEBELUMNYA) */}
         {clickedLocation && (
           <>
             <Marker
@@ -369,11 +433,11 @@ export default function MapPage() {
       </Map>
 
       {/* =========================================
-          2. FLOATING UI (HUD)
+          2. FLOATING UI (HUD) - SEARCH INTERNAL
       ========================================= */}
 
-      {/* Panel Kiri Atas (Brand & Pencarian) */}
       <div className="absolute top-6 left-6 z-10 flex flex-col gap-4 w-full max-w-[340px] pointer-events-none">
+        {/* Brand */}
         <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[20px] p-3 flex items-center gap-4 pointer-events-auto">
           <div className="w-11 h-11 bg-gradient-to-br from-[#1e5230] to-[#2D7344] rounded-[14px] flex items-center justify-center shadow-inner">
             <MapIcon className="text-white" size={24} strokeWidth={1.5} />
@@ -388,18 +452,79 @@ export default function MapPage() {
           </div>
         </div>
 
-        <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[16px] p-1.5 flex items-center gap-2 pointer-events-auto focus-within:bg-white/95 focus-within:ring-2 focus-within:ring-[#2D7344]/40 transition-all duration-300">
-          <div className="pl-3 text-gray-400">
-            <Search size={18} />
+        {/* INPUT PENCARIAN & DROPDOWN LOKAL */}
+        <div className="relative pointer-events-auto w-full">
+          <div className="bg-white/90 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[16px] p-1.5 flex items-center gap-2 focus-within:bg-white focus-within:ring-2 focus-within:ring-[#2D7344]/40 transition-all duration-300 z-20 relative">
+            <div className="pl-3 text-gray-400">
+              <Search size={18} />
+            </div>
+            <input
+              type="text"
+              placeholder="Cari Database Desa..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setShowDropdown(true);
+              }}
+              onFocus={() => {
+                if (searchResults.length > 0) setShowDropdown(true);
+              }}
+              className="w-full bg-transparent border-none text-sm text-gray-700 font-medium placeholder-gray-400 focus:outline-none py-2.5"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => {
+                  setSearchQuery("");
+                  setShowDropdown(false);
+                }}
+                className="p-1 mr-1 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X size={16} />
+              </button>
+            )}
+            <button className="bg-[#2D7344] hover:bg-[#1e5230] text-white p-2.5 rounded-xl transition-colors shadow-md flex items-center justify-center">
+              <Search size={16} strokeWidth={3} />
+            </button>
           </div>
-          <input
-            type="text"
-            placeholder="Cari area atau desa..."
-            className="w-full bg-transparent border-none text-sm text-gray-700 font-medium placeholder-gray-400 focus:outline-none py-2.5"
-          />
-          <button className="bg-[#2D7344] hover:bg-[#1e5230] text-white p-2.5 rounded-xl transition-colors shadow-md flex items-center justify-center">
-            <Search size={16} strokeWidth={3} />
-          </button>
+
+          {/* HASIL PENCARIAN LOKAL */}
+          {showDropdown && searchQuery.length >= 2 && (
+            <div className="absolute top-[110%] left-0 w-full bg-white/95 backdrop-blur-xl border border-white shadow-[0_15px_40px_rgb(0,0,0,0.12)] rounded-[16px] overflow-hidden z-10 animate-in fade-in slide-in-from-top-2 duration-200">
+              {isFetchingDesaData ? (
+                <div className="text-center py-5 text-xs text-gray-500 flex flex-col items-center gap-2">
+                  <Loader2 size={16} className="animate-spin text-[#2D7344]" />
+                  <span>Memuat database desa...</span>
+                </div>
+              ) : searchResults.length > 0 ? (
+                <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                  {searchResults.map((desa) => (
+                    <button
+                      key={desa.id}
+                      onClick={() => handleSelectLocation(desa)}
+                      className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-gray-50 border-b border-gray-100 last:border-0 transition-colors"
+                    >
+                      <Home
+                        size={16}
+                        className="text-[#2D7344] mt-0.5 shrink-0"
+                      />
+                      <div className="flex flex-col">
+                        <span className="text-sm font-bold text-gray-800 line-clamp-1">
+                          {desa.nama}
+                        </span>
+                        <span className="text-[11px] text-gray-500 line-clamp-1">
+                          Kec. {desa.kecamatan} • Kode: {desa.kodeKemendagri}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-4 text-xs text-gray-500 font-medium">
+                  Data desa tidak ditemukan.
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -471,7 +596,6 @@ export default function MapPage() {
                 <div
                   className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerHutan ? "bg-white/90 border-emerald-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
                 >
-                  {/* Header (Ikon + Toggle Switch) */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div
@@ -490,7 +614,6 @@ export default function MapPage() {
                         </div>
                       </div>
                     </div>
-                    {/* ON/OFF Switch */}
                     <label className="cursor-pointer">
                       <div
                         className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerHutan ? "bg-[#2D7344]" : "bg-gray-300"}`}
@@ -508,7 +631,6 @@ export default function MapPage() {
                     </label>
                   </div>
 
-                  {/* Opacity Slider (Muncul hanya jika layer ON) */}
                   {showLayerHutan && (
                     <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200">
                       <div className="flex justify-between items-center mb-1">
@@ -522,7 +644,7 @@ export default function MapPage() {
                       <input
                         type="range"
                         min="10"
-                        max="100" // Min 10% agar tidak sepenuhnya hilang saat ON
+                        max="100"
                         value={opacityHutan}
                         onChange={(e) =>
                           setOpacityHutan(parseInt(e.target.value))
@@ -537,7 +659,6 @@ export default function MapPage() {
                 <div
                   className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerDesa ? "bg-white/90 border-blue-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
                 >
-                  {/* Header (Ikon + Toggle Switch) */}
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div
@@ -556,7 +677,6 @@ export default function MapPage() {
                         </div>
                       </div>
                     </div>
-                    {/* ON/OFF Switch */}
                     <label className="cursor-pointer">
                       <div
                         className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerDesa ? "bg-blue-600" : "bg-gray-300"}`}
@@ -574,7 +694,6 @@ export default function MapPage() {
                     </label>
                   </div>
 
-                  {/* Opacity Slider (Muncul hanya jika layer ON) */}
                   {showLayerDesa && (
                     <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200">
                       <div className="flex justify-between items-center mb-1">

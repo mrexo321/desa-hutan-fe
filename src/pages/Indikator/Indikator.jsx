@@ -5,7 +5,7 @@ import {
   Filter,
   Edit2,
   Trash2,
-  Eye, // Tambahan ikon untuk preview
+  Eye,
   ChevronLeft,
   ChevronRight,
   X,
@@ -17,16 +17,18 @@ import { toast } from "sonner";
 import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable";
 import { indikatorService } from "../../services/master/indikatorService";
+import { useNavigate } from "react-router-dom";
 
 const Indikator = () => {
   const queryClient = useQueryClient();
+  const navigate = useNavigate(); // <-- TAMBAHAN 2
   const [activeTab, setActiveTab] = useState("utama");
   const [searchQuery, setSearchQuery] = useState("");
 
   // ==========================================
   // STATE MODALS
   // ==========================================
-  // State Preview
+  // State Preview (Untuk Kategori)
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
   const [previewId, setPreviewId] = useState(null);
 
@@ -66,36 +68,28 @@ const Indikator = () => {
 
   const categoryData = categoriesResponse?.data || [];
 
+  // Fetch Semua Data Indikator Utama
+  const {
+    data: mainResponse,
+    isLoading: isLoadingMain,
+    isError: isErrorMain,
+  } = useQuery({
+    queryKey: ["main-indicators"],
+    queryFn: indikatorService.getMainIndicator,
+    enabled: activeTab === "utama",
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const mainIndicatorData = mainResponse?.data || [];
+
   // Fetch Data Detail Kategori (Berdasarkan ID untuk Preview)
   const { data: previewResponse, isFetching: isFetchingPreview } = useQuery({
     queryKey: ["category-indicator-detail", previewId],
     queryFn: () => indikatorService.getCategoryIndicatorById(previewId),
-    enabled: !!previewId, // Hanya jalan jika previewId ada isinya
+    enabled: !!previewId && activeTab === "kategori",
   });
 
-  // Menyesuaikan dengan struktur response API (biasanya di dalam .data)
   const previewData = previewResponse?.data || previewResponse;
-
-  // Mock Data Utama (Tetap)
-  const mainIndicatorData = useMemo(
-    () => [
-      {
-        id: 1,
-        kode: "B_B",
-        nama: "Bencana Banjir",
-        kategori: "Bencana",
-        badgeColor: "bg-red-100 text-red-700 border-red-200",
-      },
-      {
-        id: 2,
-        kode: "S_P",
-        nama: "Kepadatan Penduduk",
-        kategori: "Sosial",
-        badgeColor: "bg-blue-100 text-blue-700 border-blue-200",
-      },
-    ],
-    [],
-  );
 
   // Filter Data
   const displayData = useMemo(() => {
@@ -103,29 +97,22 @@ const Indikator = () => {
     if (!searchQuery.trim()) return dataSource;
     return dataSource.filter(
       (item) =>
-        item.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.kode.toLowerCase().includes(searchQuery.toLowerCase()),
+        item.nama?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.kode?.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [activeTab, categoryData, mainIndicatorData, searchQuery]);
 
-  // Mutation Create (Tambah)
+  // Mutations ... (Dipersingkat agar fokus pada perubahan navigasi)
   const createCategoryMutation = useMutation({
     mutationFn: (payload) => indikatorService.createCategoryIndicator(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["category-indicators"] });
       toast.success("Data kategori berhasil ditambahkan!");
       setIsAddModalOpen(false);
-      setAddForm({ kode: "", nama: "" }); // Reset form
-    },
-    onError: (error) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Terjadi kesalahan saat menambahkan data.";
-      toast.error(errorMessage);
+      setAddForm({ kode: "", nama: "" });
     },
   });
 
-  // Mutation Update
   const updateCategoryMutation = useMutation({
     mutationFn: ({ id, payload }) =>
       indikatorService.updateCategoryIndicator(id, payload),
@@ -134,15 +121,8 @@ const Indikator = () => {
       toast.success("Data kategori berhasil diperbarui!");
       setIsEditModalOpen(false);
     },
-    onError: (error) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Terjadi kesalahan saat memperbarui data.";
-      toast.error(errorMessage);
-    },
   });
 
-  // Mutation Delete
   const deleteCategoryMutation = useMutation({
     mutationFn: (id) => indikatorService.deleteCategoryIndicator(id),
     onSuccess: () => {
@@ -151,31 +131,36 @@ const Indikator = () => {
       setIsDeleteModalOpen(false);
       setItemToDelete(null);
     },
-    onError: (error) => {
-      const errorMessage =
-        error.response?.data?.message ||
-        "Terjadi kesalahan saat menghapus data.";
-      toast.error(errorMessage);
-    },
   });
 
   // ==========================================
   // 2. HANDLERS
   // ==========================================
 
-  // Handler Preview
   const handlePreviewClick = (row) => {
-    setPreviewId(row.id);
-    setIsPreviewModalOpen(true);
+    // TAMBAHAN 3: Jika tab Utama, navigasikan ke halaman detail
+    if (activeTab === "utama") {
+      // Asumsi route kamu adalah /dashboard/indikator/utama/:id
+      // Sesuaikan path navigasi ini dengan setup react-router kamu!
+      navigate(`/dashboard/indikator/utama/${row.id}`);
+    } else {
+      // Jika tab Kategori, buka Modal (logika lama)
+      setPreviewId(row.id);
+      setIsPreviewModalOpen(true);
+    }
   };
 
   const closePreviewModal = () => {
     setIsPreviewModalOpen(false);
-    setTimeout(() => setPreviewId(null), 200); // Clear state setelah animasi modal selesai
+    setTimeout(() => setPreviewId(null), 200);
   };
 
-  // Handler Add
   const handleAddClick = () => {
+    if (activeTab === "utama") {
+      // Arahkan ke halaman create
+      navigate("/dashboard/indikator/utama/create");
+      return;
+    }
     setAddForm({ kode: "", nama: "" });
     setIsAddModalOpen(true);
   };
@@ -186,14 +171,14 @@ const Indikator = () => {
       toast.warning("Kode dan Nama tidak boleh kosong!");
       return;
     }
-    createCategoryMutation.mutate({
-      kode: addForm.kode,
-      nama: addForm.nama,
-    });
+    createCategoryMutation.mutate({ kode: addForm.kode, nama: addForm.nama });
   };
 
-  // Handler Edit
   const handleEditClick = (row) => {
+    if (activeTab === "utama") {
+      toast.info("Fitur Edit Indikator Utama belum tersedia.");
+      return;
+    }
     setEditForm({
       id: row.id,
       kode: row.kode,
@@ -206,13 +191,8 @@ const Indikator = () => {
 
   const handleUpdateSubmit = (e) => {
     e.preventDefault();
-
-    if (!editForm.kode || !editForm.nama) {
-      toast.warning("Kode dan Nama tidak boleh kosong!");
-      return;
-    }
-
-    // 1. Cek apakah TIDAK ADA perubahan sama sekali
+    if (!editForm.kode || !editForm.nama)
+      return toast.warning("Kode dan Nama tidak boleh kosong!");
     if (
       editForm.kode === editForm.originalKode &&
       editForm.nama === editForm.originalNama
@@ -221,37 +201,29 @@ const Indikator = () => {
       setIsEditModalOpen(false);
       return;
     }
-
-    // 2. PERBAIKAN: Selalu kirimkan kode dan nama secara utuh (Full Payload)
-    // Ini menghindari error 'undefined' di backend
-    const payload = {
-      kode: editForm.kode,
-      nama: editForm.nama,
-    };
-
     updateCategoryMutation.mutate({
       id: editForm.id,
-      payload: payload,
+      payload: { kode: editForm.kode, nama: editForm.nama },
     });
   };
 
-  // Handler Delete
   const handleDeleteClick = (row) => {
+    if (activeTab === "utama") {
+      toast.info("Fitur Hapus Indikator Utama belum tersedia.");
+      return;
+    }
     setItemToDelete(row);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = () => {
-    if (itemToDelete) {
-      deleteCategoryMutation.mutate(itemToDelete.id);
-    }
+    if (itemToDelete) deleteCategoryMutation.mutate(itemToDelete.id);
   };
 
   // ==========================================
-  // 3. KONFIGURASI KOLOM TABEL DINAMIS
+  // 3. KONFIGURASI KOLOM TABEL
   // ==========================================
 
-  // Tambahkan onPreview ke ActionButtons
   const ActionButtons = ({ row, onPreview, onEdit, onDelete }) => (
     <div className="flex items-center justify-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity duration-300">
       <button
@@ -280,12 +252,13 @@ const Indikator = () => {
 
   const columnsUtama = useMemo(
     () => [
+      // ... (kolom kode, nama, kategori biarkan sama)
       {
         header: "Kode",
         accessor: "kode",
         className: "w-24",
         render: (row) => (
-          <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+          <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200 uppercase">
             {row.kode}
           </span>
         ),
@@ -298,15 +271,16 @@ const Indikator = () => {
         ),
       },
       {
-        header: "Jenis Kategori",
-        accessor: "kategori",
-        render: (row) => (
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-bold border ${row.badgeColor}`}
-          >
-            {row.kategori}
-          </span>
-        ),
+        header: "Kategori Indikator",
+        accessor: "kategoriIndikator",
+        render: (row) => {
+          const categoryName = row.kategoriIndikator?.nama || "-";
+          return (
+            <span className="px-3 py-1 rounded-full text-xs font-bold border bg-blue-50 text-blue-700 border-blue-200">
+              {categoryName}
+            </span>
+          );
+        },
       },
       {
         header: "Aksi",
@@ -315,14 +289,17 @@ const Indikator = () => {
         render: (row) => (
           <ActionButtons
             row={row}
-            onPreview={handlePreviewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
+            onPreview={() => navigate(`/dashboard/indikator/utama/${row.id}`)} // Ke halaman Detail
+            onEdit={() => navigate(`/dashboard/indikator/utama/edit/${row.id}`)} // Ke halaman Edit
+            onDelete={() => {
+              // Jika Anda belum punya service delete indikator utama, beri toast info dulu
+              toast.info("Fitur Hapus Indikator Utama belum tersedia.");
+            }}
           />
         ),
       },
     ],
-    [],
+    [navigate],
   );
 
   const columnsKategori = useMemo(
@@ -421,8 +398,7 @@ const Indikator = () => {
                   onClick={handleAddClick}
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
                 >
-                  <Plus size={18} strokeWidth={3} />
-                  Tambah Data
+                  <Plus size={18} strokeWidth={3} /> Tambah Data
                 </button>
               </div>
             </div>
@@ -430,10 +406,12 @@ const Indikator = () => {
             <DataTable
               columns={activeTab === "utama" ? columnsUtama : columnsKategori}
               data={displayData}
-              isLoading={activeTab === "kategori" ? isLoadingCat : false}
-              isError={activeTab === "kategori" ? isErrorCat : false}
+              isLoading={
+                activeTab === "kategori" ? isLoadingCat : isLoadingMain
+              }
+              isError={activeTab === "kategori" ? isErrorCat : isErrorMain}
               searchQuery={searchQuery}
-              emptyMessage="Belum ada data indikator yang ditambahkan"
+              emptyMessage={`Belum ada data indikator ${activeTab} yang ditambahkan`}
             />
           </div>
         </div>
@@ -488,7 +466,6 @@ const Indikator = () => {
                       {previewData.nama || "-"}
                     </p>
                   </div>
-                  {/* Anda bisa menambahkan field lain dari API di sini, contoh: Tanggal Dibuat dll */}
                 </div>
               ) : (
                 <div className="text-center py-6 text-slate-500">

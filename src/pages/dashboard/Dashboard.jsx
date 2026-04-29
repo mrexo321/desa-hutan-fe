@@ -38,6 +38,8 @@ const Dashboard = () => {
     queryFn: analystSpatialService.getAllProvinces,
   });
 
+  console.log(provinces);
+
   const handleGoToDetail = (provinsiName) => {
     navigate(`/dashboard/provinsi/${encodeURIComponent(provinsiName)}`);
   };
@@ -391,7 +393,7 @@ const Dashboard = () => {
                       {row.provinsi}
                     </td>
                     <td className="py-4 px-4 text-gray-500">
-                      {row.total_desa_hutan}
+                      {row.totalDesaHutan}
                     </td>
 
                     <td className="py-4 px-6 text-center">

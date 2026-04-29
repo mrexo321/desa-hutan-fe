@@ -23,6 +23,11 @@ import ManajemenRoles from "./pages/ManajemenRole/ManajemenRole";
 import MasterWilayah from "./pages/MasterWilayah/MasterWilayah";
 import MasterPotensi from "./pages/MasterPotensi/MasterPotensi";
 import ProvinceDetail from "./pages/dashboard/ProvinceDetail";
+import DetailMainIndikator from "./pages/Indikator/DetailMainIndikator";
+import FormMainIndikator from "./pages/Indikator/FormMainIndicator";
+import DesaDetail from "./pages/dashboard/DetailDesa";
+import DetailFormulaIndicator from "./pages/Indikator/DetailFormulaIndicator";
+import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
 
 const App = () => {
   return (
@@ -47,10 +52,36 @@ const App = () => {
         element={<EditPerformaDesa />}
       />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+      {/* Indikator */}
       <Route path="/dashboard/indikator" element={<Indikator />} />
+      <Route
+        path="/dashboard/indikator/utama/:id"
+        element={<DetailMainIndikator />}
+      />
+      <Route
+        path="/dashboard/indikator/utama/create"
+        element={<FormMainIndikator />}
+      />
+      <Route
+        path="/dashboard/indikator/utama/edit/:id"
+        element={<FormMainIndikator />}
+      />
+      <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
       <Route
         path="/dashboard/indikator-perhitungan"
         element={<IndikatorPerhitungan />}
+      />
+      <Route
+        path="/dashboard/indikator-perhitungan/:id"
+        element={<DetailFormulaIndicator />}
+      />
+      <Route
+        path="/dashboard/indikator-perhitungan/tambah"
+        element={<FormFormulaIndicator />}
+      />
+      <Route
+        path="/dashboard/indikator-perhitungan/edit/:id"
+        element={<FormFormulaIndicator />}
       />
 
       {/* Klasifikasi */}

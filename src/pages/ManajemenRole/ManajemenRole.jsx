@@ -30,20 +30,15 @@ const ManajemenRole = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [checkedPermissions, setCheckedPermissions] = useState([]);
+  const [checkedPermissions, setCheckedPermissions] = useState([]); 
 
   // =========================================================
   // 2. FETCH DATA MENGGUNAKAN REACT QUERY
   // =========================================================
   // Query 1: Ambil Data Roles untuk Tabel
-  const {
-    data: roles,
-    isLoading: isLoadingRoles,
-    isError,
-    error,
-  } = useQuery({
+  const { data: roles, isLoading: isLoadingRoles, isError, error } = useQuery({
     queryKey: ["roles"],
-    queryFn: roleService.getRoles,
+    queryFn: roleService.getRoles, 
   });
 
   // Query 2: Ambil SEMUA Data Permissions untuk Modal Edit
@@ -57,9 +52,7 @@ const ManajemenRole = () => {
   // =========================================================
   const updatePermissionsMutation = useMutation({
     mutationFn: async (payload) => {
-      // Pastikan fungsi createBulkPermissions ada di permissionService
-      // ATAU gunakan fungsi assign bulk dari roleService, tergantung setup backend-mu.
-      // Saya asumsikan kita pakai createBulkPermissions dari permissionService yang kamu kasih di awal.
+      // Menggunakan fungsi assignPermissionToRoleBulk dari rolePermissionService
       return await rolePermissionService.assignPermissionToRoleBulk(payload); 
     },
     onSuccess: () => {
@@ -69,12 +62,9 @@ const ManajemenRole = () => {
     },
     onError: (err) => {
       console.error(err);
-      const errorMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Gagal menyimpan perubahan. Periksa koneksi atau hubungi admin.";
+      const errorMsg = err.response?.data?.message || err.response?.data?.error || "Gagal menyimpan perubahan. Periksa koneksi atau hubungi admin.";
       toast.error(errorMsg);
-    },
+    }
   });
 
   // =========================================================
@@ -87,11 +77,11 @@ const ManajemenRole = () => {
 
   const handleEditClick = (roleData) => {
     setSelectedRole(roleData);
-
-    const currentPerms = Array.isArray(roleData.permissions)
-      ? roleData.permissions.map((p) => (typeof p === "object" ? p.name : p))
+    
+    const currentPerms = Array.isArray(roleData.permissions) 
+      ? roleData.permissions.map(p => typeof p === 'object' ? p.name : p) 
       : [];
-
+      
     setCheckedPermissions(currentPerms);
     setIsEditModalOpen(true);
   };
@@ -106,10 +96,10 @@ const ManajemenRole = () => {
   };
 
   const handleCheckboxChange = (permName) => {
-    setCheckedPermissions((prev) =>
+    setCheckedPermissions((prev) => 
       prev.includes(permName)
-        ? prev.filter((p) => p !== permName)
-        : [...prev, permName],
+        ? prev.filter((p) => p !== permName) 
+        : [...prev, permName] 
     );
   };
 
@@ -117,48 +107,29 @@ const ManajemenRole = () => {
     if (!selectedRole) return;
 
     // 1. Dapatkan Array ID Permission yang diceklis
-    const selectedPermissionIds =
-      allPermissions
-        ?.filter((perm) => checkedPermissions.includes(perm.name))
-        .map((perm) => perm.id) || [];
+    const selectedPermissionIds = allPermissions
+      ?.filter((perm) => checkedPermissions.includes(perm.name))
+      .map((perm) => perm.id) || [];
 
     // 2. UBAH PAYLOAD MENJADI BENTUK ARRAY OF OBJECTS (Menggunakan snake_case)
     const payload = selectedPermissionIds.map((permId) => ({
-      roleId: selectedRole.id,       // Coba pakai camelCase dulu
-      permissionId: permId           // Coba pakai camelCase dulu
+      role_id: selectedRole.id,       
+      permission_id: permId           
     }));
-
-    /* 
-      Hasil payload di atas akan menjadi Array seperti ini:
-      [
-        { roleId: "role1", permissionId: "permA" },
-        { roleId: "role1", permissionId: "permB" }
-      ]
-    */
 
     // 3. Tembak API
     updatePermissionsMutation.mutate(payload);
   };
-=======
-  const { data: roles, isLoading } = useQuery({
-    queryKey: ["roles"],
-    queryFn: roleService.getRoles,
-  });
 
-  console.log(roles);
-
->>>>>>> de916acf6b3043dc9346ad336dc518a34c6fe486
   return (
     <DashboardLayout activeMenu="Manajemen Role">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
+          
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
-              Manajemen Roles
-            </h1>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Manajemen Roles</h1>
             <p className="text-sm text-gray-500 mt-1">
-              Kelola tingkat otorisasi dan daftar hak akses (permissions) untuk
-              setiap peran.
+              Kelola tingkat otorisasi dan daftar hak akses (permissions) untuk setiap peran.
             </p>
           </div>
 
@@ -175,15 +146,11 @@ const ManajemenRole = () => {
                   <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2D7344] shrink-0">
                     <ShieldCheck size={20} strokeWidth={2} />
                   </div>
-                  <h2 className="text-lg font-bold text-gray-800 whitespace-nowrap hidden sm:block">
-                    Tabel Data Roles
-                  </h2>
+                  <h2 className="text-lg font-bold text-gray-800 whitespace-nowrap hidden sm:block">Tabel Data Roles</h2>
                 </div>
                 <div className="hidden sm:block w-px h-8 bg-gray-200 mx-2"></div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-gray-500 whitespace-nowrap">
-                    Wilayah:
-                  </span>
+                  <span className="text-sm font-bold text-gray-500 whitespace-nowrap">Wilayah:</span>
                   <select className="bg-gray-50 border border-gray-200 text-gray-700 py-2.5 px-3 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-[#2D7344] cursor-pointer font-medium min-w-[160px]">
                     <option>-- Pilih Wilayah --</option>
                   </select>
@@ -192,15 +159,8 @@ const ManajemenRole = () => {
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <div className="relative w-full sm:w-64 group">
-                  <Search
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors"
-                    size={16}
-                  />
-                  <input
-                    type="text"
-                    placeholder="Cari role..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:border-[#2D7344]"
-                  />
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors" size={16} />
+                  <input type="text" placeholder="Cari role..." className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:border-[#2D7344]" />
                 </div>
                 <button className="hidden sm:flex items-center justify-center p-2.5 text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
                   <Filter size={18} />
@@ -224,61 +184,37 @@ const ManajemenRole = () => {
                 <tbody className="text-sm font-medium text-gray-700">
                   {isLoadingRoles ? (
                     <tr>
-                      <td
-                        colSpan="4"
-                        className="py-12 text-center text-gray-500"
-                      >
+                      <td colSpan="4" className="py-12 text-center text-gray-500">
                         <div className="flex flex-col items-center justify-center gap-2">
-                          <Loader2
-                            className="animate-spin text-[#2D7344]"
-                            size={28}
-                          />
+                          <Loader2 className="animate-spin text-[#2D7344]" size={28} />
                           <p>Memuat data dari server...</p>
                         </div>
                       </td>
                     </tr>
                   ) : isError ? (
                     <tr>
-                      <td
-                        colSpan="4"
-                        className="py-12 text-center text-red-500 bg-red-50/50"
-                      >
-                        {error?.message ||
-                          "Terjadi kesalahan saat memuat data."}
+                      <td colSpan="4" className="py-12 text-center text-red-500 bg-red-50/50">
+                        {error?.message || "Terjadi kesalahan saat memuat data."}
                       </td>
                     </tr>
                   ) : roles?.length === 0 ? (
                     <tr>
-                      <td
-                        colSpan="4"
-                        className="py-12 text-center text-gray-500"
-                      >
+                      <td colSpan="4" className="py-12 text-center text-gray-500">
                         Belum ada data role yang ditambahkan.
                       </td>
                     </tr>
                   ) : (
                     roles?.map((row, index) => {
                       const roleName = row.name || row.nama || "Tanpa Nama";
-                      const isSuperadmin = roleName
-                        .toLowerCase()
-                        .includes("superadmin");
-                      const permissions = Array.isArray(row.permissions)
-                        ? row.permissions
-                        : [];
+                      const isSuperadmin = roleName.toLowerCase().includes("superadmin");
+                      const permissions = Array.isArray(row.permissions) ? row.permissions : [];
 
                       return (
-                        <tr
-                          key={row.id || index}
-                          className="border-b border-gray-50/80 hover:bg-[#F9FBFA] transition-colors group align-top"
-                        >
-                          <td className="py-5 px-6 text-gray-500 font-semibold text-center">
-                            {index + 1}
-                          </td>
+                        <tr key={row.id || index} className="border-b border-gray-50/80 hover:bg-[#F9FBFA] transition-colors group align-top">
+                          <td className="py-5 px-6 text-gray-500 font-semibold text-center">{index + 1}</td>
                           <td className="py-5 px-6">
                             <div className="flex flex-col gap-1 items-start">
-                              <span
-                                className={`font-bold ${isSuperadmin ? "text-[#2D7344]" : "text-gray-900"}`}
-                              >
+                              <span className={`font-bold ${isSuperadmin ? "text-[#2D7344]" : "text-gray-900"}`}>
                                 {roleName}
                               </span>
                               {isSuperadmin && (
@@ -292,36 +228,21 @@ const ManajemenRole = () => {
                             {permissions.length > 0 ? (
                               <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700">
                                 <ShieldCheck size={14} />
-                                <span className="text-xs font-bold">
-                                  {permissions.length} Akses Diberikan
-                                </span>
+                                <span className="text-xs font-bold">{permissions.length} Akses Diberikan</span>
                               </div>
                             ) : (
-                              <span className="text-gray-400 italic text-xs">
-                                Tidak ada permission khusus
-                              </span>
+                              <span className="text-gray-400 italic text-xs">Tidak ada permission khusus</span>
                             )}
                           </td>
                           <td className="py-5 px-6">
                             <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                              <button
-                                onClick={() => handleViewClick(row)}
-                                className="p-1.5 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-md transition-all"
-                                title="Lihat Detail"
-                              >
+                              <button onClick={() => handleViewClick(row)} className="p-1.5 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-md transition-all" title="Lihat Detail">
                                 <Eye size={16} strokeWidth={2} />
                               </button>
-                              <button
-                                onClick={() => handleEditClick(row)}
-                                className="p-1.5 text-gray-400 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-md transition-all"
-                                title="Edit"
-                              >
+                              <button onClick={() => handleEditClick(row)} className="p-1.5 text-gray-400 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-md transition-all" title="Edit">
                                 <Edit2 size={16} strokeWidth={2} />
                               </button>
-                              <button
-                                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
-                                title="Hapus"
-                              >
+                              <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Hapus">
                                 <Trash2 size={16} strokeWidth={2} />
                               </button>
                             </div>
@@ -336,26 +257,21 @@ const ManajemenRole = () => {
 
             <div className="p-4 md:p-6 border-t border-gray-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/30 rounded-b-2xl">
               <p className="text-xs font-medium text-gray-500">
-                Menampilkan{" "}
-                <span className="font-bold text-gray-900">
-                  {roles?.length || 0}
-                </span>{" "}
-                role
+                Menampilkan <span className="font-bold text-gray-900">{roles?.length || 0}</span> role
               </p>
               <div className="flex items-center gap-2">
                 <button className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-400 hover:text-gray-700 shadow-sm disabled:opacity-50 cursor-pointer">
                   <ChevronLeft size={18} />
                 </button>
                 <div className="flex items-center gap-1 px-2">
-                  <button className="w-8 h-8 rounded-lg bg-[#2D7344] text-white text-xs font-bold shadow-md">
-                    1
-                  </button>
+                  <button className="w-8 h-8 rounded-lg bg-[#2D7344] text-white text-xs font-bold shadow-md">1</button>
                 </div>
                 <button className="p-1.5 rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 shadow-sm cursor-pointer">
                   <ChevronRight size={18} />
                 </button>
               </div>
             </div>
+
           </div>
         </div>
       </main>
@@ -366,30 +282,19 @@ const ManajemenRole = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
               <div>
-                <h3 className="text-lg font-bold text-gray-800">
-                  Detail Hak Akses
-                </h3>
-                <p className="text-sm text-gray-500 font-medium">
-                  {selectedRole.name || selectedRole.nama}
-                </p>
+                <h3 className="text-lg font-bold text-gray-800">Detail Hak Akses</h3>
+                <p className="text-sm text-gray-500 font-medium">{selectedRole.name || selectedRole.nama}</p>
               </div>
-              <button
-                onClick={closeModal}
-                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
-              >
+              <button onClick={closeModal} className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
-
+            
             <div className="p-6 overflow-y-auto custom-scrollbar">
-              {Array.isArray(selectedRole.permissions) &&
-              selectedRole.permissions.length > 0 ? (
+              {Array.isArray(selectedRole.permissions) && selectedRole.permissions.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {selectedRole.permissions.map((perm, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-[#EAFBF0] border border-green-200 text-[#2D7344] px-3 py-1.5 rounded-md text-xs font-mono tracking-tight font-semibold flex items-center gap-1.5"
-                    >
+                    <span key={idx} className="bg-[#EAFBF0] border border-green-200 text-[#2D7344] px-3 py-1.5 rounded-md text-xs font-mono tracking-tight font-semibold flex items-center gap-1.5">
                       <CheckSquare size={14} />
                       {perm.name || perm}
                     </span>
@@ -397,22 +302,14 @@ const ManajemenRole = () => {
                 </div>
               ) : (
                 <div className="text-center py-8">
-                  <ShieldAlert
-                    className="mx-auto text-gray-300 mb-3"
-                    size={48}
-                  />
-                  <p className="text-gray-500 text-sm">
-                    Role ini belum memiliki hak akses (permissions) apapun.
-                  </p>
+                  <ShieldAlert className="mx-auto text-gray-300 mb-3" size={48} />
+                  <p className="text-gray-500 text-sm">Role ini belum memiliki hak akses (permissions) apapun.</p>
                 </div>
               )}
             </div>
-
+            
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end">
-              <button
-                onClick={closeModal}
-                className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-bold transition-colors"
-              >
+              <button onClick={closeModal} className="px-5 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg text-sm font-bold transition-colors">
                 Tutup
               </button>
             </div>
@@ -426,26 +323,17 @@ const ManajemenRole = () => {
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh]">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-[#2D7344]">
               <div>
-                <h3 className="text-lg font-bold text-white">
-                  Edit Hak Akses Role
-                </h3>
-                <p className="text-sm text-green-100 font-medium">
-                  {selectedRole.name || selectedRole.nama}
-                </p>
+                <h3 className="text-lg font-bold text-white">Edit Hak Akses Role</h3>
+                <p className="text-sm text-green-100 font-medium">{selectedRole.name || selectedRole.nama}</p>
               </div>
-              <button
-                onClick={closeModal}
-                className="p-2 text-green-100 hover:text-white hover:bg-green-700 rounded-full transition-colors"
-              >
+              <button onClick={closeModal} className="p-2 text-green-100 hover:text-white hover:bg-green-700 rounded-full transition-colors">
                 <X size={20} />
               </button>
             </div>
-
+            
             <div className="p-6 overflow-y-auto custom-scrollbar bg-gray-50/30">
               <div className="mb-4 flex items-center justify-between">
-                <span className="text-sm font-bold text-gray-700">
-                  Pilih Hak Akses:
-                </span>
+                <span className="text-sm font-bold text-gray-700">Pilih Hak Akses:</span>
                 <span className="text-xs font-medium text-[#2D7344] bg-green-50 px-2 py-1 rounded border border-green-100">
                   {checkedPermissions.length} Terpilih
                 </span>
@@ -460,23 +348,19 @@ const ManajemenRole = () => {
                   {allPermissions?.map((perm) => {
                     const isChecked = checkedPermissions.includes(perm.name);
                     return (
-                      <label
-                        key={perm.id}
+                      <label 
+                        key={perm.id} 
                         className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
-                          isChecked
-                            ? "bg-[#EAFBF0] border-[#2D7344]/30"
-                            : "bg-white border-gray-200 hover:border-[#2D7344]/50"
+                          isChecked ? "bg-[#EAFBF0] border-[#2D7344]/30" : "bg-white border-gray-200 hover:border-[#2D7344]/50"
                         }`}
                       >
-                        <input
-                          type="checkbox"
-                          className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344]"
+                        <input 
+                          type="checkbox" 
+                          className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344]" 
                           checked={isChecked}
                           onChange={() => handleCheckboxChange(perm.name)}
                         />
-                        <span
-                          className={`text-sm ${isChecked ? "font-bold text-[#2D7344]" : "font-semibold text-gray-600"}`}
-                        >
+                        <span className={`text-sm ${isChecked ? "font-bold text-[#2D7344]" : "font-semibold text-gray-600"}`}>
                           {perm.name}
                         </span>
                       </label>
@@ -485,24 +369,22 @@ const ManajemenRole = () => {
                 </div>
               )}
             </div>
-
+            
             <div className="px-6 py-4 border-t border-gray-100 bg-white flex justify-end gap-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)]">
-              <button
-                onClick={closeModal}
+              <button 
+                onClick={closeModal} 
                 disabled={updatePermissionsMutation.isPending}
                 className="px-5 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-bold transition-colors"
               >
                 Batal
               </button>
-              <button
+              <button 
                 onClick={handleSavePermissions}
                 disabled={updatePermissionsMutation.isPending}
                 className="flex items-center gap-2 px-5 py-2 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {updatePermissionsMutation.isPending ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" /> Menyimpan...
-                  </>
+                  <><Loader2 size={16} className="animate-spin" /> Menyimpan...</>
                 ) : (
                   "Simpan Perubahan"
                 )}
@@ -511,6 +393,7 @@ const ManajemenRole = () => {
           </div>
         </div>
       )}
+
     </DashboardLayout>
   );
 };

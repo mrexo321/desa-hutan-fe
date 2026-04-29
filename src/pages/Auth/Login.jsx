@@ -49,6 +49,7 @@ const Login = () => {
           role: data?.user?.roles || null,
           accessToken: data?.accessToken || null,
           refreshToken: data?.refreshToken || null,
+          permissions: data?.user?.permissions || [],
         }),
       );
 

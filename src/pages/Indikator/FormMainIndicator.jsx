@@ -34,8 +34,8 @@ const FormMainIndikator = () => {
     kode: "",
     nama: "",
     satuan: "",
-    arahPenilaian: "asc",
-    nilaiIndikator: [],
+    arahPenilaian: "positif",
+    penilaianIndikator: [],
   });
 
   // --- FETCH DATA (Select Kategori) ---
@@ -56,14 +56,16 @@ const FormMainIndikator = () => {
   useEffect(() => {
     if (isEditMode && detailResponse?.data) {
       const detail = detailResponse.data;
+      console.log(detail);
+
       setFormData({
         kategoriIndikatorId: detail.kategoriIndikatorId || "",
         tipe: detail.tipe || "",
         kode: detail.kode || "",
         nama: detail.nama || "",
         satuan: detail.satuan || "",
-        arahPenilaian: detail.arahPenilaian || "asc",
-        nilaiIndikator: detail.penilaianIndikator?.length
+        arahPenilaian: detail.arahPenilaian || "positif",
+        penilaianIndikator: detail.penilaianIndikator?.length
           ? detail.penilaianIndikator.map((item) => ({
               label: item.label || "",
               nilai: item.nilai !== undefined ? item.nilai : "",
@@ -100,23 +102,26 @@ const FormMainIndikator = () => {
   const handleAddNilai = () => {
     setFormData((prev) => ({
       ...prev,
-      nilaiIndikator: [...prev.nilaiIndikator, { label: "", nilai: "" }],
+      penilaianIndikator: [
+        ...prev.penilaianIndikator,
+        { label: "", nilai: "" },
+      ],
     }));
   };
 
   const handleRemoveNilai = (index) => {
     setFormData((prev) => {
-      const newArray = [...prev.nilaiIndikator];
+      const newArray = [...prev.penilaianIndikator];
       newArray.splice(index, 1);
-      return { ...prev, nilaiIndikator: newArray };
+      return { ...prev, penilaianIndikator: newArray };
     });
   };
 
   const handleNilaiChange = (index, field, value) => {
     setFormData((prev) => {
-      const newArray = [...prev.nilaiIndikator];
+      const newArray = [...prev.penilaianIndikator];
       newArray[index][field] = value;
-      return { ...prev, nilaiIndikator: newArray };
+      return { ...prev, penilaianIndikator: newArray };
     });
   };
 
@@ -124,7 +129,7 @@ const FormMainIndikator = () => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    const hasEmptyNilai = formData.nilaiIndikator.some(
+    const hasEmptyNilai = formData.penilaianIndikator.some(
       (item) => !item.label || item.nilai === "",
     );
 
@@ -137,7 +142,7 @@ const FormMainIndikator = () => {
 
     const payload = {
       ...formData,
-      nilaiIndikator: formData.nilaiIndikator.map((item) => ({
+      penilaianIndikator: formData.penilaianIndikator.map((item) => ({
         label: item.label,
         nilai: Number(item.nilai),
       })),
@@ -358,11 +363,11 @@ const FormMainIndikator = () => {
                     }
                     className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-800 focus:bg-white focus:outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all cursor-pointer appearance-none"
                   >
-                    <option value="asc">
-                      ↑ Ascending (Semakin tinggi nilai, semakin baik)
+                    <option value="positif">
+                      ↑ Positif (Nilai Positif (+))
                     </option>
-                    <option value="desc">
-                      ↓ Descending (Semakin rendah nilai, semakin baik)
+                    <option value="negatif">
+                      ↓ Negatif (Nilai Negatif (-))
                     </option>
                   </select>
                 </div>
@@ -383,13 +388,13 @@ const FormMainIndikator = () => {
                   </div>
                 </div>
                 <span className="bg-emerald-100 text-emerald-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                  {formData.nilaiIndikator.length} Kriteria
+                  {formData.penilaianIndikator.length} Kriteria
                 </span>
               </div>
 
               {/* Area Array Scrollable Internal */}
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-4">
-                {formData.nilaiIndikator.length === 0 ? (
+                {formData.penilaianIndikator.length === 0 ? (
                   <div className="flex flex-col items-center justify-center text-center py-12 px-4 bg-white border border-dashed border-slate-300 rounded-2xl">
                     <div className="w-14 h-14 bg-slate-100 rounded-full flex items-center justify-center text-slate-400 mb-3">
                       <ListChecks size={24} />
@@ -410,7 +415,7 @@ const FormMainIndikator = () => {
                     </button>
                   </div>
                 ) : (
-                  formData.nilaiIndikator.map((item, index) => (
+                  formData.penilaianIndikator.map((item, index) => (
                     <div
                       key={index}
                       className="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm relative group hover:border-emerald-300 transition-colors"
@@ -475,7 +480,7 @@ const FormMainIndikator = () => {
                 )}
 
                 {/* Tombol Tambah Baris (Hanya muncul jika sudah ada item) */}
-                {formData.nilaiIndikator.length > 0 && (
+                {formData.penilaianIndikator.length > 0 && (
                   <button
                     type="button"
                     onClick={handleAddNilai}

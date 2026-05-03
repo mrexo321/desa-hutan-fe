@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { indikatorService } from "../../services/master/indikatorService"; // Sesuaikan path
+import { indikatorService } from "../../services/master/indikatorService";
 import {
   ChevronLeft,
   Calculator,
@@ -28,7 +28,6 @@ const FormFormulaIndicator = () => {
 
   const textareaRef = useRef(null);
 
-  // 1. UPDATE STATE FORM SESUAI KEBUTUHAN API BARU
   const [formData, setFormData] = useState({
     nama: "",
     formula: "",
@@ -38,14 +37,14 @@ const FormFormulaIndicator = () => {
   const [selectedIndicators, setSelectedIndicators] = useState([]);
   const [searchIndikator, setSearchIndikator] = useState("");
 
-  // Fetch Data Formula (jika Edit Mode)
+  // Fetch Data Formula (Edit Mode)
   const { data: detailDataRes, isLoading: isFetchingDetail } = useQuery({
     queryKey: ["detailFormula", id],
     queryFn: () => indikatorService.getDetailFormula(id),
     enabled: isEditMode,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isEditMode && detailDataRes) {
       const detail = detailDataRes?.data || detailDataRes;
 
@@ -62,7 +61,7 @@ const FormFormulaIndicator = () => {
     }
   }, [isEditMode, detailDataRes]);
 
-  // Fetch Daftar Indikator Utama (Untuk Panel Kanan)
+  // Fetch Daftar Indikator Utama
   const { data: mainIndicatorsRes } = useQuery({
     queryKey: ["mainIndicators"],
     queryFn: () => indikatorService.getMainIndicator(),
@@ -75,7 +74,7 @@ const FormFormulaIndicator = () => {
       ind.kode?.toLowerCase().includes(searchIndikator.toLowerCase()),
   );
 
-  // MOCK: Fetch Daftar Tahun (SESUAIKAN DENGAN SERVICE ASLI ANDA)
+  // MOCK: Fetch Daftar Tahun
   const { data: tahunRes } = useQuery({
     queryKey: ["tahunList"],
     queryFn: async () => {
@@ -88,6 +87,40 @@ const FormFormulaIndicator = () => {
     },
   });
   const tahunList = tahunRes?.data || [];
+
+  // 1. FIX: SINKRONISASI OTOMATIS TEXT EDITOR <-> PAYLOAD
+  useEffect(() => {
+    // Jangan jalankan jika master list belum ready
+    if (!mainIndicatorsList || mainIndicatorsList.length === 0) return;
+
+    const currentFormula = formData.formula || "";
+
+    // Ekstrak semua teks yang berada di dalam kurung kurawal ganda, misal: {{KODE1}}
+    const matches = currentFormula.match(/\{\{([^}]+)\}\}/g) || [];
+    const usedKodes = matches.map((m) => m.replace(/[{}]/g, ""));
+
+    // Gabungkan dengan selectedIndicators lama untuk jaga-jaga ada indikator lama yang tidak ada di list master
+    const availableIndicators = [...mainIndicatorsList, ...selectedIndicators];
+    const uniqueIndicatorsMap = new Map();
+    availableIndicators.forEach((ind) => {
+      if (ind.kode) uniqueIndicatorsMap.set(ind.kode, ind);
+    });
+
+    const activeIndicators = [];
+    const addedIds = new Set();
+
+    // Cocokkan KODE yang ada di dalam text editor dengan data objek indikatornya
+    usedKodes.forEach((kode) => {
+      const ind = uniqueIndicatorsMap.get(kode);
+      if (ind && !addedIds.has(ind.id)) {
+        activeIndicators.push(ind);
+        addedIds.add(ind.id);
+      }
+    });
+
+    // Otomatis update state indikator terpilih
+    setSelectedIndicators(activeIndicators);
+  }, [formData.formula, mainIndicatorsList]); // Trigger setiap kali teks formula berubah
 
   // Mutations
   const mutationConfig = {
@@ -138,21 +171,20 @@ const FormFormulaIndicator = () => {
     }, 0);
   };
 
+  // 2. FIX: Cukup insert ke text editor, payload otomatis mengikuti berkat useEffect di atas
   const handleIndicatorClick = (indicator) => {
     const formatKode = `{{${indicator.kode}}}`;
     insertAtCursor(formatKode);
-
-    setSelectedIndicators((prev) => {
-      const isExist = prev.find((item) => item.id === indicator.id);
-      if (isExist) return prev;
-      return [...prev, indicator];
-    });
   };
 
-  const removeIndicator = (idToRemove) => {
-    setSelectedIndicators((prev) =>
-      prev.filter((item) => item.id !== idToRemove),
-    );
+  // 3. FIX: Hapus teks dari editor, bukan sekedar hapus dari array panel kanan
+  const removeIndicator = (indicator) => {
+    if (!indicator.kode) return;
+    const formatKode = `{{${indicator.kode}}}`;
+
+    // Ini akan menghapus semua instance {{KODE}} tersebut dari teks formula
+    const newFormula = formData.formula.split(formatKode).join("");
+    setFormData((prev) => ({ ...prev, formula: newFormula }));
   };
 
   const clearFormula = () => {
@@ -344,7 +376,6 @@ const FormFormulaIndicator = () => {
                               key={idx}
                               type="button"
                               onClick={() => insertAtCursor(op.action)}
-                              // Styling 3D Keyboard Key
                               className="w-10 h-10 flex items-center justify-center bg-slate-800 text-slate-200 hover:text-white hover:bg-emerald-600 font-mono font-bold text-lg rounded-xl border-b-[3px] border-slate-950 hover:border-emerald-800 active:border-b-0 active:translate-y-[3px] transition-all"
                             >
                               {op.label}
@@ -371,7 +402,6 @@ const FormFormulaIndicator = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, formula: e.target.value })
                         }
-                        // Styling mirip Code Editor modern
                         className="w-full px-6 py-6 bg-[#0B1120] text-emerald-400 focus:outline-none resize-none transition-all font-mono text-xl leading-loose custom-scrollbar-dark selection:bg-emerald-900 selection:text-emerald-100 placeholder-slate-700"
                         rows="8"
                         placeholder="Ketik logika rumus matematika Anda di sini..."
@@ -469,9 +499,10 @@ const FormFormulaIndicator = () => {
                             {ind.nama}
                           </span>
                         </div>
+                        {/* 4. FIX: Parsing object ind langsung, bukan ind.id */}
                         <button
                           type="button"
-                          onClick={() => removeIndicator(ind.id)}
+                          onClick={() => removeIndicator(ind)}
                           className="shrink-0 text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
                           title="Hapus dari daftar"
                         >

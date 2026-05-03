@@ -21,7 +21,7 @@ import { useNavigate } from "react-router-dom";
 
 const Indikator = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate(); // <-- TAMBAHAN 2
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("utama");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -46,7 +46,7 @@ const Indikator = () => {
     originalNama: "",
   });
 
-  // State Delete
+  // State Delete (Hanya untuk Kategori Modal)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -102,7 +102,7 @@ const Indikator = () => {
     );
   }, [activeTab, categoryData, mainIndicatorData, searchQuery]);
 
-  // Mutations ... (Dipersingkat agar fokus pada perubahan navigasi)
+  // Mutations Kategori
   const createCategoryMutation = useMutation({
     mutationFn: (payload) => indikatorService.createCategoryIndicator(payload),
     onSuccess: () => {
@@ -133,18 +133,28 @@ const Indikator = () => {
     },
   });
 
+  // MUTATION BARU: Hapus Indikator Utama
+  const deleteMainMutation = useMutation({
+    mutationFn: (id) => indikatorService.deleteMainIndicator(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["main-indicators"] });
+      toast.success("Data indikator utama berhasil dihapus!");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Gagal menghapus data indikator utama",
+      );
+    },
+  });
+
   // ==========================================
   // 2. HANDLERS
   // ==========================================
 
   const handlePreviewClick = (row) => {
-    // TAMBAHAN 3: Jika tab Utama, navigasikan ke halaman detail
     if (activeTab === "utama") {
-      // Asumsi route kamu adalah /dashboard/indikator/utama/:id
-      // Sesuaikan path navigasi ini dengan setup react-router kamu!
       navigate(`/dashboard/indikator/utama/${row.id}`);
     } else {
-      // Jika tab Kategori, buka Modal (logika lama)
       setPreviewId(row.id);
       setIsPreviewModalOpen(true);
     }
@@ -157,7 +167,6 @@ const Indikator = () => {
 
   const handleAddClick = () => {
     if (activeTab === "utama") {
-      // Arahkan ke halaman create
       navigate("/dashboard/indikator/utama/create");
       return;
     }
@@ -176,7 +185,7 @@ const Indikator = () => {
 
   const handleEditClick = (row) => {
     if (activeTab === "utama") {
-      toast.info("Fitur Edit Indikator Utama belum tersedia.");
+      navigate(`/dashboard/indikator/utama/edit/${row.id}`);
       return;
     }
     setEditForm({
@@ -207,17 +216,29 @@ const Indikator = () => {
     });
   };
 
+  // Handler Hapus Kategori (Pakai Modal)
   const handleDeleteClick = (row) => {
-    if (activeTab === "utama") {
-      toast.info("Fitur Hapus Indikator Utama belum tersedia.");
-      return;
-    }
     setItemToDelete(row);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = () => {
     if (itemToDelete) deleteCategoryMutation.mutate(itemToDelete.id);
+  };
+
+  // HANDLER BARU: Hapus Indikator Utama (Pakai Sonner Toast)
+  const handleDeleteUtama = (row) => {
+    toast("Konfirmasi Hapus Data", {
+      description: `Apakah Anda yakin ingin menghapus indikator utama "${row.nama}"? Data yang dihapus tidak dapat dikembalikan.`,
+      action: {
+        label: "Ya, Hapus",
+        onClick: () => deleteMainMutation.mutate(row.id),
+      },
+      cancel: {
+        label: "Batal",
+      },
+      duration: 6000, // Durasi lebih lama agar user sempat klik
+    });
   };
 
   // ==========================================
@@ -252,7 +273,6 @@ const Indikator = () => {
 
   const columnsUtama = useMemo(
     () => [
-      // ... (kolom kode, nama, kategori biarkan sama)
       {
         header: "Kode",
         accessor: "kode",
@@ -289,12 +309,9 @@ const Indikator = () => {
         render: (row) => (
           <ActionButtons
             row={row}
-            onPreview={() => navigate(`/dashboard/indikator/utama/${row.id}`)} // Ke halaman Detail
-            onEdit={() => navigate(`/dashboard/indikator/utama/edit/${row.id}`)} // Ke halaman Edit
-            onDelete={() => {
-              // Jika Anda belum punya service delete indikator utama, beri toast info dulu
-              toast.info("Fitur Hapus Indikator Utama belum tersedia.");
-            }}
+            onPreview={() => navigate(`/dashboard/indikator/utama/${row.id}`)}
+            onEdit={() => navigate(`/dashboard/indikator/utama/edit/${row.id}`)}
+            onDelete={() => handleDeleteUtama(row)} // Tautkan handler toast Sonner di sini
           />
         ),
       },
@@ -671,7 +688,7 @@ const Indikator = () => {
       )}
 
       {/* ==========================================
-          MODAL DELETE (WARNING)
+          MODAL DELETE (HANYA UNTUK KATEGORI)
       ========================================== */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity">

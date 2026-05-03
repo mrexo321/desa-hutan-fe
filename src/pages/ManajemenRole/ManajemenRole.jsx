@@ -111,10 +111,10 @@ const ManajemenRole = () => {
       ?.filter((perm) => checkedPermissions.includes(perm.name))
       .map((perm) => perm.id) || [];
 
-    // 2. UBAH PAYLOAD MENJADI BENTUK ARRAY OF OBJECTS (Menggunakan snake_case)
+    // 2. UBAH PAYLOAD MENJADI BENTUK ARRAY OF OBJECTS (Menggunakan camelCase)
     const payload = selectedPermissionIds.map((permId) => ({
-      role_id: selectedRole.id,       
-      permission_id: permId           
+      roleId: selectedRole.id,       
+      permissionId: permId           
     }));
 
     // 3. Tembak API

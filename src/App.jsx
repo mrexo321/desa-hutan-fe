@@ -1,5 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
+import ProtectedRoute from "./components/ProtectedRoute"; // 👈 1. IMPORT MIDDLEWARE DI SINI
 
 // Import halaman Landing & Auth
 import Homepage from "./pages/landing/Homepage";
@@ -32,70 +33,71 @@ import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
 const App = () => {
   return (
     <Routes>
-      {/* Route Publik */}
+      {/* ======================================================= */}
+      {/* ROUTE PUBLIK (Bebas diakses tanpa login)                  */}
+      {/* ======================================================= */}
       <Route path="/" element={<Homepage />} />
       <Route path="/map" element={<MapPage />} />
       <Route path="/login" element={<Login />} />
       <Route path="/infografis" element={<Infografis />} />
       <Route path="/about-us" element={<AboutUs />} />
 
-      {/* Route Internal/Dashboard */}
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route
-        path="/dashboard/provinsi/:provinceName"
-        element={<ProvinceDetail />}
+      {/* ======================================================= */}
+      {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
+      {/* ======================================================= */}
+      <Route 
+        path="/dashboard" 
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } 
       />
+      <Route path="/dashboard/provinsi/:provinceName" element={<ProvinceDetail />} />
       <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
       <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
-      <Route
-        path="/dashboard/performa-desa/edit"
-        element={<EditPerformaDesa />}
-      />
+      <Route path="/dashboard/performa-desa/edit" element={<EditPerformaDesa />} />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+      
       {/* Indikator */}
       <Route path="/dashboard/indikator" element={<Indikator />} />
-      <Route
-        path="/dashboard/indikator/utama/:id"
-        element={<DetailMainIndikator />}
-      />
-      <Route
-        path="/dashboard/indikator/utama/create"
-        element={<FormMainIndikator />}
-      />
-      <Route
-        path="/dashboard/indikator/utama/edit/:id"
-        element={<FormMainIndikator />}
-      />
+      <Route path="/dashboard/indikator/utama/:id" element={<DetailMainIndikator />} />
+      <Route path="/dashboard/indikator/utama/create" element={<FormMainIndikator />} />
+      <Route path="/dashboard/indikator/utama/edit/:id" element={<FormMainIndikator />} />
       <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
-      <Route
-        path="/dashboard/indikator-perhitungan"
-        element={<IndikatorPerhitungan />}
+      <Route path="/dashboard/indikator-perhitungan" element={<IndikatorPerhitungan />} />
+      <Route path="/dashboard/indikator-perhitungan/:id" element={<DetailFormulaIndicator />} />
+      <Route path="/dashboard/indikator-perhitungan/tambah" element={<FormFormulaIndicator />} />
+      <Route path="/dashboard/indikator-perhitungan/edit/:id" element={<FormFormulaIndicator />} />
+
+      {/* Klasifikasi & Wilayah Dasar */}
+      <Route path="/dashboard/klasifikasi" element={<Klasifikasi />} />
+      <Route path="/dashboard/wilayah" element={<Wilayah />} />
+      <Route path="/dashboard/master-wilayah" element={<MasterWilayah />} />
+      <Route path="/dashboard/master-potensi" element={<MasterPotensi />} />
+
+      {/* ======================================================= */}
+      {/* 2. ROUTE SENSITIF (Dilindungi Middleware + Cek Array Izin)*/}
+      {/* ======================================================= */}
+      
+      <Route 
+        path="/dashboard/manajemen-user" 
+        element={
+          <ProtectedRoute allowedPermissions={['user:read', 'user:create', 'user:update', 'user:delete', 'user_role:assign']}>
+            <ManajemenUser />
+          </ProtectedRoute>
+        } 
       />
-      <Route
-        path="/dashboard/indikator-perhitungan/:id"
-        element={<DetailFormulaIndicator />}
-      />
-      <Route
-        path="/dashboard/indikator-perhitungan/tambah"
-        element={<FormFormulaIndicator />}
-      />
-      <Route
-        path="/dashboard/indikator-perhitungan/edit/:id"
-        element={<FormFormulaIndicator />}
+      
+      <Route 
+        path="/dashboard/manajemen-role" 
+        element={
+          <ProtectedRoute allowedPermissions={['role:read', 'role:create', 'role:update', 'role:delete', 'role_permission:assign']}>
+            <ManajemenRoles />
+          </ProtectedRoute>
+        } 
       />
 
-      {/* Klasifikasi */}
-      <Route path="/dashboard/klasifikasi" element={<Klasifikasi />} />
-      {/* Wilayah */}
-      <Route path="/dashboard/wilayah" element={<Wilayah />} />
-      {/* Manajemen User */}
-      <Route path="/dashboard/manajemen-user" element={<ManajemenUser />} />
-      {/* Manajemen Role */}
-      <Route path="/dashboard/manajemen-role" element={<ManajemenRoles />} />
-      {/* Master Wilayah */}
-      <Route path="/dashboard/master-wilayah" element={<MasterWilayah />} />
-      {/* Master Potensi */}
-      <Route path="/dashboard/master-potensi" element={<MasterPotensi />} />
     </Routes>
   );
 };

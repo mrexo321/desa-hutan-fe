@@ -83,7 +83,7 @@ const FormFormulaIndicator = () => {
   // Sesuaikan dengan struktur respons dari axios (bisa di dalam data.data atau langsung data)
   const tahunList = tahunRes?.data || tahunRes || [];
 
-  // 1. FIX: SINKRONISASI OTOMATIS TEXT EDITOR <-> PAYLOAD
+  // 1. SINKRONISASI OTOMATIS TEXT EDITOR <-> PAYLOAD
   useEffect(() => {
     // Jangan jalankan jika master list belum ready
     if (!mainIndicatorsList || mainIndicatorsList.length === 0) return;
@@ -166,13 +166,13 @@ const FormFormulaIndicator = () => {
     }, 0);
   };
 
-  // 2. FIX: Cukup insert ke text editor, payload otomatis mengikuti berkat useEffect di atas
+  // 2. Cukup insert ke text editor, payload otomatis mengikuti berkat useEffect di atas
   const handleIndicatorClick = (indicator) => {
     const formatKode = `{{${indicator.kode}}}`;
     insertAtCursor(formatKode);
   };
 
-  // 3. FIX: Hapus teks dari editor, bukan sekedar hapus dari array panel kanan
+  // 3. Hapus teks dari editor, bukan sekedar hapus dari array panel kanan
   const removeIndicator = (indicator) => {
     if (!indicator.kode) return;
     const formatKode = `{{${indicator.kode}}}`;
@@ -225,6 +225,7 @@ const FormFormulaIndicator = () => {
 
   const isLoading = createMutation.isLoading || updateMutation.isLoading;
 
+  // --- DAFTAR OPERATOR MATEMATIKA DITAMBAHKAN AKAR KUADRAT DLL ---
   const mathOperators = [
     { label: "(", action: " ( " },
     { label: ")", action: " ) " },
@@ -232,6 +233,10 @@ const FormFormulaIndicator = () => {
     { label: "-", action: " - " },
     { label: "x", action: " * " },
     { label: "÷", action: " / " },
+    { label: "√", action: " sqrt(" },
+    { label: "^", action: " ^ " }, // Ditambahkan: Pangkat
+    { label: "%", action: " % " }, // Ditambahkan: Persentase/Modulo
+    { label: ".", action: "." }, // Ditambahkan: Titik Desimal
   ];
 
   return (
@@ -497,7 +502,6 @@ const FormFormulaIndicator = () => {
                             {ind.nama}
                           </span>
                         </div>
-                        {/* 4. FIX: Parsing object ind langsung, bukan ind.id */}
                         <button
                           type="button"
                           onClick={() => removeIndicator(ind)}

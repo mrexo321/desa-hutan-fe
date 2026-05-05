@@ -25,6 +25,7 @@ import {
   Activity,
   Info,
   Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -33,6 +34,7 @@ import { analystSpatialService } from "./services/master/analystSpatialService";
 // --- IMPORT SERVICE DESA ---
 // Pastikan path ini sesuai dengan struktur folder Anda
 import { wilayahDesaService } from "./services/master/wilayahDesaService";
+import { useNavigate } from "react-router-dom";
 
 export default function MapPage() {
   const MAPBOX_TOKEN = environment.MAPBOX_URL;
@@ -56,6 +58,7 @@ export default function MapPage() {
 
   // --- STATE INTERAKSI KLIK PETA ---
   const [clickedLocation, setClickedLocation] = useState(null);
+  const navigate = useNavigate();
 
   // --- STATE PENCARIAN (LOKAL) ---
   const [searchQuery, setSearchQuery] = useState("");
@@ -437,18 +440,34 @@ export default function MapPage() {
       ========================================= */}
 
       <div className="absolute top-6 left-6 z-10 flex flex-col gap-4 w-full max-w-[340px] pointer-events-none">
-        {/* Brand */}
-        <div className="bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[20px] p-3 flex items-center gap-4 pointer-events-auto">
-          <div className="w-11 h-11 bg-gradient-to-br from-[#1e5230] to-[#2D7344] rounded-[14px] flex items-center justify-center shadow-inner">
-            <MapIcon className="text-white" size={24} strokeWidth={1.5} />
-          </div>
-          <div>
-            <h1 className="font-extrabold text-gray-800 tracking-wide text-lg leading-tight">
-              GEO<span className="text-[#2D7344]">DASHBOARD</span>
-            </h1>
-            <p className="text-[9px] text-gray-500 uppercase tracking-[0.25em] font-bold">
-              Sistem Tata Ruang
-            </p>
+        {/* Row: Tombol Back & Brand */}
+        <div className="flex items-stretch gap-3 pointer-events-auto">
+          {/* Tombol Kembali ke Beranda */}
+          <button
+            onClick={() => navigate("/")}
+            className="group px-4 bg-white/70 hover:bg-white backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[20px] flex items-center justify-center transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/40"
+            title="Kembali ke Beranda"
+          >
+            <ArrowLeft
+              size={22}
+              className="text-gray-600 group-hover:text-[#2D7344] group-hover:-translate-x-1 transition-all duration-300"
+              strokeWidth={2.5}
+            />
+          </button>
+
+          {/* Brand */}
+          <div className="flex-1 bg-white/70 backdrop-blur-xl border border-white/50 shadow-[0_8px_30px_rgb(0,0,0,0.08)] rounded-[20px] p-3 flex items-center gap-4">
+            <div className="w-11 h-11 bg-gradient-to-br from-[#1e5230] to-[#2D7344] rounded-[14px] flex items-center justify-center shadow-inner shrink-0">
+              <MapIcon className="text-white" size={24} strokeWidth={1.5} />
+            </div>
+            <div>
+              <h1 className="font-extrabold text-gray-800 tracking-wide text-lg leading-tight">
+                GEO<span className="text-[#2D7344]">DASHBOARD</span>
+              </h1>
+              <p className="text-[9px] text-gray-500 uppercase tracking-[0.25em] font-bold">
+                Sistem Tata Ruang
+              </p>
+            </div>
           </div>
         </div>
 

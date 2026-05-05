@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute"; // 👈 1. IMPORT MIDDLEWARE DI SINI
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Import halaman Landing & Auth
 import Homepage from "./pages/landing/Homepage";

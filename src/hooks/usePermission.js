@@ -7,10 +7,10 @@ export const usePermission = () => {
   const authData = authDataString ? JSON.parse(authDataString) : null;
 
   // 2. Ekstrak array permissions dan roles dari object user
-  const userPermissions = authData?.user?.permissions || [];
-  const userRoles = authData?.user?.roles || [];
-
-  // 3. (Opsional tapi disarankan) Buat bypass khusus untuk 'superadmin'
+  const userPermissions = authData?.permissions || [];
+  const userRoles = authData?.roles || [];
+  
+  // 3. (Opsional tapi disarankan) Buat bypass khusus untuk 'superadmin' 
   // agar tidak perlu dicek satu-satu hak aksesnya.
   const isSuperadmin = userRoles.includes('superadmin');
 

@@ -103,6 +103,11 @@ const ManajemenUser = () => {
       roleId: selectedRoleId
     };
     assignRoleMutation.mutate(payload);
+
+    console.log("CEK PAYLOAD SEBELUM DIKIRIM:", payload);
+    console.log("DATA USER LENGKAP:", selectedUser);
+
+
   };
 
   // =========================================================
@@ -133,7 +138,7 @@ const ManajemenUser = () => {
       return;
     }
 
-    toast.success("UI Valid! (Mock API: User berhasil ditambah)");
+    toast.success("User berhasil ditambah");
     console.log("PAYLOAD CREATE USER:", formData);
     setIsAddModalOpen(false);
     resetForm();

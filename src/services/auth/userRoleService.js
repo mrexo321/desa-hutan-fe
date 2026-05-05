@@ -17,8 +17,8 @@ export const userRoleService = {
   },
 
   async unassignRole(payload){
-    const responce = await authInstance.post("/user-roles/unassign", payload);
-    return responce.data;
+    const response = await authInstance.post("/user-roles/unassign", payload);
+    return response.data;
   },
 
   async assignRoleBulk(payload){

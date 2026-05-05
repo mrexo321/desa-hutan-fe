@@ -3,13 +3,13 @@ import { useCallback } from 'react';
 export const usePermission = () => {
   // 1. Ambil data dari localStorage (atau state management seperti Zustand/Redux jika kamu pakai)
   // Sesuaikan 'user_data' dengan key yang kamu gunakan saat proses login berhasil.
-  const authDataString = localStorage.getItem('user_data');
+  const authDataString = localStorage.getItem('user');
   const authData = authDataString ? JSON.parse(authDataString) : null;
 
   // 2. Ekstrak array permissions dan roles dari object user
-  const userPermissions = authData?.user?.permissions || [];
-  const userRoles = authData?.user?.roles || [];
-
+  const userPermissions = authData?.permissions || [];
+  const userRoles = authData?.roles || [];
+  
   // 3. (Opsional tapi disarankan) Buat bypass khusus untuk 'superadmin' 
   // agar tidak perlu dicek satu-satu hak aksesnya.
   const isSuperadmin = userRoles.includes('superadmin');

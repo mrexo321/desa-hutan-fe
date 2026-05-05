@@ -74,19 +74,14 @@ const FormFormulaIndicator = () => {
       ind.kode?.toLowerCase().includes(searchIndikator.toLowerCase()),
   );
 
-  // MOCK: Fetch Daftar Tahun
-  const { data: tahunRes } = useQuery({
+  // Fetch Daftar Tahun dari API
+  const { data: tahunRes, isLoading: isLoadingTahun } = useQuery({
     queryKey: ["tahunList"],
-    queryFn: async () => {
-      return {
-        data: [
-          { id: "019d482c-be27-7119-884e-a6950f89c6bd", tahun: "2026" },
-          { id: "2", tahun: "2025" },
-        ],
-      };
-    },
+    queryFn: () => indikatorService.getAllYearIndicator(),
   });
-  const tahunList = tahunRes?.data || [];
+
+  // Sesuaikan dengan struktur respons dari axios (bisa di dalam data.data atau langsung data)
+  const tahunList = tahunRes?.data || tahunRes || [];
 
   // 1. FIX: SINKRONISASI OTOMATIS TEXT EDITOR <-> PAYLOAD
   useEffect(() => {
@@ -194,7 +189,6 @@ const FormFormulaIndicator = () => {
     }
   };
 
-  // Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -214,6 +208,7 @@ const FormFormulaIndicator = () => {
       return;
     }
 
+    // PAYLOAD BERSIH SESUAI SKEMA BACKEND
     const payload = {
       nama: formData.nama,
       formula: formData.formula,
@@ -335,10 +330,13 @@ const FormFormulaIndicator = () => {
                               tahunIndikatorPerhitunganId: e.target.value,
                             })
                           }
-                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer"
+                          disabled={isLoadingTahun} // Disable saat loading
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                           <option value="" disabled>
-                            -- Pilih Tahun --
+                            {isLoadingTahun
+                              ? "Memuat tahun..."
+                              : "-- Pilih Tahun --"}
                           </option>
                           {tahunList.map((thn) => (
                             <option key={thn.id} value={thn.id}>

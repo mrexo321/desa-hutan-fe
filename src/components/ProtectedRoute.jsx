@@ -8,7 +8,7 @@ const ProtectedRoute = ({ children, allowedPermissions }) => {
   const { canAny } = usePermission();
 
   // 1. CEK LOGIN DASAR: Apakah user sudah login?
-  const authDataString = localStorage.getItem("user_data");
+  const authDataString = localStorage.getItem("user");
   if (!authDataString) {
     // Kalau belum login, tendang ke halaman login
     return <Navigate to="/login" replace />;
@@ -17,10 +17,12 @@ const ProtectedRoute = ({ children, allowedPermissions }) => {
   // 2. CEK HAK AKSES KHUSUS (Jika parameternya diisi)
   if (allowedPermissions && allowedPermissions.length > 0) {
     const isAllowed = canAny(allowedPermissions);
-    
+
     if (!isAllowed) {
       // Kalau user login tapi TIDAK punya akses ke halaman ini, tendang ke Dashboard awal
-      toast.error("Akses Ditolak: Anda tidak memiliki izin untuk membuka halaman ini.");
+      toast.error(
+        "Akses Ditolak: Anda tidak memiliki izin untuk membuka halaman ini.",
+      );
       return <Navigate to="/dashboard" replace />;
     }
   }

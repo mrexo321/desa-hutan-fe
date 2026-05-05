@@ -57,8 +57,8 @@ export default function Sidebar({ activeMenu }) {
       icon: <Target {...iconProps} />,
     },
     {
-      name: "Indikator Perhitungan",
-      path: "/dashboard/indikator-perhitungan",
+      name: "Tahun Indikator Perhitungan",
+      path: "/dashboard/tahun-indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
     },
     {

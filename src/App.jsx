@@ -29,6 +29,8 @@ import FormMainIndikator from "./pages/Indikator/FormMainIndicator";
 import DesaDetail from "./pages/dashboard/DetailDesa";
 import DetailFormulaIndicator from "./pages/Indikator/DetailFormulaIndicator";
 import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
+import TahunIndikatorPerhitungan from "./pages/Indikator/TahunIndikatorPerhitungan";
+import FormTahunIndicator from "./pages/Indikator/FormTahunIndicator";
 
 const App = () => {
   return (
@@ -45,30 +47,65 @@ const App = () => {
       {/* ======================================================= */}
       {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
       {/* ======================================================= */}
-      <Route 
-        path="/dashboard" 
+      <Route
+        path="/dashboard"
         element={
           <ProtectedRoute>
             <Dashboard />
           </ProtectedRoute>
-        } 
+        }
       />
-      <Route path="/dashboard/provinsi/:provinceName" element={<ProvinceDetail />} />
+      <Route
+        path="/dashboard/provinsi/:provinceName"
+        element={<ProvinceDetail />}
+      />
       <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
       <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
-      <Route path="/dashboard/performa-desa/edit" element={<EditPerformaDesa />} />
+      <Route
+        path="/dashboard/performa-desa/edit"
+        element={<EditPerformaDesa />}
+      />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
-      
+
       {/* Indikator */}
       <Route path="/dashboard/indikator" element={<Indikator />} />
-      <Route path="/dashboard/indikator/utama/:id" element={<DetailMainIndikator />} />
-      <Route path="/dashboard/indikator/utama/create" element={<FormMainIndikator />} />
-      <Route path="/dashboard/indikator/utama/edit/:id" element={<FormMainIndikator />} />
+      <Route
+        path="/dashboard/indikator/utama/:id"
+        element={<DetailMainIndikator />}
+      />
+      <Route
+        path="/dashboard/indikator/utama/create"
+        element={<FormMainIndikator />}
+      />
+      <Route
+        path="/dashboard/indikator/utama/edit/:id"
+        element={<FormMainIndikator />}
+      />
       <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
-      <Route path="/dashboard/indikator-perhitungan" element={<IndikatorPerhitungan />} />
-      <Route path="/dashboard/indikator-perhitungan/:id" element={<DetailFormulaIndicator />} />
-      <Route path="/dashboard/indikator-perhitungan/tambah" element={<FormFormulaIndicator />} />
-      <Route path="/dashboard/indikator-perhitungan/edit/:id" element={<FormFormulaIndicator />} />
+      <Route
+        path="/dashboard/indikator-perhitungan"
+        element={<IndikatorPerhitungan />}
+      />
+      <Route
+        path="/dashboard/tahun-indikator-perhitungan"
+        element={<TahunIndikatorPerhitungan />}
+      />
+      <Route
+        path="/dashboard/tahun-indikator-perhitungan/tambah"
+        element={<FormTahunIndicator />}
+      />
+      <Route
+        path="/dashboard/indikator-perhitungan/:id"
+        element={<DetailFormulaIndicator />}
+      />
+      <Route
+        path="/dashboard/indikator-perhitungan/tambah"
+        element={<FormFormulaIndicator />}
+      />
+      <Route
+        path="/dashboard/indikator-perhitungan/edit/:id"
+        element={<FormFormulaIndicator />}
+      />
 
       {/* Klasifikasi & Wilayah Dasar */}
       <Route path="/dashboard/klasifikasi" element={<Klasifikasi />} />
@@ -79,25 +116,40 @@ const App = () => {
       {/* ======================================================= */}
       {/* 2. ROUTE SENSITIF (Dilindungi Middleware + Cek Array Izin)*/}
       {/* ======================================================= */}
-      
-      <Route 
-        path="/dashboard/manajemen-user" 
+
+      <Route
+        path="/dashboard/manajemen-user"
         element={
-          <ProtectedRoute allowedPermissions={['user:read', 'user:create', 'user:update', 'user:delete', 'user_role:assign']}>
+          <ProtectedRoute
+            allowedPermissions={[
+              "user:read",
+              "user:create",
+              "user:update",
+              "user:delete",
+              "user_role:assign",
+            ]}
+          >
             <ManajemenUser />
           </ProtectedRoute>
-        } 
-      />
-      
-      <Route 
-        path="/dashboard/manajemen-role" 
-        element={
-          <ProtectedRoute allowedPermissions={['role:read', 'role:create', 'role:update', 'role:delete', 'role_permission:assign']}>
-            <ManajemenRoles />
-          </ProtectedRoute>
-        } 
+        }
       />
 
+      <Route
+        path="/dashboard/manajemen-role"
+        element={
+          <ProtectedRoute
+            allowedPermissions={[
+              "role:read",
+              "role:create",
+              "role:update",
+              "role:delete",
+              "role_permission:assign",
+            ]}
+          >
+            <ManajemenRoles />
+          </ProtectedRoute>
+        }
+      />
     </Routes>
   );
 };

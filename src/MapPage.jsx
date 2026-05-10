@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useRef } from "react";
+import React, { useState, useMemo, useCallback, useRef, useEffect } from "react";
 import Map, {
   Marker,
   NavigationControl,
@@ -104,6 +104,10 @@ export default function MapPage() {
   const [opacityHutan, setOpacityHutan] = useState(80);
   const [opacityDesa, setOpacityDesa] = useState(80);
 
+  // State hutan refresh tile
+  const [hutanVersion, setHutanVersion] = useState(Date.now());
+
+
   // --- FETCHING DATA DETAIL KLIK ---
   const { data: detailData, isFetching: isFetchingDetail } = useQuery({
     queryKey: [
@@ -120,19 +124,29 @@ export default function MapPage() {
     staleTime: 5000,
   });
 
-  // --- URL WMS GEOSERVER ---
+  const WMS_BASE = import.meta.env.VITE_GEOSERVER_WMS_BASE;
+
   const WMS_HUTAN = useMemo(
     () =>
-      `https://api-simpeg.uika-bogor.ac.id/geoserver/desa_gis/wms?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa_gis:wilayah_hutan_geom`,
-    [],
+      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa-gis:vw_wilayah_hutan&styles=wilayah_hutan_style&_v=${hutanVersion}`,
+    [hutanVersion],
   );
 
   const WMS_DESA = useMemo(
     () =>
-      `https://api-simpeg.uika-bogor.ac.id/geoserver/desa_gis/wms?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa_gis:wilayah_desa_geom`,
+      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa-gis:wilayah_desa_geom&styles=wilayah_desa_style`,
     [],
   );
 
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'hutan_style_updated') {
+        setHutanVersion(Date.now());
+      }
+    };
+    window.addEventListener('storage', handler);
+    return () => window.removeEventListener('storage', handler);
+  }, []);
   const mapStyleOptions = [
     {
       name: "Satelit",
@@ -247,6 +261,7 @@ export default function MapPage() {
             type="raster"
             tiles={[WMS_HUTAN]}
             tileSize={256}
+            scheme="xyz"
           >
             <Layer
               id="layer-hutan"
@@ -267,6 +282,7 @@ export default function MapPage() {
             type="raster"
             tiles={[WMS_DESA]}
             tileSize={256}
+            scheme="xyz"
           >
             <Layer
               id="layer-desa"
@@ -335,27 +351,27 @@ export default function MapPage() {
                       <div>
                         <div className="flex items-center gap-2 mb-1">
                           <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
-                            Desa
+                            {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
                           </span>
                           <span className="font-mono text-xs font-semibold text-gray-400">
-                            {detailData.kode_kemendagri || "-"}
+                            {detailData.desa?.kodeKemendagri || '-'}
                           </span>
                         </div>
                         <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
-                          {detailData.nama_desa || "Area Tidak Diketahui"}
+                          {detailData.desa?.nama || 'Area Tidak Diketahui'}
                         </h3>
                       </div>
 
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                            Luas Tercatat
+                            Luas Desa
                           </p>
                           <p className="font-bold text-gray-800 text-sm">
-                            {detailData.luas_ha || "0"}{" "}
-                            <span className="text-xs text-gray-500 font-medium">
-                              Ha
-                            </span>
+                            {detailData.desa?.luasDesaHa || '-'}{" "}
+                            {detailData.desa?.luasDesaHa && (
+                              <span className="text-xs text-gray-500 font-medium">Ha</span>
+                            )}
                           </p>
                         </div>
                         <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
@@ -364,11 +380,9 @@ export default function MapPage() {
                           </p>
                           <p
                             className="font-bold text-gray-800 text-sm truncate"
-                            title={detailData.nama_hutan}
+                            title={detailData.hutan?.fungsiKawasan?.nama}
                           >
-                            {detailData.nama_hutan !== "-"
-                              ? detailData.nama_hutan
-                              : "Tidak terdata"}
+                            {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
                           </p>
                         </div>
                       </div>
@@ -383,19 +397,16 @@ export default function MapPage() {
                               </p>
                               <div className="flex flex-col">
                                 <span className="font-bold text-[#2D7344] capitalize text-sm">
-                                  {detailData.status || "-"}
+                                  {detailData.status?.replace('_', ' ') || '-'}
                                 </span>
                                 <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
-                                  {detailData.jenis_interaksi?.replace(
-                                    "_",
-                                    " ",
-                                  ) || "-"}
+                                  {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
                                 </span>
                               </div>
                             </div>
                             <div className="text-right">
                               <span className="text-xl font-extrabold text-gray-800">
-                                {detailData.luas_persen}%
+                                {detailData.irisan?.luasPersen ?? 0}%
                               </span>
                             </div>
                           </div>
@@ -403,7 +414,7 @@ export default function MapPage() {
                             <div
                               className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
                               style={{
-                                width: `${Math.min(Number(detailData.luas_persen) || 0, 100)}%`,
+                                width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
                               }}
                             ></div>
                           </div>

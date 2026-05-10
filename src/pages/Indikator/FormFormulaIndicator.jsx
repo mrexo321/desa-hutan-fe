@@ -127,7 +127,7 @@ const FormFormulaIndicator = () => {
       console.error("Gagal menyimpan:", error.response?.data);
       alert(
         error.response?.data?.message ||
-          "Terjadi kesalahan saat menyimpan data.",
+        "Terjadi kesalahan saat menyimpan data.",
       );
     },
   };
@@ -167,6 +167,47 @@ const FormFormulaIndicator = () => {
   };
 
   // 2. Cukup insert ke text editor, payload otomatis mengikuti berkat useEffect di atas
+  /**
+   * Membungkus teks yang diseleksi dengan fungsi matematika.
+   * Jika ada teks yang diseleksi, hasilnya: fnName(selectedText, ...suffix)
+   * Jika tidak ada seleksi, hasilnya: fnName(|) — cursor diletakkan di dalam kurung.
+   */
+  const wrapWithFunction = (fnPrefix, fnSuffix = "") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const startPos = textarea.selectionStart;
+    const endPos = textarea.selectionEnd;
+    const currentFormula = formData.formula;
+    const selectedText = currentFormula.substring(startPos, endPos);
+
+    let insertion;
+    let newCursorPos;
+
+    if (selectedText) {
+      // Ada teks yang diseleksi → bungkus
+      insertion = `${fnPrefix}${selectedText}${fnSuffix})`;
+      newCursorPos = startPos + insertion.length;
+    } else {
+      // Tidak ada seleksi → insert placeholder, cursor di dalam kurung
+      insertion = `${fnPrefix}${fnSuffix})`;
+      newCursorPos = startPos + fnPrefix.length; // cursor tepat setelah "("
+    }
+
+    const newFormula =
+      currentFormula.substring(0, startPos) +
+      insertion +
+      currentFormula.substring(endPos);
+
+    setFormData((prev) => ({ ...prev, formula: newFormula }));
+
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+      textarea.focus();
+    }, 0);
+  };
+
+  // 2. FIX: Cukup insert ke text editor, payload otomatis mengikuti berkat useEffect di atas
   const handleIndicatorClick = (indicator) => {
     const formatKode = `{{${indicator.kode}}}`;
     insertAtCursor(formatKode);
@@ -231,12 +272,36 @@ const FormFormulaIndicator = () => {
     { label: ")", action: " ) " },
     { label: "+", action: " + " },
     { label: "-", action: " - " },
-    { label: "x", action: " * " },
+    { label: "×", action: " * " },
     { label: "÷", action: " / " },
     { label: "√", action: " sqrt(" },
     { label: "^", action: " ^ " }, // Ditambahkan: Pangkat
     { label: "%", action: " % " }, // Ditambahkan: Persentase/Modulo
     { label: ".", action: "." }, // Ditambahkan: Titik Desimal
+  ];
+
+  // Operator matematika lanjutan (pangkat & akar)
+  const advancedOperators = [
+    {
+      label: "x²",
+      title: "Kuadrat — tambahkan ^2 setelah variabel",
+      onClick: () => insertAtCursor("^2"),
+    },
+    {
+      label: "xⁿ",
+      title: "Pangkat N — tambahkan ^ lalu ketik angkanya",
+      onClick: () => insertAtCursor("^"),
+    },
+    {
+      label: "√x",
+      title: "Akar Kuadrat — bungkus ekspresi terpilih dengan sqrt(...)",
+      onClick: () => wrapWithFunction("sqrt("),
+    },
+    {
+      label: "ⁿ√x",
+      title: "Akar N — bungkus ekspresi terpilih dengan nthRoot(..., n)",
+      onClick: () => wrapWithFunction("nthRoot(", ", n"),
+    },
   ];
 
   return (
@@ -369,9 +434,10 @@ const FormFormulaIndicator = () => {
                     {/* Wrapper Editor (Glow Effect) */}
                     <div className="rounded-2xl overflow-hidden shadow-sm border border-slate-200 focus-within:ring-4 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all duration-300">
                       {/* Math Pad Toolbar */}
-                      <div className="bg-slate-900 px-4 py-3 border-b border-slate-950 flex flex-wrap justify-between items-center gap-2">
+                      <div className="bg-slate-900 px-4 pt-3 pb-2 border-b border-slate-950 flex flex-col gap-2">
+                        {/* Baris 1: Operator Dasar + Clear */}
                         <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1 shrink-0">
                             Operator
                           </span>
                           {mathOperators.map((op, idx) => (
@@ -384,17 +450,35 @@ const FormFormulaIndicator = () => {
                               {op.label}
                             </button>
                           ))}
+
+                          {/* Clear Button */}
+                          <button
+                            type="button"
+                            onClick={clearFormula}
+                            className="flex items-center gap-1.5 px-3 h-10 bg-slate-800 hover:bg-red-500 text-slate-300 hover:text-white font-bold text-xs rounded-xl border-b-[3px] border-slate-950 hover:border-red-700 active:border-b-0 active:translate-y-[3px] transition-all ml-auto"
+                            title="Bersihkan Editor"
+                          >
+                            <Eraser size={14} /> Clear
+                          </button>
                         </div>
 
-                        {/* Clear Button */}
-                        <button
-                          type="button"
-                          onClick={clearFormula}
-                          className="flex items-center gap-1.5 px-3 h-10 bg-slate-800 hover:bg-red-500 text-slate-300 hover:text-white font-bold text-xs rounded-xl border-b-[3px] border-slate-950 hover:border-red-700 active:border-b-0 active:translate-y-[3px] transition-all ml-auto"
-                          title="Bersihkan Editor"
-                        >
-                          <Eraser size={14} /> Clear
-                        </button>
+                        {/* Baris 2: Operator Pangkat & Akar */}
+                        <div className="flex flex-wrap items-center gap-2.5 pb-1">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1 shrink-0">
+                            Pangkat &amp; Akar
+                          </span>
+                          {advancedOperators.map((op, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={op.onClick}
+                              title={op.title}
+                              className="h-10 px-3.5 flex items-center justify-center bg-slate-800 text-amber-300 hover:text-white hover:bg-amber-600 font-bold text-base rounded-xl border-b-[3px] border-slate-950 hover:border-amber-800 active:border-b-0 active:translate-y-[3px] transition-all font-mono"
+                            >
+                              {op.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Area Teks Terminal-Style */}

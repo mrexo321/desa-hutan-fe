@@ -1,5 +1,6 @@
 import React from "react";
 import DashboardLayout from "../../components/DashboardLayout";
+import SyncButton from "../../components/SyncButton";
 
 export default function DesaHutan() {
   // Mock data tabel baris pertama
@@ -30,9 +31,13 @@ export default function DesaHutan() {
         
         {/* JUDUL HALAMAN & GARIS */}
         <div className="flex flex-col items-center mb-6">
-          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest mb-3 uppercase">
-            Desa Hutan
-          </h2>
+          <div className="w-full flex items-center justify-between mb-3">
+            <div /> {/* spacer kiri */}
+            <h2 className="text-xl font-bold text-[#2D7344] tracking-widest uppercase">
+              Desa Hutan
+            </h2>
+            <SyncButton apiBase="/analisis-spasial" />
+          </div>
           <div className="w-full h-[2px] bg-[#2D7344]"></div>
         </div>
 

@@ -186,11 +186,10 @@ const ProvinceDetail = () => {
                           </td>
                           <td className="py-4 px-4 text-center">
                             <span
-                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                                isMayoritas
-                                  ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                                  : "bg-amber-50 text-amber-600 border-amber-200"
-                              }`}
+                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${isMayoritas
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                : "bg-amber-50 text-amber-600 border-amber-200"
+                                }`}
                             >
                               {desa.ringkasanInteraksi?.klasifikasi ||
                                 "Minoritas"}
@@ -229,6 +228,7 @@ const ProvinceDetail = () => {
           </div>
         </div>
       </main>
+
     </DashboardLayout>
   );
 };

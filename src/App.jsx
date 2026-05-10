@@ -31,6 +31,10 @@ import DetailFormulaIndicator from "./pages/Indikator/DetailFormulaIndicator";
 import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
 import TahunIndikatorPerhitungan from "./pages/Indikator/TahunIndikatorPerhitungan";
 import FormTahunIndicator from "./pages/Indikator/FormTahunIndicator";
+import CreateRole from "./pages/ManajemenRole/CreateRole";
+import EditRole from "./pages/ManajemenRole/EditRole";
+import DetailRole from "./pages/ManajemenRole/DetailRole";
+import AssignPermission from "./pages/ManajemenRole/AssignPermission";
 
 const App = () => {
   return (
@@ -134,6 +138,7 @@ const App = () => {
         }
       />
 
+      {/* --- MANAJEMEN ROLE --- */}
       <Route
         path="/dashboard/manajemen-role"
         element={
@@ -147,6 +152,48 @@ const App = () => {
             ]}
           >
             <ManajemenRoles />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/manajemen-role/create"
+        element={
+          <ProtectedRoute allowedPermissions={["role:create"]}>
+            <CreateRole />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/manajemen-role/edit/:id"
+        element={
+          <ProtectedRoute
+            allowedPermissions={["role:update", "role_permission:assign"]}
+          >
+            <EditRole />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/manajemen-role/detail/:id"
+        element={
+          <ProtectedRoute allowedPermissions={["role:read"]}>
+            <DetailRole />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/manajemen-role/assign/:id"
+        element={
+          <ProtectedRoute
+            allowedPermissions={[
+              "role_permission:assign",
+              "role_permission:unassign",
+            ]}
+          >
+            <AssignPermission />
           </ProtectedRoute>
         }
       />

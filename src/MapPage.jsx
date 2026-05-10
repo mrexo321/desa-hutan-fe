@@ -42,7 +42,6 @@ export default function MapPage() {
   // --- REFERENSI PETA UNTUK FLY-TO ---
   const mapRef = useRef(null);
 
-  // 1. State Posisi Peta
   const [initialViewState] = useState({
     longitude: 106.8229,
     latitude: -6.2088,
@@ -51,10 +50,8 @@ export default function MapPage() {
     bearing: 0,
   });
 
-  const [displayCoords, setDisplayCoords] = useState({
-    longitude: 106.8229,
-    latitude: -6.2088,
-  });
+  const lngRef = useRef(null);
+  const latRef = useRef(null);
 
   // --- STATE INTERAKSI KLIK PETA ---
   const [clickedLocation, setClickedLocation] = useState(null);
@@ -85,6 +82,8 @@ export default function MapPage() {
         (desa) =>
           desa.nama?.toLowerCase().includes(query) ||
           desa.kecamatan?.toLowerCase().includes(query) ||
+          desa.kabupaten?.toLowerCase().includes(query) ||
+          desa.provinsi?.toLowerCase().includes(query) ||
           desa.kodeKemendagri?.toLowerCase().includes(query),
       )
       .slice(0, 8); // Batasi maksimal 8 hasil agar dropdown tidak terlalu panjang
@@ -162,7 +161,8 @@ export default function MapPage() {
 
   const handleMapMove = useCallback((evt) => {
     const { longitude, latitude } = evt.viewState;
-    setDisplayCoords({ longitude, latitude });
+    if (lngRef.current) lngRef.current.innerText = `${longitude.toFixed(5)}°`;
+    if (latRef.current) latRef.current.innerText = `${latitude.toFixed(5)}°`;
   }, []);
 
   const handleMapClick = useCallback((evt) => {
@@ -322,7 +322,7 @@ export default function MapPage() {
                   </button>
                 </div>
 
-                <div className="p-4 max-h-[350px] overflow-y-auto custom-scrollbar text-sm text-gray-700">
+                <div className="p-4 max-h-[400px] overflow-y-auto custom-scrollbar text-sm text-gray-700">
                   {isFetchingDetail ? (
                     <div className="flex flex-col items-center justify-center py-8 gap-3">
                       <div className="w-6 h-6 border-2 border-[#2D7344] border-t-transparent rounded-full animate-spin"></div>
@@ -332,84 +332,94 @@ export default function MapPage() {
                     </div>
                   ) : detailData ? (
                     <div className="flex flex-col gap-4">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
+                      {/* DESA INFO */}
+                      <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
                           <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
-                            Desa
+                            Info Desa
                           </span>
                           <span className="font-mono text-xs font-semibold text-gray-400">
-                            {detailData.kode_kemendagri || "-"}
+                            {detailData.desa?.kodeKemendagri || "-"}
                           </span>
                         </div>
-                        <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
-                          {detailData.nama_desa || "Area Tidak Diketahui"}
+                        <h3 className="font-extrabold text-gray-900 text-lg leading-tight mb-1">
+                          {detailData.desa?.nama || "Area Tidak Diketahui"}
                         </h3>
+                        <p className="text-[11px] text-gray-500 mb-2 leading-relaxed">
+                          Kec. {detailData.desa?.kecamatan || "-"}, {detailData.desa?.kabupaten || "-"}
+                          <br/>
+                          {detailData.desa?.provinsi || "-"}
+                        </p>
+                        <div className="flex items-center justify-between bg-gray-50 p-2 rounded-lg border border-gray-100">
+                          <span className="text-[10px] text-gray-500 font-bold uppercase">Luas Wilayah</span>
+                          <span className="font-bold text-gray-800 text-sm">
+                            {detailData.desa?.luasDesaHa || "0"} <span className="text-xs text-gray-500 font-medium">Ha</span>
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                            Luas Tercatat
-                          </p>
-                          <p className="font-bold text-gray-800 text-sm">
-                            {detailData.luas_ha || "0"}{" "}
-                            <span className="text-xs text-gray-500 font-medium">
-                              Ha
-                            </span>
-                          </p>
-                        </div>
-                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                      {/* HUTAN INFO */}
+                      <div className="bg-white border border-gray-100 rounded-xl p-3 shadow-sm">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-blue-100">
                             Kawasan Hutan
-                          </p>
-                          <p
-                            className="font-bold text-gray-800 text-sm truncate"
-                            title={detailData.nama_hutan}
-                          >
-                            {detailData.nama_hutan !== "-"
-                              ? detailData.nama_hutan
-                              : "Tidak terdata"}
-                          </p>
+                          </span>
+                          <span className="text-[9px] font-bold text-gray-400 uppercase text-right line-clamp-1 w-1/2">
+                            {detailData.hutan?.fungsiKawasan?.nama || "-"}
+                          </span>
+                        </div>
+                        <h3 className="font-extrabold text-gray-900 text-sm leading-tight mb-2">
+                          {detailData.hutan?.nama || "Tidak Bernama"}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-2">
+                           <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                            <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">No SK Kawasan</p>
+                            <p className="font-bold text-gray-800 text-xs line-clamp-2" title={detailData.hutan?.noSkKawasan}>{detailData.hutan?.noSkKawasan || "-"}</p>
+                           </div>
+                           <div className="bg-gray-50 p-2 rounded-lg border border-gray-100">
+                            <p className="text-[9px] text-gray-400 font-bold uppercase mb-0.5">Luas Hutan</p>
+                            <p className="font-bold text-gray-800 text-xs">{detailData.hutan?.luasHutanHa || "0"} <span className="text-[10px] font-normal text-gray-500">Ha</span></p>
+                           </div>
                         </div>
                       </div>
 
-                      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
-                        <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
+                      {/* INTERAKSI & IRISAN */}
+                      <div className="bg-gradient-to-br from-[#1e5230] to-[#2D7344] border border-[#2D7344] rounded-xl p-3.5 shadow-md relative overflow-hidden text-white">
+                        <div className="absolute right-0 top-0 w-20 h-20 bg-white/10 rounded-bl-full pointer-events-none"></div>
                         <div className="relative z-10">
                           <div className="flex justify-between items-end mb-3">
                             <div>
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                              <p className="text-[10px] text-emerald-200 font-bold uppercase tracking-wider mb-0.5">
                                 Status Interaksi
                               </p>
                               <div className="flex flex-col">
-                                <span className="font-bold text-[#2D7344] capitalize text-sm">
-                                  {detailData.status || "-"}
+                                <span className="font-bold text-white capitalize text-sm">
+                                  {detailData.status === 'irisan' ? 'Beririsan' : detailData.status || "-"}
                                 </span>
-                                <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
-                                  {detailData.jenis_interaksi?.replace(
-                                    "_",
-                                    " ",
-                                  ) || "-"}
+                                <span className="text-emerald-100 text-[10px] uppercase tracking-wider font-medium mt-0.5">
+                                  {detailData.irisan?.jenisInteraksi || "-"}
                                 </span>
                               </div>
                             </div>
                             <div className="text-right">
-                              <span className="text-xl font-extrabold text-gray-800">
-                                {detailData.luas_persen}%
+                              <span className="text-2xl font-extrabold text-white">
+                                {detailData.irisan?.luasPersen || 0}%
                               </span>
                             </div>
                           </div>
-                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                          
+                          <div className="w-full h-1.5 bg-black/20 rounded-full overflow-hidden mb-2.5">
                             <div
-                              className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
+                              className="h-full bg-white rounded-full transition-all duration-1000 ease-out"
                               style={{
-                                width: `${Math.min(Number(detailData.luas_persen) || 0, 100)}%`,
+                                width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
                               }}
                             ></div>
                           </div>
-                          <p className="text-[10px] text-gray-400 mt-2 font-medium">
-                            Persentase wilayah masuk kawasan hutan
-                          </p>
+                          <div className="flex justify-between items-center">
+                            <span className="text-[10px] text-emerald-100 font-medium">Luas Beririsan</span>
+                            <span className="text-xs font-bold">{detailData.irisan?.luasHa || 0} Ha</span>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -515,7 +525,7 @@ export default function MapPage() {
                   <span>Memuat database desa...</span>
                 </div>
               ) : searchResults.length > 0 ? (
-                <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
                   {searchResults.map((desa) => (
                     <button
                       key={desa.id}
@@ -530,8 +540,11 @@ export default function MapPage() {
                         <span className="text-sm font-bold text-gray-800 line-clamp-1">
                           {desa.nama}
                         </span>
-                        <span className="text-[11px] text-gray-500 line-clamp-1">
-                          Kec. {desa.kecamatan} • Kode: {desa.kodeKemendagri}
+                        <span className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
+                          Kec. {desa.kecamatan}, {desa.kabupaten || desa.kabupaten}
+                        </span>
+                        <span className="text-[10px] text-gray-400 mt-0.5">
+                          {desa.provinsi} • Kode: {desa.kodeKemendagri}
                         </span>
                       </div>
                     </button>
@@ -750,8 +763,8 @@ export default function MapPage() {
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
               LNG
             </span>
-            <span className="font-mono text-emerald-50 text-sm font-semibold w-20">
-              {displayCoords.longitude.toFixed(5)}°
+            <span ref={lngRef} className="font-mono text-emerald-50 text-sm font-semibold w-20">
+              106.82290°
             </span>
           </div>
           <div className="w-px h-4 bg-gray-700"></div>
@@ -759,8 +772,8 @@ export default function MapPage() {
             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">
               LAT
             </span>
-            <span className="font-mono text-emerald-50 text-sm font-semibold w-20">
-              {displayCoords.latitude.toFixed(5)}°
+            <span ref={latRef} className="font-mono text-emerald-50 text-sm font-semibold w-20">
+              -6.20880°
             </span>
           </div>
         </div>

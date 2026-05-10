@@ -33,6 +33,8 @@ const IndikatorPerhitungan = () => {
 
   const rawData = responseData?.data || responseData || [];
 
+  console.log(rawData);
+
   // Client-side search filtering
   const filteredData = rawData.filter((item) =>
     item.nama?.toLowerCase().includes(searchTerm.toLowerCase()),

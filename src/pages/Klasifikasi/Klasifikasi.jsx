@@ -217,6 +217,7 @@ const Klasifikasi = () => {
     if (itemToDelete) deleteMutation.mutate(itemToDelete.id);
   };
 
+
   // ==========================================
   // 4. FILTERING & KOLOM TABEL
   // ==========================================

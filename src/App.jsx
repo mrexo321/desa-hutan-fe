@@ -19,6 +19,8 @@ import Indikator from "./pages/Indikator/Indikator";
 import IndikatorPerhitungan from "./pages/Indikator/IndikatorPerhitungan";
 import Klasifikasi from "./pages/Klasifikasi/Klasifikasi";
 import Wilayah from "./pages/Wilayah/Wilayah";
+import TambahWilayahDesa from "./pages/Wilayah/TambahWilayahDesa";
+import EditWilayahDesa from "./pages/Wilayah/EditWilayahDesa";
 import ManajemenUser from "./pages/ManajemenUser/ManajemenUser";
 import ManajemenRoles from "./pages/ManajemenRole/ManajemenRole";
 import MasterWilayah from "./pages/MasterWilayah/MasterWilayah";
@@ -31,6 +33,7 @@ import DetailFormulaIndicator from "./pages/Indikator/DetailFormulaIndicator";
 import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
 import TahunIndikatorPerhitungan from "./pages/Indikator/TahunIndikatorPerhitungan";
 import FormTahunIndicator from "./pages/Indikator/FormTahunIndicator";
+import SiteSettings from "./pages/SiteSettings/SiteSettings";
 
 const App = () => {
   return (
@@ -130,6 +133,23 @@ const App = () => {
             ]}
           >
             <ManajemenUser />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/manajemen-role"
+        element={
+          <ProtectedRoute
+            allowedPermissions={[
+              "role:read",
+              "role:create",
+              "role:update",
+              "role:delete",
+              "role_permission:assign",
+            ]}
+          >
+            <ManajemenRoles />
           </ProtectedRoute>
         }
       />

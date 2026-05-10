@@ -18,6 +18,7 @@ import {
   X,
   Leaf,
   LogOut,
+  Settings2,
 } from "lucide-react";
 
 export default function Sidebar({ activeMenu }) {
@@ -90,6 +91,11 @@ export default function Sidebar({ activeMenu }) {
       name: "Master Potensi",
       path: "/dashboard/master-potensi",
       icon: <Database {...iconProps} />,
+    },
+    {
+      name: "Site Settings",
+      path: "/dashboard/site-settings",
+      icon: <Settings2 {...iconProps} />,
     },
   ];
 

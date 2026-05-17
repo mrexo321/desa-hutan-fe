@@ -1,6 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import ProtectedRoute from "./components/ProtectedRoute"; // 👈 1. IMPORT MIDDLEWARE DI SINI
+import ProtectedRoute from "./components/ProtectedRoute";
 
 // Import halaman Landing & Auth
 import Homepage from "./pages/landing/Homepage";
@@ -13,12 +13,16 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import DesaHutan from "./pages/desaHutan/DesaHutan";
 import PerformaDesa from "./pages/PerfomaDesa/PerformaDesa";
 import EditPerformaDesa from "./pages/PerfomaDesa/EditPerformaDesa";
+import TambahPerformaDesa from "./pages/PerfomaDesa/TambahPerformaDesa";
+import PerformaDesaDetail from "./pages/PerfomaDesa/PerformaDesaDetail";
 import PotensiDesa from "./pages/PotensiDesa/PotensiDesa";
 import MapPage from "./MapPage";
 import Indikator from "./pages/Indikator/Indikator";
 import IndikatorPerhitungan from "./pages/Indikator/IndikatorPerhitungan";
 import Klasifikasi from "./pages/Klasifikasi/Klasifikasi";
 import Wilayah from "./pages/Wilayah/Wilayah";
+import TambahWilayahDesa from "./pages/Wilayah/TambahWilayahDesa";
+import EditWilayahDesa from "./pages/Wilayah/EditWilayahDesa";
 import ManajemenUser from "./pages/ManajemenUser/ManajemenUser";
 import ManajemenRoles from "./pages/ManajemenRole/ManajemenRole";
 import MasterWilayah from "./pages/MasterWilayah/MasterWilayah";
@@ -26,7 +30,7 @@ import MasterPotensi from "./pages/MasterPotensi/MasterPotensi";
 import ProvinceDetail from "./pages/dashboard/ProvinceDetail";
 import DetailMainIndikator from "./pages/Indikator/DetailMainIndikator";
 import FormMainIndikator from "./pages/Indikator/FormMainIndicator";
-import DesaDetail from "./pages/dashboard/DetailDesa";
+import DetailDesa from "./pages/dashboard/DetailDesa";
 import DetailFormulaIndicator from "./pages/Indikator/DetailFormulaIndicator";
 import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
 import TahunIndikatorPerhitungan from "./pages/Indikator/TahunIndikatorPerhitungan";
@@ -35,6 +39,7 @@ import CreateRole from "./pages/ManajemenRole/CreateRole";
 import EditRole from "./pages/ManajemenRole/EditRole";
 import DetailRole from "./pages/ManajemenRole/DetailRole";
 import AssignPermission from "./pages/ManajemenRole/AssignPermission";
+import SiteSettings from "./pages/SiteSettings/SiteSettings";
 
 const App = () => {
   return (
@@ -63,10 +68,19 @@ const App = () => {
         path="/dashboard/provinsi/:provinceName"
         element={<ProvinceDetail />}
       />
+
       <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
       <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
       <Route
-        path="/dashboard/performa-desa/edit"
+        path="/dashboard/performa-desa/detail/:id"
+        element={<PerformaDesaDetail />}
+      />
+      <Route
+        path="/dashboard/performa-desa/tambah"
+        element={<TambahPerformaDesa />}
+      />
+      <Route
+        path="/dashboard/performa-desa/edit/:id"
         element={<EditPerformaDesa />}
       />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
@@ -85,7 +99,7 @@ const App = () => {
         path="/dashboard/indikator/utama/edit/:id"
         element={<FormMainIndikator />}
       />
-      <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
+      <Route path="/dashboard/desa-detail/:desaId" element={<DetailDesa />} />
       <Route
         path="/dashboard/indikator-perhitungan"
         element={<IndikatorPerhitungan />}
@@ -134,6 +148,23 @@ const App = () => {
             ]}
           >
             <ManajemenUser />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/manajemen-role"
+        element={
+          <ProtectedRoute
+            allowedPermissions={[
+              "role:read",
+              "role:create",
+              "role:update",
+              "role:delete",
+              "role_permission:assign",
+            ]}
+          >
+            <ManajemenRoles />
           </ProtectedRoute>
         }
       />

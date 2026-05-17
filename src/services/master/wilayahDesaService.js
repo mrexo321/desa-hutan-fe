@@ -10,4 +10,34 @@ export const wilayahDesaService = {
     });
     return response.data.data;
   },
+
+  async getDesaById(id) {
+    const response = await masterInstance.get(`/wilayah-desa/${id}`);
+    return response.data.data;
+  },
+
+  async createDesa(formData) {
+    // formData adalah FormData (multipart/form-data)
+    const response = await masterInstance.post("/wilayah-desa", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return response.data;
+  },
+
+  async updateDesa(id, formData) {
+    // formData adalah FormData (multipart/form-data)
+    const response = await masterInstance.patch(
+      `/wilayah-desa/${id}`,
+      formData,
+      {
+        headers: { "Content-Type": "multipart/form-data" },
+      },
+    );
+    return response.data;
+  },
+
+  async deleteDesa(id) {
+    const response = await masterInstance.delete(`/wilayah-desa/${id}`);
+    return response.data;
+  },
 };

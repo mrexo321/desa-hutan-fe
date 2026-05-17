@@ -99,12 +99,23 @@ const Dashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
+  const [filters, setFilters] = useState({
+    provinsi: null,
+    kabupaten: null,
+    kecamatan: null,
+  });
+
   // =========================================
   // 4. DATA FETCHING (REACT QUERY)
   // =========================================
   const { data: provinces, isLoading: isProvincesLoading } = useQuery({
     queryKey: ["provinces"],
     queryFn: analystSpatialService.getAllProvinces,
+  });
+
+  const { data: ringkasanData, isLoading: isRingkasanLoading } = useQuery({
+    queryKey: ["ringkasanAnalisis", filters],
+    queryFn: () => analystSpatialService.getRingkasanAnalisis(filters),
   });
 
   const { data: responseDesa, isLoading: isFetchingDesaData } = useQuery({
@@ -519,7 +530,7 @@ const Dashboard = () => {
                                 {desa.nama}
                               </span>
                               <span className="text-[10px] text-gray-500 line-clamp-1">
-                                Kec. {desa.kecamatan} • Kode:{" "}
+                                Kec. {desa.kecamatan} ΓÇó Kode:{" "}
                                 {desa.kodeKemendagri}
                               </span>
                             </div>
@@ -739,7 +750,7 @@ const Dashboard = () => {
                     LNG
                   </span>
                   <span className="font-mono text-emerald-50 text-xs font-semibold w-16">
-                    {displayCoords.longitude.toFixed(4)}°
+                    {displayCoords.longitude.toFixed(4)}┬░
                   </span>
                 </div>
                 <div className="w-px h-3 bg-gray-700"></div>
@@ -748,7 +759,7 @@ const Dashboard = () => {
                     LAT
                   </span>
                   <span className="font-mono text-emerald-50 text-xs font-semibold w-16">
-                    {displayCoords.latitude.toFixed(4)}°
+                    {displayCoords.latitude.toFixed(4)}┬░
                   </span>
                 </div>
               </div>
@@ -826,207 +837,166 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* MAIN STATS (GRID BENTO) */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-          <div className="col-span-1 lg:col-span-7 bg-gradient-to-br from-[#0C2F21] to-[#124230] rounded-[32px] p-8 text-white relative overflow-hidden shadow-xl shadow-emerald-900/10 flex flex-col justify-between group">
-            <div className="relative z-10">
-              <div className="flex items-center gap-2 text-emerald-400/90 text-xs font-bold tracking-widest mb-3 uppercase">
-                <Activity size={14} /> Total Desa Hutan
-              </div>
-              <div className="flex items-end gap-4 mb-4">
-                <h2 className="text-6xl md:text-7xl font-extrabold tracking-tight">
-                  268
-                </h2>
-                <div className="bg-emerald-500/20 text-emerald-300 px-3 py-1.5 rounded-lg text-xs font-bold backdrop-blur-md border border-emerald-400/20 mb-3 flex items-center gap-1">
-                  <TrendingUp size={12} /> +12% bulan ini
-                </div>
-              </div>
-              <p className="text-gray-300/90 text-sm max-w-sm font-medium leading-relaxed mb-8">
-                Desa hutan terdaftar dan terkelola dalam sistem informasi tata
-                ruang kawasan hutan Indonesia.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-4 relative z-10">
-              {[
-                { label: "Terverifikasi", count: 243, color: "bg-emerald-400" },
-                { label: "Diproses", count: 25, color: "bg-orange-400" },
-                { label: "Data Baru", count: 18, color: "bg-blue-400" },
-              ].map((stat, i) => (
-                <div
-                  key={i}
-                  className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[16px] p-3.5 px-5 flex items-center gap-4 cursor-default"
-                >
-                  <div
-                    className={`w-2.5 h-2.5 rounded-full ${stat.color} shadow-[0_0_10px_currentColor]`}
-                  ></div>
-                  <div>
-                    <div className="text-gray-400 text-[10px] uppercase tracking-widest font-bold mb-0.5">
-                      {stat.label}
-                    </div>
-                    <div className="text-xl font-extrabold text-white leading-none">
-                      {stat.count}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-            <div className="absolute right-0 bottom-0 w-2/3 h-full opacity-40 pointer-events-none flex items-end transition-transform duration-700 group-hover:scale-105 group-hover:opacity-50 origin-bottom-right">
-              <svg
-                viewBox="0 0 200 100"
-                className="w-full h-auto"
-                preserveAspectRatio="none"
-              >
-                <path
-                  d="M0,80 C40,70 60,90 100,50 C140,10 160,40 200,20 L200,100 L0,100 Z"
-                  fill="url(#grad1)"
-                />
-                <path
-                  d="M0,80 C40,70 60,90 100,50 C140,10 160,40 200,20"
-                  fill="none"
-                  stroke="#10B981"
-                  strokeWidth="2.5"
-                  strokeLinecap="round"
-                />
-                <defs>
-                  <linearGradient id="grad1" x1="0%" y1="0%" x2="0%" y2="100%">
-                    <stop offset="0%" stopColor="#10B981" stopOpacity="0.4" />
-                    <stop offset="100%" stopColor="#0C2F21" stopOpacity="0" />
-                  </linearGradient>
-                </defs>
-              </svg>
-            </div>
-          </div>
-
-          <div className="col-span-1 lg:col-span-5 grid grid-cols-2 gap-5">
-            {[
-              {
-                title: "Pertumbuhan",
-                desc: "/ bulan lalu",
-                value: "+12%",
-                icon: <TrendingUp size={22} strokeWidth={2.5} />,
-                color: "emerald",
-              },
-              {
-                title: "Pengguna",
-                desc: "/ sistem aktif",
-                value: "1,847",
-                icon: <Users size={22} strokeWidth={2.5} />,
-                color: "blue",
-              },
-              {
-                title: "Total Luas",
-                desc: "/ hektar",
-                value: "148.5K",
-                icon: <MapPin size={22} strokeWidth={2.5} />,
-                color: "orange",
-              },
-              {
-                title: "Sinkronisasi",
-                desc: "/ terakhir",
-                value: "2 jam",
-                icon: <Clock size={22} strokeWidth={2.5} />,
-                color: "amber",
-              },
-            ].map((card, i) => (
-              <div
-                key={i}
-                className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group"
-              >
-                <div
-                  className={`w-12 h-12 rounded-[16px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center mb-4 group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
-                >
-                  {card.icon}
-                </div>
-                <div className="text-3xl font-extrabold text-gray-800 mb-1">
-                  {card.value}
-                </div>
-                <div className="text-xs text-gray-500 font-bold">
-                  {card.title}{" "}
-                  <span className="text-gray-400 font-medium">{card.desc}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* KATEGORI STATS */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* STATS UTAMA */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
           {[
             {
-              icon: <TreePine size={20} />,
-              title: "KHDTK",
-              desc: "Kawasan Tujuan Khusus",
-              count: 42,
-              color: "text-emerald-600",
-              bg: "bg-emerald-50",
-              bar: "bg-emerald-500",
-              trend: "+5.2%",
+              title: "Total Desa",
+              value: ringkasanData?.total_desa || 0,
+              icon: <Home size={22} strokeWidth={2.5} />,
+              color: "blue",
             },
             {
-              icon: <Activity size={20} />,
-              title: "HK",
-              desc: "Hutan Konservasi",
-              count: 87,
-              color: "text-blue-600",
-              bg: "bg-blue-50",
-              bar: "bg-blue-500",
-              trend: "+2.1%",
+              title: "Dalam Kawasan Hutan",
+              value: ringkasanData?.total_desa_dalam || 0,
+              pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_dalam / ringkasanData.total_desa) * 100).toFixed(1) : 0,
+              icon: <TreePine size={22} strokeWidth={2.5} />,
+              color: "orange",
             },
             {
-              icon: <Leaf size={20} />,
-              title: "HL",
-              desc: "Hutan Lindung",
-              count: 64,
-              color: "text-orange-600",
-              bg: "bg-orange-50",
-              bar: "bg-orange-500",
-              trend: "-1.3%",
-              isDown: true,
+              title: "Beririsan Kawasan Hutan",
+              value: ringkasanData?.total_desa_beririsan_sebagian || 0,
+              pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_beririsan_sebagian / ringkasanData.total_desa) * 100).toFixed(1) : 0,
+              icon: <Activity size={22} strokeWidth={2.5} />,
+              color: "amber",
             },
             {
-              icon: <MapPin size={20} />,
-              title: "HP",
-              desc: "Hutan Produksi",
-              count: 75,
-              color: "text-purple-600",
-              bg: "bg-purple-50",
-              bar: "bg-purple-500",
-              trend: "+3.8%",
+              title: "Di Luar Kawasan Hutan",
+              value: ringkasanData?.total_desa_luar_kawasan || 0,
+              pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_luar_kawasan / ringkasanData.total_desa) * 100).toFixed(1) : 0,
+              icon: <Leaf size={22} strokeWidth={2.5} />,
+              color: "emerald",
             },
-          ].map((item, idx) => (
+          ].map((card, i) => (
             <div
-              key={idx}
-              className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 transition-all hover:-translate-y-1 hover:shadow-lg relative overflow-hidden"
+              key={i}
+              className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group relative overflow-hidden"
             >
-              <div className="flex justify-between items-start mb-5">
-                <div
-                  className={`w-12 h-12 rounded-[14px] ${item.bg} ${item.color} flex items-center justify-center`}
-                >
-                  {item.icon}
+              {isRingkasanLoading ? (
+                <div className="animate-pulse flex flex-col gap-3">
+                  <div className="h-12 w-12 bg-gray-200 rounded-[16px]"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                 </div>
-                <span
-                  className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg ${item.isDown ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}
-                >
-                  {item.trend}
-                </span>
-              </div>
-              <h3 className="text-3xl font-extrabold text-gray-800 mb-1">
-                {item.count}
-              </h3>
-              <div className="font-bold text-sm text-gray-800">
-                {item.title}
-              </div>
-              <div className="text-[11px] font-medium text-gray-500 mt-0.5 line-clamp-1">
-                {item.desc}
-              </div>
-              <div className="w-full bg-gray-100 h-1.5 rounded-full mt-5 overflow-hidden">
-                <div
-                  className={`h-full ${item.bar} rounded-full`}
-                  style={{ width: `${Math.min(item.count + 20, 100)}%` }}
-                ></div>
-              </div>
+              ) : (
+                <>
+                  <div className="flex justify-between items-start mb-4">
+                    <div
+                      className={`w-12 h-12 rounded-[16px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
+                    >
+                      {card.icon}
+                    </div>
+                    {card.pct !== undefined && card.pct !== 0 && (
+                      <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
+                        {card.pct}%
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-3xl font-extrabold text-gray-800 mb-1">
+                    {card.value.toLocaleString('id-ID')}
+                  </div>
+                  <div className="text-xs text-gray-500 font-bold">
+                    {card.title}
+                  </div>
+                </>
+              )}
             </div>
           ))}
+        </div>
+
+        {/* LUAS AREA CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {[
+            {
+              title: "Total Luas Desa",
+              value: ringkasanData?.total_luas_desa_ha || 0,
+              icon: <MapPin size={22} strokeWidth={2.5} />,
+              color: "blue",
+            },
+            {
+              title: "Total Luas Kawasan Hutan",
+              value: ringkasanData?.total_luas_hutan_ha || 0,
+              icon: <Trees size={22} strokeWidth={2.5} />,
+              color: "emerald",
+            },
+            {
+              title: "Total Luas Irisan Desa-Hutan",
+              value: ringkasanData?.total_luas_irisan_ha || 0,
+              icon: <Layers size={22} strokeWidth={2.5} />,
+              color: "purple",
+            },
+          ].map((card, i) => (
+            <div
+              key={i}
+              className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group"
+            >
+              {isRingkasanLoading ? (
+                <div className="animate-pulse flex flex-col gap-3">
+                  <div className="h-12 w-12 bg-gray-200 rounded-[14px]"></div>
+                  <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                  <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div
+                      className={`w-12 h-12 rounded-[14px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
+                    >
+                      {card.icon}
+                    </div>
+                    <div className="text-sm font-bold text-gray-500">
+                      {card.title}
+                    </div>
+                  </div>
+                  <div className="text-3xl font-extrabold text-gray-800">
+                    {card.value.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-sm font-bold text-gray-400">Ha</span>
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* TABEL LIST: DESA PER FUNGSI KAWASAN HUTAN */}
+        <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden mb-8">
+          <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-lg font-extrabold text-gray-800">
+              Desa per Fungsi Kawasan Hutan
+            </h3>
+          </div>
+          <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-[#F8FAFC]">
+            {isRingkasanLoading ? (
+               [1, 2, 3].map((i) => (
+                 <div key={i} className="animate-pulse bg-white border border-gray-100 shadow-sm rounded-xl h-32 w-full" />
+               ))
+            ) : ringkasanData?.desa_per_fungsi_kawasan_hutan?.length > 0 ? (
+               [...ringkasanData.desa_per_fungsi_kawasan_hutan].sort((a,b) => b.total_desa - a.total_desa).map((row, idx) => {
+                 const pct = ringkasanData.total_desa_beririsan ? ((row.total_desa / ringkasanData.total_desa_beririsan) * 100).toFixed(1) : 0;
+                 return (
+                   <div key={idx} className="bg-white rounded-[16px] p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                     <div className="font-extrabold text-gray-800 mb-4 text-base">{row.fungsi_kawasan_hutan}</div>
+                     <div className="flex justify-between items-end mb-3">
+                       <div>
+                         <div className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-1">Total Desa</div>
+                         <div className="text-2xl font-extrabold text-emerald-600">{row.total_desa.toLocaleString('id-ID')}</div>
+                       </div>
+                       <div className="text-right">
+                         <div className="text-[10px] text-gray-400 font-medium mb-1">Dlm: <span className="font-bold text-gray-700">{row.total_desa_dalam.toLocaleString('id-ID')}</span> | Iris: <span className="font-bold text-gray-700">{row.total_desa_beririsan.toLocaleString('id-ID')}</span></div>
+                         <div className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md inline-block mt-0.5">{pct}% dr total</div>
+                       </div>
+                     </div>
+                     <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                       <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }}></div>
+                     </div>
+                   </div>
+                 );
+               })
+            ) : (
+              <div className="col-span-full text-center py-8 text-gray-500 text-sm">
+                Tidak ada data fungsi kawasan hutan yang tersedia.
+              </div>
+            )}
+          </div>
         </div>
 
         {/* TABEL DATA */}

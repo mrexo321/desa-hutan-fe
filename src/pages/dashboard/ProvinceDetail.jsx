@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
@@ -40,27 +40,31 @@ const ProvinceDetail = () => {
     totalPage: Math.ceil((rawData.length || 0) / size) || 1,
   };
 
-  // Logika Filter Pencarian
-  const filteredData = rawData.filter((desa) => {
-    const searchLower = searchTerm.toLowerCase();
-    return (
-      desa.nama?.toLowerCase().includes(searchLower) ||
-      desa.kecamatan?.toLowerCase().includes(searchLower) ||
-      desa.kabupaten?.toLowerCase().includes(searchLower) ||
-      desa.kodeKemendagri?.toLowerCase().includes(searchLower)
-    );
-  });
+  // Logika Filter Pencarian dengan useMemo untuk optimasi performa (mencegah lag)
+  const filteredData = useMemo(() => {
+    return rawData.filter((desa) => {
+      const searchLower = searchTerm.toLowerCase();
+      
+      // Helper function untuk mengambil string jika datanya berupa object (seperti kecamatan/kabupaten)
+      const getString = (val) => (typeof val === 'object' && val !== null ? val.nama || '' : val || '');
+      
+      return (
+        getString(desa.nama).toLowerCase().includes(searchLower) ||
+        getString(desa.kecamatan).toLowerCase().includes(searchLower) ||
+        getString(desa.kabupaten).toLowerCase().includes(searchLower) ||
+        getString(desa.kodeKemendagri).toLowerCase().includes(searchLower)
+      );
+    });
+  }, [rawData, searchTerm]);
 
   const handleSearchChange = (e) => setSearchTerm(e.target.value);
 
   // FUNGSI BARU: Pindah Halaman ke Detail Desa
   const handleViewDetail = (desa) => {
-    // Sesuaikan path '/desa-detail/' dengan routing di App.jsx Anda
-    // Kita mengirimkan object 'desa' melalui state agar tidak perlu fetch ulang di halaman sebelah
-    navigate(`/desa-detail/${desa.id}`, {
+    navigate(`/dashboard/desa-detail/${desa.id || desa.desaId}`, {
       state: {
         desaData: desa,
-        provinceName: provinceName, // Kirim juga nama provinsi untuk breadcrumb
+        provinceName: provinceName,
       },
     });
   };
@@ -176,21 +180,20 @@ const ProvinceDetail = () => {
                             {desa.kodeKemendagri || "-"}
                           </td>
                           <td className="py-4 px-4 text-gray-500">
-                            {desa.kecamatan || "-"}
+                            {typeof desa.kecamatan === 'object' && desa.kecamatan !== null ? desa.kecamatan.nama : (desa.kecamatan || "-")}
                           </td>
                           <td className="py-4 px-4 text-gray-500">
-                            {desa.kabupaten || "-"}
+                            {typeof desa.kabupaten === 'object' && desa.kabupaten !== null ? desa.kabupaten.nama : (desa.kabupaten || "-")}
                           </td>
                           <td className="py-4 px-4 text-right text-gray-700 font-semibold">
                             {desa.luas_desa_ha?.toLocaleString() || "0"}
                           </td>
                           <td className="py-4 px-4 text-center">
                             <span
-                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${
-                                isMayoritas
-                                  ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                                  : "bg-amber-50 text-amber-600 border-amber-200"
-                              }`}
+                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${isMayoritas
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                : "bg-amber-50 text-amber-600 border-amber-200"
+                                }`}
                             >
                               {desa.ringkasanInteraksi?.klasifikasi ||
                                 "Minoritas"}
@@ -229,6 +232,7 @@ const ProvinceDetail = () => {
           </div>
         </div>
       </main>
+
     </DashboardLayout>
   );
 };

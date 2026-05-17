@@ -233,15 +233,39 @@ const Dashboard = () => {
   return (
     <DashboardLayout activeMenu={"Dashboard"}>
       {/* =========================================
-          HERO MAP SECTION (BISA FULLSCREEN)
+          TOMBOL BUKA PETA (Jika tidak fullscreen)
       ========================================= */}
-      <div
-        className={`transition-all duration-500 ease-in-out ${
-          isFullscreen
-            ? "fixed inset-0 z-[100] w-screen h-screen bg-[#E8EDE9]"
-            : "relative w-full h-[500px] md:h-[600px] rounded-[32px] overflow-hidden mb-8 shadow-sm border border-gray-200 bg-[#E8EDE9] shrink-0"
-        }`}
-      >
+      {!isFullscreen && (
+        <div className="mb-8 bg-gradient-to-br from-[#0C2F21] to-[#124230] rounded-[32px] p-8 sm:p-10 text-white flex flex-col md:flex-row items-center justify-between shadow-xl shadow-emerald-900/10 relative overflow-hidden group">
+          <div className="absolute right-0 top-0 w-1/2 h-full opacity-20 pointer-events-none transition-transform duration-700 group-hover:scale-105 origin-right">
+            <svg viewBox="0 0 200 100" className="w-full h-full object-cover" preserveAspectRatio="none">
+              <path d="M0,100 C50,50 150,50 200,0 L200,100 Z" fill="#10B981" />
+            </svg>
+          </div>
+          <div className="relative z-10 mb-6 md:mb-0">
+            <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold tracking-widest mb-3 uppercase">
+              <MapIcon size={14} /> Peta Spasial
+            </div>
+            <h2 className="text-3xl font-extrabold mb-2 text-white">Visualisasi Peta Kawasan Hutan</h2>
+            <p className="text-emerald-100/80 font-medium max-w-lg text-sm leading-relaxed">
+              Jelajahi sebaran titik desa hutan, informasi kawasan, dan data interaktif secara langsung melalui peta spasial terintegrasi.
+            </p>
+          </div>
+          <button
+            onClick={() => setIsFullscreen(true)}
+            className="relative z-10 flex items-center gap-3 bg-[#00B67A] hover:bg-emerald-500 text-white px-8 py-4 rounded-[16px] font-extrabold shadow-[0_8px_20px_rgba(0,182,122,0.3)] hover:shadow-[0_8px_25px_rgba(0,182,122,0.5)] hover:-translate-y-1 transition-all w-full md:w-auto justify-center"
+          >
+            <MapIcon size={20} strokeWidth={2.5} />
+            Buka Peta Fullscreen
+          </button>
+        </div>
+      )}
+
+      {/* =========================================
+          HERO MAP SECTION (HANYA FULLSCREEN)
+      ========================================= */}
+      {isFullscreen && (
+        <div className="fixed inset-0 z-[100] w-screen h-screen bg-[#E8EDE9] animate-in fade-in duration-300">
         {MAPBOX_TOKEN ? (
           <Map
             ref={mapRef}
@@ -526,15 +550,11 @@ const Dashboard = () => {
             {/* --- HUD KANAN ATAS: TOOLBAR FULLSCREEN & KONTROL MAP --- */}
             <div className="absolute top-6 right-6 z-10 flex flex-col gap-3 items-end pointer-events-none">
               <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white/80 hover:bg-white text-gray-700 hover:text-[#00B67A] backdrop-blur-xl border border-white/50 shadow-lg rounded-[14px] transition-all focus:outline-none"
-                title={isFullscreen ? "Keluar Fullscreen" : "Mode Layar Penuh"}
+                onClick={() => setIsFullscreen(false)}
+                className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white/80 hover:bg-white text-gray-700 hover:text-red-500 backdrop-blur-xl border border-white/50 shadow-lg rounded-[14px] transition-all focus:outline-none"
+                title="Tutup Peta"
               >
-                {isFullscreen ? (
-                  <Minimize size={20} strokeWidth={2} />
-                ) : (
-                  <Maximize size={20} strokeWidth={2} />
-                )}
+                <X size={20} strokeWidth={2.5} />
               </button>
 
               <div className="relative pointer-events-auto">
@@ -751,12 +771,14 @@ const Dashboard = () => {
             <p>Token Mapbox tidak ditemukan.</p>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* =========================================
-          KONTEN DASHBOARD BAWAH (Disembunyikan saat Fullscreen)
+          KONTEN DASHBOARD BAWAH (Tidak di-render saat Fullscreen)
       ========================================= */}
-      <div className={isFullscreen ? "hidden" : "block"}>
+      {!isFullscreen && (
+        <div className="block animate-in fade-in duration-500">
         {/* FILTER & SEARCH */}
         <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">
           <div className="relative w-full lg:w-96 flex-1 group">
@@ -1082,7 +1104,8 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      )}
 
       {/* =========================================
           GLOBAL CSS OVERRIDE

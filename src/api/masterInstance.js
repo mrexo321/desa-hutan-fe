@@ -91,7 +91,7 @@ masterInstance.interceptors.response.use(
           return Promise.reject(error);
         }
 
-        // Hit API Refresh Token
+        // ini buat refresh token , gausah di utak atik awas aja
         const res = await axios.post(
           `${environment.AUTH_URL}/auth/refresh-token`,
           { refreshToken: currentRefreshToken },
@@ -99,13 +99,13 @@ masterInstance.interceptors.response.use(
 
         const newToken = res.data.data.accessToken;
 
-        // Simpan token baru ke Redux
+        // taro di reduxx
         reduxStore.dispatch(setToken({ accessToken: newToken }));
 
-        // Jalankan semua request yang sempat mengantre tadi
+        // jalanin queue , antriannya biar ga numpuk
         processQueue(null, newToken);
 
-        // Eksekusi ulang request utama yang memicu refresh ini
+        // re-hit endpoint awal
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return masterInstance(originalRequest);
       } catch (refreshError) {

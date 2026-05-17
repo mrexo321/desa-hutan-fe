@@ -1,76 +1,78 @@
-import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { performaDesaService } from "../../services/master/performaDesaService";
 import { wilayahDesaService } from "../../services/master/wilayahDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { toast } from "sonner";
-import { ChevronLeft, Save, Loader2, Info } from "lucide-react";
+import { ChevronLeft, Save, Loader2, Info, Search, ChevronDown, Check } from "lucide-react";
 
-export default function EditPerformaDesa() {
-  const { id } = useParams();
+export default function TambahPerformaDesa() {
   const navigate = useNavigate();
 
   const [desaId, setDesaId] = useState("");
   const [formulaId, setFormulaId] = useState("");
   const [indikatorValues, setIndikatorValues] = useState({});
 
-  // Fetch Existing Performa Data
-  const { data: performaResponse, isLoading: isLoadingPerforma } = useQuery({
-    queryKey: ["detailPerformaDesa", id],
-    queryFn: () => performaDesaService.getDetailPerformaDesa(id),
-    enabled: !!id,
-  });
+  // Searchable Dropdown State
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [searchDesa, setSearchDesa] = useState("");
+  const dropdownRef = useRef(null);
 
-
-
-  const performaData = performaResponse?.data || performaResponse;
-  console.log(performaData);
-
-  // Set initial data once performaData is loaded
+  // Close dropdown on click outside
   useEffect(() => {
-    if (performaData) {
-      setDesaId(performaData.desa?.id || "");
-      // Ambil id formula dari object formulaIndikatorPerhitungan
-      setFormulaId(performaData.formulaIndikatorPerhitungan?.id || "");
-
-      const initialValues = {};
-      if (performaData.nilaiIndikator) {
-        performaData.nilaiIndikator.forEach((ind) => {
-          // Handle camelCase from API response
-          const indikatorUtamaId = ind.indikatorUtamaId || ind.indikator_utama_id;
-          const penilaianIndikatorId = ind.penilaianIndikatorId || ind.penilaian_indikator_id;
-
-          initialValues[indikatorUtamaId] = {
-            nilai: ind.nilai,
-            label: ind.label,
-            penilaian_indikator_id: penilaianIndikatorId,
-          };
-        });
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
       }
-      setIndikatorValues(initialValues);
     }
-  }, [performaData]);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
-  // Fetch Formula Detail based on formulaId (either from initial data or user change)
+  // Fetch Desa
+  const { data: desaData, isLoading: isLoadingDesa } = useQuery({
+    queryKey: ["allDesaForSelect"],
+    queryFn: () => wilayahDesaService.getAllDesa(1, 1000), // Get all for dropdown
+  });
+  const desaList = desaData?.items || desaData || [];
+
+  console.log(desaList);
+
+
+  const filteredDesa = useMemo(() => {
+    if (!searchDesa) return desaList;
+    return desaList.filter((d) =>
+      d.nama.toLowerCase().includes(searchDesa.toLowerCase())
+    );
+  }, [desaList, searchDesa]);
+
+  // Fetch Formulas
+  const { data: formulaData, isLoading: isLoadingFormula } = useQuery({
+    queryKey: ["allFormulasForSelect"],
+    queryFn: () => indikatorService.getAllFormula(),
+  });
+  const formulaList = formulaData?.data || formulaData || [];
+
+  // Fetch Formula Detail
   const { data: detailFormulaData, isLoading: isLoadingDetailFormula } = useQuery({
-    queryKey: ["detailFormulaForEdit", formulaId],
+    queryKey: ["detailFormulaForCreate", formulaId],
     queryFn: () => indikatorService.getDetailFormula(formulaId),
     enabled: !!formulaId,
   });
   const detailFormula = detailFormulaData?.data || detailFormulaData;
   const indikatorUtamaList = detailFormula?.indikatorUtama || [];
 
-  const { mutate: updateData, isPending } = useMutation({
-    mutationFn: (payload) => performaDesaService.updatePerformaDesa(id, payload),
+  const { mutate: submitData, isPending } = useMutation({
+    mutationFn: (payload) => performaDesaService.createPerformaDesa(payload),
     onSuccess: () => {
-      toast.success("Berhasil mengubah data performa desa!");
+      toast.success("Berhasil menambahkan data performa desa!");
       navigate("/dashboard/performa-desa");
     },
     onError: (error) => {
       console.error(error);
-      toast.error("Gagal mengubah data performa desa.");
+      toast.error("Gagal menambahkan data performa desa.");
     },
   });
 
@@ -130,18 +132,8 @@ export default function EditPerformaDesa() {
       }),
     };
 
-    updateData(payload);
+    submitData(payload);
   };
-
-  if (isLoadingPerforma) {
-    return (
-      <DashboardLayout activeMenu="Performa Desa">
-        <div className="flex-1 flex justify-center items-center h-[80vh]">
-          <Loader2 size={40} className="animate-spin text-emerald-500" />
-        </div>
-      </DashboardLayout>
-    );
-  }
 
   return (
     <DashboardLayout activeMenu="Performa Desa">
@@ -157,10 +149,10 @@ export default function EditPerformaDesa() {
               Kembali
             </button>
             <h1 className="text-2xl md:text-3xl font-bold text-slate-800 tracking-tight">
-              Edit Performa Desa
+              Tambah Performa Desa
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Ubah data penilaian indikator performa untuk desa ini.
+              Masukkan data penilaian indikator performa untuk desa yang dipilih.
             </p>
           </div>
         </div>
@@ -169,28 +161,84 @@ export default function EditPerformaDesa() {
         <form onSubmit={handleSubmit} className="bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 space-y-8">
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Desa (Read-Only) */}
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Desa yang Diedit</label>
-              <input
-                type="text"
-                value={performaData?.desa?.nama || "Memuat..."}
-                disabled
-                className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3 text-sm text-slate-500 cursor-not-allowed font-medium"
-              />
-              <p className="text-xs text-slate-400 mt-1">Data desa tidak dapat diubah pada mode edit.</p>
+            {/* Pilih Desa (Searchable Dropdown) */}
+            <div className="space-y-2 relative" ref={dropdownRef}>
+              <label className="text-sm font-bold text-slate-700">Pilih Desa</label>
+
+              <div
+                onClick={() => !isLoadingDesa && setIsDropdownOpen(!isDropdownOpen)}
+                className={`w-full bg-slate-50 border ${isDropdownOpen ? 'border-emerald-500 ring-2 ring-emerald-500/20' : 'border-slate-200'} rounded-xl p-3 text-sm text-slate-800 flex justify-between items-center cursor-pointer transition-all font-medium ${isLoadingDesa ? 'opacity-50 cursor-not-allowed' : 'hover:border-slate-300'}`}
+              >
+                <span className={desaId ? "text-slate-800" : "text-slate-400"}>
+                  {desaId ? desaList.find(d => d.id === desaId)?.nama || "Desa tidak valid" : "-- Pilih Desa --"}
+                </span>
+                {isLoadingDesa ? (
+                  <Loader2 size={18} className="animate-spin text-slate-400" />
+                ) : (
+                  <ChevronDown size={18} className={`text-slate-400 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`} />
+                )}
+              </div>
+
+              {isDropdownOpen && (
+                <div className="absolute z-50 w-full mt-2 bg-white border border-slate-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                  <div className="p-3 border-b border-slate-100 bg-slate-50/50">
+                    <div className="relative">
+                      <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                      <input
+                        type="text"
+                        autoFocus
+                        placeholder="Cari nama desa..."
+                        value={searchDesa}
+                        onChange={(e) => setSearchDesa(e.target.value)}
+                        className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-2 text-sm focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-shadow"
+                      />
+                    </div>
+                  </div>
+                  <div className="max-h-60 overflow-y-auto custom-scrollbar">
+                    {filteredDesa.length > 0 ? (
+                      filteredDesa.map((d) => (
+                        <div
+                          key={d.id}
+                          onClick={() => {
+                            setDesaId(d.id);
+                            setIsDropdownOpen(false);
+                            setSearchDesa("");
+                          }}
+                          className={`px-4 py-3 text-sm cursor-pointer transition-colors flex items-center justify-between ${desaId === d.id ? 'bg-emerald-50 text-emerald-700 font-bold' : 'hover:bg-slate-50 text-slate-700 font-medium'}`}
+                        >
+                          {d.nama}
+                          {desaId === d.id && <Check size={16} className="text-emerald-600" />}
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 text-center text-sm text-slate-500">
+                        Desa tidak ditemukan
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {/* Formula (Read-Only) */}
+            {/* Pilih Formula */}
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700">Formula Indikator</label>
-              <input
-                type="text"
-                value={performaData?.formulaIndikatorPerhitungan?.nama || "Formula Tertentu"}
-                disabled
-                className="w-full bg-slate-100 border border-slate-200 rounded-xl p-3 text-sm text-slate-500 cursor-not-allowed font-medium"
-              />
-              <p className="text-xs text-slate-400 mt-1">Formula bersifat tetap untuk data performa ini.</p>
+              <label className="text-sm font-bold text-slate-700">Pilih Formula Indikator</label>
+              <select
+                value={formulaId}
+                onChange={(e) => {
+                  setFormulaId(e.target.value);
+                  setIndikatorValues({}); // reset values on formula change
+                }}
+                disabled={isLoadingFormula}
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-medium"
+              >
+                <option value="">-- Pilih Formula --</option>
+                {formulaList.map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.nama}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -219,7 +267,6 @@ export default function EditPerformaDesa() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {indikatorUtamaList.map((ind) => {
                   const isDropdown = ind.penilaianIndikator && ind.penilaianIndikator.length > 0;
-                  const currentValue = indikatorValues[ind.id];
 
                   return (
                     <div key={ind.id} className="space-y-2 p-4 bg-slate-50 border border-slate-100 rounded-2xl">
@@ -230,7 +277,7 @@ export default function EditPerformaDesa() {
 
                       {isDropdown ? (
                         <select
-                          value={currentValue?.penilaian_indikator_id || ""}
+                          value={indikatorValues[ind.id]?.penilaian_indikator_id || ""}
                           onChange={(e) => handleIndikatorChange(ind.id, e.target.value, true, ind.penilaianIndikator)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all cursor-pointer"
                         >
@@ -245,7 +292,7 @@ export default function EditPerformaDesa() {
                         <input
                           type="number"
                           placeholder="Masukkan angka..."
-                          value={currentValue?.label || currentValue?.nilai || ""}
+                          value={indikatorValues[ind.id]?.label || ""}
                           onChange={(e) => handleIndikatorChange(ind.id, e.target.value, false)}
                           className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
                         />
@@ -264,7 +311,7 @@ export default function EditPerformaDesa() {
               className="flex items-center gap-2 px-8 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isPending ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              {isPending ? "Menyimpan..." : "Simpan Perubahan"}
+              {isPending ? "Menyimpan..." : "Simpan Data Performa"}
             </button>
           </div>
         </form>

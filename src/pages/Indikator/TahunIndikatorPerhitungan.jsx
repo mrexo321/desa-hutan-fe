@@ -170,7 +170,7 @@ const TahunIndikatorPerhitungan = () => {
         <div className="flex items-center justify-center gap-2">
           {/* Arahkan ke halaman detail list formula */}
           <button
-            onClick={() => navigate(`/dashboard/indikator-perhitungan`)}
+            onClick={() => navigate(`/dashboard/indikator-perhitungan?tahunIndikatorPerhitunganId=${row.id}`)}
             className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
             title="Lihat Detail Indikator"
           >

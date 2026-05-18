@@ -7,11 +7,11 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { performaDesaService } from "../../services/master/performaDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { toast } from "sonner";
-import { 
-  Download, 
-  UploadCloud, 
-  Plus, 
-  Filter, 
+import {
+  Download,
+  UploadCloud,
+  Plus,
+  Filter,
   Info,
   Loader2,
   Calendar,
@@ -46,11 +46,25 @@ export default function PerformaDesa() {
   });
   const years = yearsData?.data || yearsData || [];
 
-  const { data: formulaData, isLoading: isFormulaLoading } = useQuery({
-    queryKey: ["allFormulaIndicators"],
-    queryFn: () => indikatorService.getAllFormula(),
+  const { data: formulaDataMain, isLoading: isFormulaMainLoading } = useQuery({
+    queryKey: ["formulaIndicators", selectedTahun],
+    queryFn: () =>
+      indikatorService.getAllFormula({
+        tahunIndikatorPerhitunganId: selectedTahun,
+      }),
+    enabled: !!selectedTahun,
   });
-  const formulas = formulaData?.data || formulaData || [];
+  const formulasMain = formulaDataMain?.data || formulaDataMain || [];
+
+  const { data: formulaDataUpload, isLoading: isFormulaUploadLoading } = useQuery({
+    queryKey: ["formulaIndicators", uploadTahunId],
+    queryFn: () =>
+      indikatorService.getAllFormula({
+        tahunIndikatorPerhitunganId: uploadTahunId,
+      }),
+    enabled: !!uploadTahunId,
+  });
+  const formulasUpload = formulaDataUpload?.data || formulaDataUpload || [];
 
   // Fetch Performa Desa
   const {
@@ -59,11 +73,13 @@ export default function PerformaDesa() {
     isError,
   } = useQuery({
     queryKey: ["performaDesa", selectedTahun, selectedFormula],
-    queryFn: () =>
-      performaDesaService.getListPerformaDesa({
-        tahun: selectedTahun,
+    queryFn: () => {
+      const yearString = years.find(y => y.id === selectedTahun)?.tahun;
+      return performaDesaService.getListPerformaDesa({
+        tahun: yearString,
         formulaId: selectedFormula,
-      }),
+      });
+    },
     enabled: !!selectedTahun && !!selectedFormula,
   });
 
@@ -83,7 +99,7 @@ export default function PerformaDesa() {
       toast.error("Silakan pilih formula terlebih dahulu untuk mengunduh template.");
       return;
     }
-    
+
     try {
       setIsDownloading(true);
       const blob = await performaDesaService.downloadPerformaExcelTemplate(selectedFormula);
@@ -91,8 +107,9 @@ export default function PerformaDesa() {
       const link = document.createElement("a");
       link.href = url;
       // Get formula name for better file naming
-      const formulaName = formulas.find(f => f.id === selectedFormula)?.nama || "Template";
-      link.setAttribute("download", `Template_Performa_Desa_${selectedTahun || "All"}_${formulaName}.xlsx`);
+      const formulaName = formulasMain.find(f => f.id === selectedFormula)?.nama || "Template";
+      const yearString = years.find(y => y.id === selectedTahun)?.tahun || "All";
+      link.setAttribute("download", `Template_Performa_Desa_${yearString}_${formulaName}.xlsx`);
       document.body.appendChild(link);
       link.click();
       link.parentNode.removeChild(link);
@@ -236,7 +253,7 @@ export default function PerformaDesa() {
   return (
     <DashboardLayout activeMenu="Performa Desa">
       <div className="flex flex-col gap-6 min-h-[calc(100vh-120px)] bg-slate-50/50 p-4 md:p-6 rounded-[2rem]">
-        
+
         {/* HEADER SECTION */}
         <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4">
           <div>
@@ -285,7 +302,7 @@ export default function PerformaDesa() {
             <Filter size={16} />
             <span>Filter Data</span>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-600 ml-1">Tahun Penilaian</label>
@@ -305,7 +322,7 @@ export default function PerformaDesa() {
                 >
                   <option value="">-- Pilih Tahun --</option>
                   {years.map((y) => (
-                    <option key={y.id} value={y.tahun}>
+                    <option key={y.id} value={y.id}>
                       {y.tahun}
                     </option>
                   ))}
@@ -330,11 +347,11 @@ export default function PerformaDesa() {
                     setSelectedFormula(e.target.value);
                     setCurrentPage(1);
                   }}
-                  disabled={isFormulaLoading}
+                  disabled={isFormulaMainLoading || !selectedTahun}
                   className="w-full pl-11 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 appearance-none cursor-pointer transition-all disabled:opacity-50 hover:border-slate-300"
                 >
                   <option value="">-- Pilih Formula --</option>
-                  {formulas.map((f) => (
+                  {formulasMain.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.nama}
                     </option>
@@ -352,7 +369,7 @@ export default function PerformaDesa() {
 
         {/* DATA TABLE SECTION */}
         <div className="flex-1 bg-white rounded-2xl flex flex-col shadow-sm border border-slate-100 overflow-hidden relative min-h-[400px]">
-          
+
           {!selectedTahun || !selectedFormula ? (
             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center h-full">
               <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center text-emerald-500 mb-6 shadow-inner">
@@ -389,11 +406,11 @@ export default function PerformaDesa() {
                   </div>
                   <div>
                     <h3 className="text-[15px] font-bold text-slate-800">
-                      Tabel Data Performa Tahun {selectedTahun}
+                      Tabel Data Performa Tahun {years.find((y) => y.id === selectedTahun)?.tahun || ""}
                     </h3>
                     <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                      Formula: <span className="font-semibold text-slate-700">{formulas.find((f) => f.id === selectedFormula)?.nama || "Tidak ada nama"}</span>
+                      Formula: <span className="font-semibold text-slate-700">{formulasMain.find((f) => f.id === selectedFormula)?.nama || "Tidak ada nama"}</span>
                     </p>
                   </div>
                 </div>
@@ -454,9 +471,12 @@ export default function PerformaDesa() {
                     Tahun Penilaian
                   </label>
                   <div className="relative">
-                    <select 
+                    <select
                       value={uploadTahunId}
-                      onChange={(e) => setUploadTahunId(e.target.value)}
+                      onChange={(e) => {
+                        setUploadTahunId(e.target.value);
+                        setUploadFormulaId(""); // Reset formula saat tahun berubah
+                      }}
                       className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 appearance-none cursor-pointer transition-all font-medium"
                     >
                       <option value="">-- Pilih Tahun --</option>
@@ -480,13 +500,14 @@ export default function PerformaDesa() {
                     Formula Indikator
                   </label>
                   <div className="relative">
-                    <select 
+                    <select
                       value={uploadFormulaId}
                       onChange={(e) => setUploadFormulaId(e.target.value)}
-                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 appearance-none cursor-pointer transition-all font-medium"
+                      disabled={isFormulaUploadLoading || !uploadTahunId}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 appearance-none cursor-pointer transition-all font-medium disabled:opacity-50"
                     >
                       <option value="">-- Pilih Formula --</option>
-                      {formulas.map((f) => (
+                      {formulasUpload.map((f) => (
                         <option key={f.id} value={f.id}>
                           {f.nama}
                         </option>
@@ -506,7 +527,7 @@ export default function PerformaDesa() {
                     Pilih File Excel
                   </label>
                   <div className="relative group">
-                    <input 
+                    <input
                       type="file"
                       accept=".xlsx, .xls"
                       onChange={(e) => setUploadFile(e.target.files[0])}
@@ -541,7 +562,7 @@ export default function PerformaDesa() {
                 >
                   Batal
                 </button>
-                <button 
+                <button
                   onClick={handleUploadSubmit}
                   disabled={isUploading || !uploadFile || !uploadTahunId || !uploadFormulaId}
                   className="flex items-center gap-2 px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold transition-all shadow-md shadow-emerald-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"

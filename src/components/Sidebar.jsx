@@ -15,11 +15,33 @@ const Sidebar = React.memo(function Sidebar({ activeMenu }) {
 
   const iconProps = { size: 20, strokeWidth: 2 };
 
-  // 3. Filter menu berdasarkan hak akses (permission)
-  // Jika item tidak memiliki permission (seperti Dashboard), otomatis diizinkan
-  const allowedHomeMenus = homeMenus.filter(
-    (item) => !item.permission || can(item.permission),
-  );
+  const homeMenus = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <LayoutDashboard {...iconProps} />,
+    },
+    {
+      name: "Desa Hutan",
+      path: "/dashboard/desa-hutan",
+      icon: <Trees {...iconProps} />,
+    },
+    {
+      name: "Performa Desa",
+      path: "/dashboard/performa-desa",
+      icon: <LineChart {...iconProps} />,
+    },
+    // {
+    //   name: "Potensi Desa",
+    //   path: "/dashboard/potensi-desa",
+    //   icon: <Sprout {...iconProps} />,
+    // },
+    {
+      name: "Desa PSN",
+      path: "/dashboard/desa-psn",
+      icon: <Layers {...iconProps} />,
+    },
+  ];
 
   const allowedMetadataMenus = metadataMenus.filter(
     (item) => !item.permission || can(item.permission),
@@ -37,11 +59,10 @@ const Sidebar = React.memo(function Sidebar({ activeMenu }) {
 
       {/* --- OVERLAY MOBILE --- */}
       <div
-        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-          isOpenMobile
+        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpenMobile
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
-        }`}
+          }`}
         onClick={() => setIsOpenMobile(false)}
       />
 
@@ -97,31 +118,30 @@ const Sidebar = React.memo(function Sidebar({ activeMenu }) {
 
         {/* --- DAFTAR MENU (Scrollable Area) --- */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar-dark space-y-8">
-          {/* 4. Tampilkan BAGIAN HOME hanya jika ada menu yang diizinkan */}
-          {allowedHomeMenus.length > 0 && (
-            <div>
-              <div
-                className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
-              >
-                <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
-                  Menu Utama
-                </p>
-              </div>
-              <ul className="space-y-2">
-                {allowedHomeMenus.map((item, idx) => {
-                  const isActive = activeMenu === item.name;
-                  const Icon = item.icon;
-
-                  return (
-                    <li key={idx}>
-                      <Link
-                        to={item.path}
-                        title={isCollapsed ? item.name : ""}
-                        className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${
-                          isActive
-                            ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                            : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+          {/* BAGIAN HOME */}
+          <div>
+            <div
+              className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
+            >
+              <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
+                Menu Utama
+              </p>
+            </div>
+            <ul className="space-y-2">
+              {homeMenus.map((item, idx) => {
+                const isActive = activeMenu === item.name;
+                return (
+                  <li key={idx}>
+                    <Link
+                      to={item.path}
+                      title={isCollapsed ? item.name : ""}
+                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                          ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
+                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
                         }`}
+                    >
+                      <div
+                        className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
                       >
                         <div
                           className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
@@ -141,33 +161,21 @@ const Sidebar = React.memo(function Sidebar({ activeMenu }) {
                 })}
               </ul>
             </div>
-          )}
-
-          {/* 5. Tampilkan BAGIAN METADATA hanya jika ada menu yang diizinkan */}
-          {allowedMetadataMenus.length > 0 && (
-            <div>
-              <div
-                className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
-              >
-                <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
-                  Pengaturan Data
-                </p>
-              </div>
-              <ul className="space-y-2">
-                {allowedMetadataMenus.map((item, idx) => {
-                  const isActive = activeMenu === item.name;
-                  const Icon = item.icon;
-
-                  return (
-                    <li key={idx}>
-                      <Link
-                        to={item.path}
-                        title={isCollapsed ? item.name : ""}
-                        className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${
-                          isActive
-                            ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                            : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+            <ul className="space-y-2">
+              {metadataMenus.map((item, idx) => {
+                const isActive = activeMenu === item.name;
+                return (
+                  <li key={idx}>
+                    <Link
+                      to={item.path}
+                      title={isCollapsed ? item.name : ""}
+                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                          ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
+                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
                         }`}
+                    >
+                      <div
+                        className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
                       >
                         <div
                           className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}

@@ -40,6 +40,7 @@ import EditRole from "./pages/ManajemenRole/EditRole";
 import DetailRole from "./pages/ManajemenRole/DetailRole";
 import AssignPermission from "./pages/ManajemenRole/AssignPermission";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
+import DesaPSN from "./pages/DesaPSN/DesaPSN";
 
 const App = () => {
   return (
@@ -84,6 +85,14 @@ const App = () => {
         element={<EditPerformaDesa />}
       />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+      <Route
+        path="/dashboard/desa-psn"
+        element={
+          <ProtectedRoute>
+            <DesaPSN />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Indikator */}
       <Route path="/dashboard/indikator" element={<Indikator />} />
@@ -186,6 +195,16 @@ const App = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/dashboard/site-settings"
+        element={
+          <ProtectedRoute
+            allowedPermissions={[
+              "site:read",
+              "site:update",
+            ]}
+          >
+            <SiteSettings />
 
       <Route
         path="/dashboard/manajemen-role/create"

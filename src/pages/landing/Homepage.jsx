@@ -99,11 +99,21 @@ const Homepage = () => {
     staleTime,
   });
 
+  const { data: generalArr = [], isLoading: generalLoading } = useQuery({
+    queryKey: ["siteSettings", "general"],
+    queryFn: () => siteSettingService.getByCategory("general"),
+    staleTime,
+  });
+
   const hero = siteSettingService.toMap(heroArr);
   const profil = siteSettingService.toMap(profilArr);
   const features = siteSettingService.toMap(featuresArr);
+  const general = siteSettingService.toMap(generalArr);
 
-  const isLoading = heroLoading || profilLoading || featuresLoading;
+  // Logo: utamakan section_logo_image (profil), fallback ke site_logo (general/navbar)
+  const logoSrc = profil.section_logo_image || general.site_logo || null;
+
+  const isLoading = heroLoading || profilLoading || featuresLoading || generalLoading;
 
   // Fallback background jika belum ada gambar di DB
   const heroBg = hero.hero_background_image
@@ -200,9 +210,9 @@ const Homepage = () => {
 
             {/* Right: Logo Section */}
             <div className="flex-1 flex justify-center lg:justify-end">
-              {profil.section_logo_image ? (
+              {logoSrc ? (
                 <img
-                  src={profil.section_logo_image}
+                  src={logoSrc}
                   alt="Logo Profil Desa Hutan"
                   className="w-64 h-64 md:w-80 md:h-80 object-contain rounded-full shadow-xl border-4 border-white"
                 />

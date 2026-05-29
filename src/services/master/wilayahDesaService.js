@@ -40,4 +40,14 @@ export const wilayahDesaService = {
     const response = await masterInstance.delete(`/wilayah-desa/${id}`);
     return response.data;
   },
+
+  async searchMap(query, limit = 5) {
+    const response = await masterInstance.get("/wilayah-desa/search-map", {
+      params: {
+        q: query,
+        limit: limit,
+      },
+    });
+    return response.data;
+  },
 };

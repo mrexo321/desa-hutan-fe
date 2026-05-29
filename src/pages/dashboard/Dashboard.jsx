@@ -425,7 +425,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout activeMenu={"Dashboard"}>
       {/* =========================================
-          HERO MAP SECTION (BISA FULLSCREEN)
+          TOMBOL BUKA PETA (Jika tidak fullscreen)
       ========================================= */}
       <div
         className={`transition-all duration-500 ease-in-out ${isFullscreen
@@ -723,15 +723,11 @@ const Dashboard = () => {
             {/* --- HUD KANAN ATAS: TOOLBAR FULLSCREEN & KONTROL MAP --- */}
             <div className="absolute top-6 right-6 z-10 flex flex-col gap-3 items-end pointer-events-none">
               <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white/80 hover:bg-white text-gray-700 hover:text-[#00B67A] backdrop-blur-xl border border-white/50 shadow-lg rounded-[14px] transition-all focus:outline-none"
-                title={isFullscreen ? "Keluar Fullscreen" : "Mode Layar Penuh"}
+                onClick={() => setIsFullscreen(false)}
+                className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white/80 hover:bg-white text-gray-700 hover:text-red-500 backdrop-blur-xl border border-white/50 shadow-lg rounded-[14px] transition-all focus:outline-none"
+                title="Tutup Peta"
               >
-                {isFullscreen ? (
-                  <Minimize size={20} strokeWidth={2} />
-                ) : (
-                  <Maximize size={20} strokeWidth={2} />
-                )}
+                <X size={20} strokeWidth={2.5} />
               </button>
 
               <div className="relative pointer-events-auto">
@@ -924,12 +920,14 @@ const Dashboard = () => {
             <p>Token Mapbox tidak ditemukan.</p>
           </div>
         )}
-      </div>
+        </div>
+      )}
 
       {/* =========================================
-          KONTEN DASHBOARD BAWAH (Disembunyikan saat Fullscreen)
+          KONTEN DASHBOARD BAWAH (Tidak di-render saat Fullscreen)
       ========================================= */}
-      <div className={isFullscreen ? "hidden" : "block"}>
+      {!isFullscreen && (
+        <div className="block animate-in fade-in duration-500">
         {/* FILTER & SEARCH */}
         {activeTab === "Ringkasan" && (
           <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">

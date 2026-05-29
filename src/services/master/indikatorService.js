@@ -72,9 +72,9 @@ export const indikatorService = {
   // ==========================================
 
   // Ambil semua data formula
-  async getAllFormula() {
+  async getAllFormula(params = {}) {
     // Note: Sesuaikan "/master-indikator-perhitungan" dengan route API backend Anda
-    const response = await masterInstance.get("/master-indikator-perhitungan");
+    const response = await masterInstance.get("/master-indikator-perhitungan", { params });
     return response.data;
   },
 

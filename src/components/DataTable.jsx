@@ -70,7 +70,7 @@ const DataTable = ({
                 {columns.map((col, colIndex) => (
                   <td key={colIndex} className="py-4 px-6">
                     {/* Jika ada custom render, gunakan itu. Jika tidak, tampilkan value text biasa */}
-                    {col.render ? col.render(row) : row[col.accessor]}
+                    {col.render ? col.render(row, rowIndex) : row[col.accessor]}
                   </td>
                 ))}
               </tr>

@@ -41,6 +41,9 @@ const TabWilayahHutan = () => {
     totalPage: 1,
   };
 
+  console.log(listData);
+
+
   // Mapping data untuk menambahkan nomor urut yang presisi dengan pagination
   const tableData = useMemo(() => {
     return listData.map((item, index) => ({

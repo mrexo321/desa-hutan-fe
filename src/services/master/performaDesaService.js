@@ -36,4 +36,8 @@ export const performaDesaService = {
     });
     return response.data;
   },
+  async getIndexPerformaDesa(params) {
+    const response = await masterInstance.get("/performa-desa-hutan/index", { params });
+    return response.data;
+  },
 };

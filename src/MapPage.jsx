@@ -60,35 +60,28 @@ export default function MapPage() {
   const [clickedLocation, setClickedLocation] = useState(null);
   const navigate = useNavigate();
 
-  // --- STATE PENCARIAN (LOKAL) ---
+  // --- STATE PENCARIAN (API SEARCH-MAP) ---
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // --- FETCHING SEMUA DATA DESA DARI API INTERNAL UNTUK PENCARIAN ---
-  const { data: responseDesa, isLoading: isFetchingDesaData } = useQuery({
-    queryKey: ["allVillagesMap"],
-    queryFn: () => wilayahDesaService.getAllDesa(1, 1000), // Ambil banyak data sekaligus
-    staleTime: 60000,
+  // Debounce search query (400ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // --- FETCHING SEARCH-MAP DARI API ---
+  const { data: searchResponse, isFetching: isFetchingSearch } = useQuery({
+    queryKey: ["searchMapDesa", debouncedQuery],
+    queryFn: () => wilayahDesaService.searchMap(debouncedQuery, 5),
+    enabled: debouncedQuery.trim().length >= 2,
+    staleTime: 30000,
   });
 
-  const listDesa = responseDesa?.items || [];
-
-  console.log(listDesa);
-
-  // --- FILTERING LOKAL BERDASARKAN INPUT ---
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 2) return [];
-
-    const query = searchQuery.toLowerCase();
-    return listDesa
-      .filter(
-        (desa) =>
-          desa.nama?.toLowerCase().includes(query) ||
-          desa.kecamatan?.toLowerCase().includes(query) ||
-          desa.kodeKemendagri?.toLowerCase().includes(query),
-      )
-      .slice(0, 8); // Batasi maksimal 8 hasil agar dropdown tidak terlalu panjang
-  }, [searchQuery, listDesa]);
+  const searchResults = searchResponse?.data || [];
 
   // 2. State Tema Peta
   const [mapStyle, setMapStyle] = useState(
@@ -97,8 +90,8 @@ export default function MapPage() {
   const [activeMenu, setActiveMenu] = useState(null);
 
   // 3. State Visibilitas Layer WMS (ON/OFF)
-  const [showLayerHutan, setShowLayerHutan] = useState(true);
-  const [showLayerDesa, setShowLayerDesa] = useState(true);
+  const [showLayerHutan, setShowLayerHutan] = useState(false);
+  const [showLayerDesa, setShowLayerDesa] = useState(false);
 
   // 4. State Opacity Layer WMS (0 - 100)
   const [opacityHutan, setOpacityHutan] = useState(80);
@@ -124,18 +117,18 @@ export default function MapPage() {
     staleTime: 5000,
   });
 
-  const WMS_BASE = import.meta.env.VITE_GEOSERVER_WMS_BASE;
+  const WMS_BASE = import.meta.env.VITE_GEOSERVER_GWC_BASE;
 
   const WMS_HUTAN = useMemo(
     () =>
-      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa-gis:vw_wilayah_hutan&styles=wilayah_hutan_style&_v=${hutanVersion}`,
-    [hutanVersion],
+      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:vw_wilayah_hutan&styles=desa-gis:wilayah_hutan_style&TILED=true&_v=${hutanVersion}`,
+    [hutanVersion, WMS_BASE],
   );
 
   const WMS_DESA = useMemo(
     () =>
-      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa-gis:wilayah_desa_geom&styles=wilayah_desa_style`,
-    [],
+      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:wilayah_desa_geom&styles=desa-gis:wilayah_desa_style&TILED=true`,
+    [WMS_BASE],
   );
 
   useEffect(() => {
@@ -198,24 +191,25 @@ export default function MapPage() {
     setSearchQuery(desa.nama);
     setShowDropdown(false);
 
-    // Ambil koordinat dari data desa (sesuaikan dengan nama properti dari API Anda)
-    // Jika API tidak mengirimkan coord, fallback ke posisi saat ini agar tidak error
-    const lng = Number(desa.longitude) || Number(desa.lng) || 106.8229;
-    const lat = Number(desa.latitude) || Number(desa.lat) || -6.2088;
+    // Ambil koordinat dari centroid response API search-map
+    const lat = desa.centroid?.lat;
+    const lng = desa.centroid?.lng;
 
-    // Animasi terbang ke lokasi
-    mapRef.current?.flyTo({
-      center: [lng, lat],
-      zoom: 15,
-      duration: 2500,
-      essential: true,
-    });
+    if (lat && lng) {
+      // Animasi terbang ke lokasi desa
+      mapRef.current?.flyTo({
+        center: [lng, lat],
+        zoom: 14,
+        duration: 2500,
+        essential: true,
+      });
 
-    // Otomatis pasang marker popup di lokasi desa
-    setClickedLocation({
-      longitude: lng,
-      latitude: lat,
-    });
+      // Otomatis pasang marker popup di lokasi desa
+      setClickedLocation({
+        longitude: lng,
+        latitude: lat,
+      });
+    }
   };
 
   if (!MAPBOX_TOKEN) {
@@ -517,13 +511,13 @@ export default function MapPage() {
             </button>
           </div>
 
-          {/* HASIL PENCARIAN LOKAL */}
+          {/* HASIL PENCARIAN API */}
           {showDropdown && searchQuery.length >= 2 && (
             <div className="absolute top-[110%] left-0 w-full bg-white/95 backdrop-blur-xl border border-white shadow-[0_15px_40px_rgb(0,0,0,0.12)] rounded-[16px] overflow-hidden z-10 animate-in fade-in slide-in-from-top-2 duration-200">
-              {isFetchingDesaData ? (
+              {isFetchingSearch ? (
                 <div className="text-center py-5 text-xs text-gray-500 flex flex-col items-center gap-2">
                   <Loader2 size={16} className="animate-spin text-[#2D7344]" />
-                  <span>Memuat database desa...</span>
+                  <span>Mencari desa...</span>
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="max-h-[250px] overflow-y-auto custom-scrollbar">
@@ -542,7 +536,10 @@ export default function MapPage() {
                           {desa.nama}
                         </span>
                         <span className="text-[11px] text-gray-500 line-clamp-1">
-                          Kec. {desa.kecamatan} • Kode: {desa.kodeKemendagri}
+                          {desa.kecamatan}, {desa.kabupaten} • {desa.provinsi}
+                        </span>
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          {desa.kode_kemendagri}
                         </span>
                       </div>
                     </button>

@@ -35,18 +35,15 @@ const Klasifikasi = () => {
 
   // State Add
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [addForm, setAddForm] = useState({ kode: "", nama: "", warna: "#2D7344" });
+  const [addForm, setAddForm] = useState({ kode: "", nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100 });
 
   // State Edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
-    id: "",
-    kode: "",
-    nama: "",
-    warna: "",
-    originalNama: "",
-    originalWarna: "",
-    originalKode: "",
+    id: "", kode: "", nama: "", warna: "",
+    nilaiMin: 0, nilaiMax: 100,
+    originalNama: "", originalWarna: "", originalKode: "",
+    originalNilaiMin: 0, originalNilaiMax: 100,
   });
 
   // State Delete
@@ -69,33 +66,36 @@ const Klasifikasi = () => {
 
   const dataHutan = responseHutan?.data || responseHutan || [];
 
-  // Data dummy buat desa
-  const dataDesa = useMemo(
-    () => [
-      { id: 1, nama: "Desa Swadaya", warna: "#F59E0B" },
-      { id: 2, nama: "Desa Swakarya", warna: "#3B82F6" },
-    ],
-    [],
-  );
+  const {
+    data: responseDesa,
+    isLoading: isLoadingDesa,
+    isError: isErrorDesa,
+  } = useQuery({
+    queryKey: ["klasifikasi-desa"],
+    queryFn: klasifikasiService.getAllClassificationDesa,
+    enabled: activeTab === "desa",
+  });
 
-  // Fetch Detail Hutan (Untuk Preview)
-  const { data: responsePreviewHutan, isFetching: isFetchingPreviewHutan } =
-    useQuery({
-      queryKey: ["klasifikasi-hutan-detail", previewId],
-      queryFn: () => klasifikasiService.getForestClassificationById(previewId),
-      enabled: !!previewId && activeTab === "hutan", // Hanya jalan jika ada ID & di tab hutan
-    });
+  const dataDesa = responseDesa?.data || responseDesa || [];
 
-  // Menentukan Data Preview (Dari API Hutan ATAU Array Desa)
+  const { data: responsePreviewHutan, isFetching: isFetchingPreviewHutan } = useQuery({
+    queryKey: ["klasifikasi-hutan-detail", previewId],
+    queryFn: () => klasifikasiService.getForestClassificationById(previewId),
+    enabled: !!previewId && activeTab === "hutan",
+  });
+
+  const { data: responsePreviewDesa, isFetching: isFetchingPreviewDesa } = useQuery({
+    queryKey: ["klasifikasi-desa-detail", previewId],
+    queryFn: () => klasifikasiService.getDesaClassificationById(previewId),
+    enabled: !!previewId && activeTab === "desa",
+  });
+
   const previewData = useMemo(() => {
-    if (activeTab === "hutan") {
-      return responsePreviewHutan?.data || responsePreviewHutan;
-    }
-    return dataDesa.find((d) => d.id === previewId);
-  }, [activeTab, responsePreviewHutan, previewId, dataDesa]);
+    if (activeTab === "hutan") return responsePreviewHutan?.data || responsePreviewHutan;
+    return responsePreviewDesa?.data || responsePreviewDesa;
+  }, [activeTab, responsePreviewHutan, responsePreviewDesa]);
 
-  const isFetchingPreview =
-    activeTab === "hutan" ? isFetchingPreviewHutan : false;
+  const isFetchingPreview = activeTab === "hutan" ? isFetchingPreviewHutan : isFetchingPreviewDesa;
 
   // ==========================================
   // 2. MUTATIONS (CREATE, UPDATE, DELETE)
@@ -144,13 +144,45 @@ const Klasifikasi = () => {
       setIsDeleteModalOpen(false);
       setItemToDelete(null);
     },
-    onError: (error) => {
-      toast.error(
-        error.response?.data?.message ||
-        "Terjadi kesalahan saat menghapus data.",
-      );
-    },
+    onError: (e) => toast.error(e.response?.data?.message || "Gagal menghapus data."),
   });
+
+  // === DESA MUTATIONS ===
+  const createDesaMutation = useMutation({
+    mutationFn: (payload) => klasifikasiService.createDesaClassification(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["klasifikasi-desa"] });
+      toast.success("Data klasifikasi desa berhasil ditambahkan!");
+      setIsAddModalOpen(false);
+      setAddForm({ nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100 });
+    },
+    onError: (e) => toast.error(e.response?.data?.message || "Gagal menyimpan data."),
+  });
+
+  const updateDesaMutation = useMutation({
+    mutationFn: ({ id, payload }) => klasifikasiService.updateDesaClassification(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["klasifikasi-desa"] });
+      toast.success("Data klasifikasi desa berhasil diperbarui!");
+      setIsEditModalOpen(false);
+    },
+    onError: (e) => toast.error(e.response?.data?.message || "Gagal memperbarui data."),
+  });
+
+  const deleteDesaMutation = useMutation({
+    mutationFn: (id) => klasifikasiService.deleteDesaClassification(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["klasifikasi-desa"] });
+      toast.success("Data klasifikasi desa berhasil dihapus!");
+      setIsDeleteModalOpen(false);
+      setItemToDelete(null);
+    },
+    onError: (e) => toast.error(e.response?.data?.message || "Gagal menghapus data."),
+  });
+
+  const activeMutation = activeTab === "hutan" ? createMutation : createDesaMutation;
+  const activeUpdateMutation = activeTab === "hutan" ? updateMutation : updateDesaMutation;
+  const activeDeleteMutation = activeTab === "hutan" ? deleteMutation : deleteDesaMutation;
 
   // ==========================================
   // 3. HANDLERS
@@ -175,42 +207,36 @@ const Klasifikasi = () => {
 
   const handleAddSubmit = (e) => {
     e.preventDefault();
-    if (!addForm.nama || !addForm.warna)
-      return toast.warning("Nama dan Warna wajib diisi!");
-    createMutation.mutate({ nama: addForm.nama, warna: addForm.warna });
+    if (!addForm.nama || !addForm.warna) return toast.warning("Nama dan Warna wajib diisi!");
+    if (activeTab === "desa") {
+      createDesaMutation.mutate({ nama: addForm.nama, warna: addForm.warna, nilaiMin: Number(addForm.nilaiMin), nilaiMax: Number(addForm.nilaiMax) });
+    } else {
+      createMutation.mutate({ nama: addForm.nama, warna: addForm.warna });
+    }
   };
 
   // Handler Edit
   const handleEditClick = (row) => {
     setEditForm({
-      id: row.id,
-      kode: row.kode,
-      nama: row.nama,
-      warna: row.warna,
-      originalNama: row.nama,
-      originalWarna: row.warna,
+      id: row.id, kode: row.kode || "", nama: row.nama, warna: row.warna,
+      nilaiMin: row.nilaiMin ?? 0, nilaiMax: row.nilaiMax ?? 100,
+      originalNama: row.nama, originalWarna: row.warna, originalKode: row.kode || "",
+      originalNilaiMin: row.nilaiMin ?? 0, originalNilaiMax: row.nilaiMax ?? 100,
     });
     setIsEditModalOpen(true);
   };
 
   const handleUpdateSubmit = (e) => {
     e.preventDefault();
-    if (!editForm.nama || !editForm.warna)
-      return toast.warning("Nama dan Warna wajib diisi!");
-
-    if (
-      editForm.nama === editForm.originalNama &&
-      editForm.warna === editForm.originalWarna
-    ) {
-      toast.info("Tidak ada perubahan data.");
-      setIsEditModalOpen(false);
-      return;
+    if (!editForm.nama || !editForm.warna) return toast.warning("Nama dan Warna wajib diisi!");
+    if (activeTab === "desa") {
+      updateDesaMutation.mutate({ id: editForm.id, payload: { nama: editForm.nama, warna: editForm.warna, nilaiMin: Number(editForm.nilaiMin), nilaiMax: Number(editForm.nilaiMax) } });
+    } else {
+      if (editForm.nama === editForm.originalNama && editForm.warna === editForm.originalWarna) {
+        toast.info("Tidak ada perubahan data."); setIsEditModalOpen(false); return;
+      }
+      updateMutation.mutate({ id: editForm.id, payload: { nama: editForm.nama, warna: editForm.warna } });
     }
-
-    updateMutation.mutate({
-      id: editForm.id,
-      payload: { nama: editForm.nama, warna: editForm.warna },
-    });
   };
 
   // Handler Delete
@@ -220,7 +246,9 @@ const Klasifikasi = () => {
   };
 
   const handleConfirmDelete = () => {
-    if (itemToDelete) deleteMutation.mutate(itemToDelete.id);
+    if (!itemToDelete) return;
+    if (activeTab === "desa") deleteDesaMutation.mutate(itemToDelete.id);
+    else deleteMutation.mutate(itemToDelete.id);
   };
 
   // ==========================================
@@ -261,16 +289,15 @@ const Klasifikasi = () => {
         accessor: "warna",
         render: (row) => (
           <div className="flex items-center gap-3">
-            <div
-              className="w-6 h-6 rounded-md shadow-inner border border-black/10"
-              style={{ backgroundColor: row.warna }}
-            ></div>
-            <span className="font-mono text-xs font-semibold text-slate-500 uppercase">
-              {row.warna}
-            </span>
+            <div className="w-6 h-6 rounded-md shadow-inner border border-black/10" style={{ backgroundColor: row.warna }}></div>
+            <span className="font-mono text-xs font-semibold text-slate-500 uppercase">{row.warna}</span>
           </div>
         ),
       },
+      ...(activeTab === "desa" ? [
+        { header: "Nilai Min", accessor: "nilaiMin", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilaiMin ?? "-"}</span> },
+        { header: "Nilai Max", accessor: "nilaiMax", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilaiMax ?? "-"}</span> },
+      ] : []),
       {
         header: "Aksi",
         className: "text-center w-36",
@@ -378,8 +405,8 @@ const Klasifikasi = () => {
             <DataTable
               columns={columns}
               data={displayData}
-              isLoading={activeTab === "hutan" ? isLoadingHutan : false}
-              isError={activeTab === "hutan" ? isErrorHutan : false}
+              isLoading={activeTab === "hutan" ? isLoadingHutan : isLoadingDesa}
+              isError={activeTab === "hutan" ? isErrorHutan : isErrorDesa}
               searchQuery={searchQuery}
               emptyMessage={`Belum ada data klasifikasi ${activeTab} yang ditambahkan`}
             />
@@ -500,76 +527,48 @@ const Klasifikasi = () => {
 
             <form onSubmit={handleAddSubmit} className="p-6">
               <div className="space-y-5">
+                {/* Nama */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Nama Klasifikasi
-                  </label>
-                  <input
-                    type="text"
-                    value={addForm.nama}
-                    onChange={(e) =>
-                      setAddForm({ ...addForm, nama: e.target.value })
-                    }
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Klasifikasi</label>
+                  <input type="text" value={addForm.nama} onChange={(e) => setAddForm({ ...addForm, nama: e.target.value })}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
-                    placeholder={`Masukkan nama klasifikasi ${activeTab}...`}
-                    required
-                  />
+                    placeholder={`Masukkan nama klasifikasi ${activeTab}...`} required />
                 </div>
 
+                {/* Warna */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Warna Peta (Hex Code)
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Warna Peta (Hex Code)</label>
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-11 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
-                      <input
-                        type="color"
-                        value={addForm.warna}
-                        onChange={(e) =>
-                          setAddForm({ ...addForm, warna: e.target.value })
-                        }
-                        className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer"
-                        required
-                      />
+                      <input type="color" value={addForm.warna} onChange={(e) => setAddForm({ ...addForm, warna: e.target.value })} className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer" required />
                     </div>
-                    <input
-                      type="text"
-                      value={addForm.warna}
-                      onChange={(e) =>
-                        setAddForm({ ...addForm, warna: e.target.value })
-                      }
+                    <input type="text" value={addForm.warna} onChange={(e) => setAddForm({ ...addForm, warna: e.target.value })}
                       className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all uppercase"
-                      placeholder="#000000"
-                      pattern="^#[0-9A-Fa-f]{6}$"
-                      title="Format warna harus Hex (contoh: #FF0000)"
-                      required
-                    />
+                      placeholder="#000000" pattern="^#[0-9A-Fa-f]{6}$" required />
                   </div>
                 </div>
+
+                {/* nilaiMin & nilaiMax — hanya untuk tab desa */}
+                {activeTab === "desa" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nilai Min (0-100)</label>
+                      <input type="number" min={0} max={100} value={addForm.nilaiMin} onChange={(e) => setAddForm({ ...addForm, nilaiMin: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nilai Max (0-100)</label>
+                      <input type="number" min={0} max={100} value={addForm.nilaiMax} onChange={(e) => setAddForm({ ...addForm, nilaiMax: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all" required />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 mt-8">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
-                  disabled={createMutation.isPending}
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={createMutation.isPending}
-                  className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#2D7344] hover:bg-[#235c36] rounded-xl transition-colors disabled:opacity-70"
-                >
-                  {createMutation.isPending ? (
-                    <>
-                      <Loader2 size={16} className="animate-spin" />{" "}
-                      Menyimpan...
-                    </>
-                  ) : (
-                    "Simpan Data"
-                  )}
+                <button type="button" onClick={() => setIsAddModalOpen(false)} className="px-5 py-2.5 text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors" disabled={createMutation.isPending || createDesaMutation.isPending}>Batal</button>
+                <button type="submit" disabled={createMutation.isPending || createDesaMutation.isPending} className="flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-white bg-[#2D7344] hover:bg-[#235c36] rounded-xl transition-colors disabled:opacity-70">
+                  {(createMutation.isPending || createDesaMutation.isPending) ? <><Loader2 size={16} className="animate-spin" /> Menyimpan...</> : "Simpan Data"}
                 </button>
               </div>
             </form>
@@ -597,67 +596,42 @@ const Klasifikasi = () => {
 
             <form onSubmit={handleUpdateSubmit} className="p-6">
               <div className="space-y-5">
+                {/* Nama */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Kode Klasifikasi
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.kode}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, kode: e.target.value })
-                    }
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Klasifikasi</label>
+                  <input type="text" value={editForm.nama} onChange={(e) => setEditForm({ ...editForm, nama: e.target.value })}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
-                    placeholder={`Masukkan kode klasifikasi ${activeTab}...`}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Nama Klasifikasi
-                  </label>
-                  <input
-                    type="text"
-                    value={editForm.nama}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, nama: e.target.value })
-                    }
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
-                    placeholder={`Masukkan nama klasifikasi ${activeTab}...`}
-                    required
-                  />
+                    placeholder={`Masukkan nama klasifikasi ${activeTab}...`} required />
                 </div>
 
+                {/* Warna */}
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">
-                    Warna Peta (Hex Code)
-                  </label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Warna Peta (Hex Code)</label>
                   <div className="flex items-center gap-3">
                     <div className="relative w-12 h-11 rounded-xl overflow-hidden border border-slate-200 shadow-sm shrink-0">
-                      <input
-                        type="color"
-                        value={editForm.warna}
-                        onChange={(e) =>
-                          setEditForm({ ...editForm, warna: e.target.value })
-                        }
-                        className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer"
-                        required
-                      />
+                      <input type="color" value={editForm.warna} onChange={(e) => setEditForm({ ...editForm, warna: e.target.value })} className="absolute -top-2 -left-2 w-16 h-16 cursor-pointer" required />
                     </div>
-                    <input
-                      type="text"
-                      value={editForm.warna}
-                      onChange={(e) =>
-                        setEditForm({ ...editForm, warna: e.target.value })
-                      }
+                    <input type="text" value={editForm.warna} onChange={(e) => setEditForm({ ...editForm, warna: e.target.value })}
                       className="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all uppercase"
-                      placeholder="#000000"
-                      pattern="^#[0-9A-Fa-f]{6}$"
-                      title="Format warna harus Hex (contoh: #FF0000)"
-                      required
-                    />
+                      placeholder="#000000" pattern="^#[0-9A-Fa-f]{6}$" required />
                   </div>
                 </div>
+
+                {/* nilaiMin & nilaiMax — hanya untuk tab desa */}
+                {activeTab === "desa" && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nilai Min (0-100)</label>
+                      <input type="number" min={0} max={100} value={editForm.nilaiMin} onChange={(e) => setEditForm({ ...editForm, nilaiMin: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all" required />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nilai Max (0-100)</label>
+                      <input type="number" min={0} max={100} value={editForm.nilaiMax} onChange={(e) => setEditForm({ ...editForm, nilaiMax: e.target.value })}
+                        className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all" required />
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3 mt-8">

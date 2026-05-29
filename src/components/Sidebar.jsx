@@ -44,10 +44,15 @@ export default function Sidebar({ activeMenu }) {
       path: "/dashboard/performa-desa",
       icon: <LineChart {...iconProps} />,
     },
+    // {
+    //   name: "Potensi Desa",
+    //   path: "/dashboard/potensi-desa",
+    //   icon: <Sprout {...iconProps} />,
+    // },
     {
-      name: "Potensi Desa",
-      path: "/dashboard/potensi-desa",
-      icon: <Sprout {...iconProps} />,
+      name: "Desa PSN",
+      path: "/dashboard/desa-psn",
+      icon: <Layers {...iconProps} />,
     },
   ];
 
@@ -111,11 +116,10 @@ export default function Sidebar({ activeMenu }) {
 
       {/* --- OVERLAY MOBILE --- */}
       <div
-        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-          isOpenMobile
+        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpenMobile
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
-        }`}
+          }`}
         onClick={() => setIsOpenMobile(false)}
       />
 
@@ -188,11 +192,10 @@ export default function Sidebar({ activeMenu }) {
                     <Link
                       to={item.path}
                       title={isCollapsed ? item.name : ""}
-                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${
-                        isActive
+                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
                           ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
                           : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
-                      }`}
+                        }`}
                     >
                       <div
                         className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
@@ -230,11 +233,10 @@ export default function Sidebar({ activeMenu }) {
                     <Link
                       to={item.path}
                       title={isCollapsed ? item.name : ""}
-                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${
-                        isActive
+                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
                           ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
                           : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
-                      }`}
+                        }`}
                     >
                       <div
                         className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}

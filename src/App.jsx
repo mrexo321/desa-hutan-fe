@@ -34,6 +34,7 @@ import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
 import TahunIndikatorPerhitungan from "./pages/Indikator/TahunIndikatorPerhitungan";
 import FormTahunIndicator from "./pages/Indikator/FormTahunIndicator";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
+import DesaPSN from "./pages/DesaPSN/DesaPSN";
 
 const App = () => {
   return (
@@ -69,6 +70,14 @@ const App = () => {
         element={<EditPerformaDesa />}
       />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+      <Route
+        path="/dashboard/desa-psn"
+        element={
+          <ProtectedRoute>
+            <DesaPSN />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Indikator */}
       <Route path="/dashboard/indikator" element={<Indikator />} />
@@ -167,6 +176,19 @@ const App = () => {
             ]}
           >
             <ManajemenRoles />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/site-settings"
+        element={
+          <ProtectedRoute
+            allowedPermissions={[
+              "site:read",
+              "site:update",
+            ]}
+          >
+            <SiteSettings />
           </ProtectedRoute>
         }
       />

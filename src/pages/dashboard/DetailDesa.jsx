@@ -18,12 +18,9 @@ const DesaDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Mengambil data yang dilempar dari halaman ProvinceDetail
   const desa = location.state?.desaData;
   const provinceName = location.state?.provinceName || "Provinsi";
 
-  // Jika user refresh halaman secara langsung, state akan hilang.
-  // Ini adalah fallback UI yang mengarahkan mereka kembali.
   if (!desa) {
     return (
       <DashboardLayout activeMenu={"Dashboard"}>
@@ -46,7 +43,6 @@ const DesaDetail = () => {
     );
   }
 
-  // Helper formatting
   const formatJenisInteraksi = (jenis) => {
     if (!jenis) return "-";
     return jenis
@@ -58,10 +54,20 @@ const DesaDetail = () => {
   const isMayoritas =
     desa.ringkasanInteraksi?.klasifikasi?.toLowerCase() === "mayoritas";
 
+  const getKlasifikasiBadge = (klasifikasi) => {
+    const map = {
+      mayoritas: "bg-emerald-50 text-emerald-700 border-emerald-200",
+      sebagian_besar: "bg-amber-50 text-amber-700 border-amber-200",
+      irisan_kecil: "bg-red-50 text-red-700 border-red-200",
+    };
+    return map[klasifikasi] || "bg-gray-100 text-gray-600 border-gray-200";
+  };
+
   return (
     <DashboardLayout activeMenu={"Dashboard"}>
       <main className="flex-1 flex flex-col h-full overflow-y-auto bg-[#F8FAFC] custom-scrollbar">
         <div className="px-6 md:px-10 py-8 max-w-7xl mx-auto w-full space-y-8">
+
           {/* --- BREADCRUMB & BACK BUTTON --- */}
           <div>
             <button
@@ -75,7 +81,6 @@ const DesaDetail = () => {
 
           {/* --- HERO HEADER --- */}
           <div className="bg-white rounded-[24px] p-8 shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-6 relative overflow-hidden">
-            {/* Background aksen */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-bl from-emerald-50/80 to-transparent rounded-bl-[100px] pointer-events-none"></div>
 
             <div className="flex items-start gap-6 relative z-10">
@@ -109,11 +114,10 @@ const DesaDetail = () => {
                 Status Interaksi
               </p>
               <div
-                className={`inline-flex items-center px-4 py-2 rounded-xl border ${
-                  isMayoritas
+                className={`inline-flex items-center px-4 py-2 rounded-xl border ${isMayoritas
                     ? "bg-emerald-50 border-emerald-200 text-emerald-700"
                     : "bg-amber-50 border-amber-200 text-amber-700"
-                }`}
+                  }`}
               >
                 <span className="font-bold capitalize text-lg">
                   {desa.ringkasanInteraksi?.klasifikasi || "Minoritas"}
@@ -135,9 +139,7 @@ const DesaDetail = () => {
               </div>
               <div className="text-4xl font-black text-gray-800">
                 {desa.luas_desa_ha?.toLocaleString() || "0"}{" "}
-                <span className="text-lg text-gray-400 font-medium ml-1">
-                  Ha
-                </span>
+                <span className="text-lg text-gray-400 font-medium ml-1">Ha</span>
               </div>
             </div>
 
@@ -151,11 +153,8 @@ const DesaDetail = () => {
                 </span>
               </div>
               <div className="text-4xl font-black text-gray-800">
-                {desa.ringkasanInteraksi?.totalLuasIrisanHa?.toLocaleString() ||
-                  "0"}{" "}
-                <span className="text-lg text-gray-400 font-medium ml-1">
-                  Ha
-                </span>
+                {desa.ringkasanInteraksi?.totalLuasIrisanHa?.toLocaleString() || "0"}{" "}
+                <span className="text-lg text-gray-400 font-medium ml-1">Ha</span>
               </div>
             </div>
 
@@ -168,7 +167,6 @@ const DesaDetail = () => {
                   Rasio Tutupan
                 </span>
               </div>
-
               <div className="relative w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-3">
                 <div
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-1000 ease-out"
@@ -179,8 +177,7 @@ const DesaDetail = () => {
               </div>
               <div className="flex justify-between items-center text-sm font-bold">
                 <span className="text-emerald-600">
-                  {desa.ringkasanInteraksi?.totalPersenIrisan || 0}% Tercover
-                  Hutan
+                  {desa.ringkasanInteraksi?.totalPersenIrisan || 0}% Tercover Hutan
                 </span>
                 <span className="text-gray-400">100%</span>
               </div>
@@ -199,15 +196,13 @@ const DesaDetail = () => {
                     Rincian Area Hutan
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Penjabaran spesifik fungsi kawasan hutan yang beririsan
-                    dengan desa.
+                    Penjabaran spesifik fungsi kawasan hutan yang beririsan dengan desa.
                   </p>
                 </div>
               </div>
-
               <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2">
                 <span className="text-sm font-bold text-gray-700">
-                  Total: {desa.detailHutan?.length || 0} Titik
+                  Total: {desa.detailHutan?.length || 0} Kawasan
                 </span>
               </div>
             </div>
@@ -220,19 +215,31 @@ const DesaDetail = () => {
                       key={idx}
                       className="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all group"
                     >
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="flex items-center gap-3">
+                      {/* Card Header: icon + nama + badge klasifikasi */}
+                      <div className="flex justify-between items-start mb-5">
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div className="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center shrink-0">
                             <MapPinned size={18} className="text-emerald-600" />
                           </div>
-                          <h4 className="font-bold text-gray-900 text-base leading-tight">
-                            {hutan.fungsiKawasan ||
-                              "Kawasan Tidak Diketahui / APL"}
-                          </h4>
+                          <div className="min-w-0">
+                            <h4 className="font-bold text-gray-900 text-sm leading-tight">
+                              {hutan.fungsiKawasan?.nama || "Kawasan Tidak Diketahui / APL"}
+                            </h4>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              Kode {hutan.fungsiKawasan?.kode || "-"}
+                            </p>
+                          </div>
                         </div>
+                        {/* Badge klasifikasi */}
+                        <span
+                          className={`text-xs font-bold px-2.5 py-1 rounded-lg border capitalize shrink-0 ml-2 ${getKlasifikasiBadge(hutan.klasifikasi)}`}
+                        >
+                          {hutan.klasifikasi?.replace(/_/g, " ") || "-"}
+                        </span>
                       </div>
 
-                      <div className="flex flex-col gap-3">
+                      {/* Rows */}
+                      <div className="flex flex-col gap-1">
                         <div className="flex justify-between items-center py-2 border-b border-gray-50">
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                             Jenis Interaksi
@@ -241,24 +248,35 @@ const DesaDetail = () => {
                             {formatJenisInteraksi(hutan.jenisInteraksi)}
                           </span>
                         </div>
+
                         <div className="flex justify-between items-center py-2 border-b border-gray-50">
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                             Luas Irisan
                           </span>
                           <span className="text-sm font-black text-gray-800">
                             {hutan.luasIrisanHa?.toLocaleString() || "0"}{" "}
-                            <span className="text-gray-400 font-medium">
-                              Ha
-                            </span>
+                            <span className="text-gray-400 font-medium">Ha</span>
                           </span>
                         </div>
-                        <div className="flex justify-between items-center py-2">
-                          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                            Persentase
-                          </span>
-                          <span className="text-sm font-black text-emerald-600">
-                            {hutan.persenIrisan || 0}%
-                          </span>
+
+                        {/* Progress bar persentase */}
+                        <div className="pt-2">
+                          <div className="flex justify-between text-xs font-bold mb-1.5">
+                            <span className="text-gray-400 uppercase tracking-wider">
+                              Persentase
+                            </span>
+                            <span className="text-emerald-600">
+                              {hutan.persenIrisan || 0}%
+                            </span>
+                          </div>
+                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-700"
+                              style={{
+                                width: `${Math.min(hutan.persenIrisan || 0, 100)}%`,
+                              }}
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -273,13 +291,13 @@ const DesaDetail = () => {
                     Tidak Ada Data Rincian
                   </h3>
                   <p className="text-sm text-gray-500 max-w-sm mx-auto">
-                    Tidak ditemukan data rincian spesifik mengenai kawasan hutan
-                    untuk desa ini.
+                    Tidak ditemukan data rincian spesifik mengenai kawasan hutan untuk desa ini.
                   </p>
                 </div>
               )}
             </div>
           </div>
+
         </div>
       </main>
     </DashboardLayout>

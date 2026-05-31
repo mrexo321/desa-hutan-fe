@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
@@ -181,8 +181,8 @@ const ProvinceDetail = () => {
                           <td className="py-4 px-4 text-center">
                             <span
                               className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize ${isMayoritas
-                                  ? "bg-emerald-50 text-emerald-600 border-emerald-200"
-                                  : "bg-amber-50 text-amber-600 border-amber-200"
+                                ? "bg-emerald-50 text-emerald-600 border-emerald-200"
+                                : "bg-amber-50 text-amber-600 border-amber-200"
                                 }`}
                             >
                               {desa.ringkasanInteraksi?.klasifikasi || "Minoritas"}

@@ -436,7 +436,7 @@ const Dashboard = () => {
   return (
     <DashboardLayout activeMenu={"Dashboard"}>
       {/* =========================================
-          HERO MAP SECTION (BISA FULLSCREEN)
+          TOMBOL BUKA PETA (Jika tidak fullscreen)
       ========================================= */}
       <div
         className={`transition-all duration-500 ease-in-out ${isFullscreen
@@ -748,15 +748,11 @@ const Dashboard = () => {
             {/* --- HUD KANAN ATAS: TOOLBAR FULLSCREEN & KONTROL MAP --- */}
             <div className="absolute top-6 right-6 z-10 flex flex-col gap-3 items-end pointer-events-none">
               <button
-                onClick={() => setIsFullscreen(!isFullscreen)}
-                className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white/80 hover:bg-white text-gray-700 hover:text-[#00B67A] backdrop-blur-xl border border-white/50 shadow-lg rounded-[14px] transition-all focus:outline-none"
-                title={isFullscreen ? "Keluar Fullscreen" : "Mode Layar Penuh"}
+                onClick={() => setIsFullscreen(false)}
+                className="pointer-events-auto flex items-center justify-center w-11 h-11 bg-white/80 hover:bg-white text-gray-700 hover:text-red-500 backdrop-blur-xl border border-white/50 shadow-lg rounded-[14px] transition-all focus:outline-none"
+                title="Tutup Peta"
               >
-                {isFullscreen ? (
-                  <Minimize size={20} strokeWidth={2} />
-                ) : (
-                  <Maximize size={20} strokeWidth={2} />
-                )}
+                <X size={20} strokeWidth={2.5} />
               </button>
 
               <div className="relative pointer-events-auto">
@@ -1015,168 +1011,517 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+      )}
 
       {/* =========================================
-          KONTEN DASHBOARD BAWAH (Disembunyikan saat Fullscreen)
+          KONTEN DASHBOARD BAWAH (Tidak di-render saat Fullscreen)
       ========================================= */}
-      <div className={isFullscreen ? "hidden" : "block"}>
-        {/* FILTER & SEARCH */}
-        {activeTab === "Ringkasan" && (
-          <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">
-            <div className="relative w-full lg:w-96 flex-1 group">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Cari direktori data provinsi..."
-                className="w-full bg-[#F8FAFC] border-none text-gray-700 py-3.5 pl-11 pr-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
-              />
-            </div>
-            <div className="flex gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
-              <select
-                value={filters.provinsi || ""}
-                onChange={(e) => {
-                  setFilters({ ...filters, provinsi: e.target.value, kabupaten: null, kecamatan: null });
-                }}
-                className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundPosition: "right 1rem center",
-                  backgroundRepeat: "no-repeat",
-                  paddingRight: "2.5rem",
-                }}
-              >
-                <option value="">Pilih Provinsi</option>
-                {listProvinsi.map((prov) => (
-                  <option key={prov.id} value={prov.id}>{prov.name || prov.nama || prov.provinsi}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.kabupaten || ""}
-                onChange={(e) => {
-                  setFilters({ ...filters, kabupaten: e.target.value, kecamatan: null });
-                }}
-                disabled={!filters.provinsi || isKabupatenDropdownLoading}
-                className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundPosition: "right 1rem center",
-                  backgroundRepeat: "no-repeat",
-                  paddingRight: "2.5rem",
-                }}
-              >
-                <option value="">Pilih Kabupaten</option>
-                {listKabupaten.map((kab) => (
-                  <option key={kab.id} value={kab.id}>{kab.name || kab.nama || kab.kabupaten}</option>
-                ))}
-              </select>
-
-              <select
-                value={filters.kecamatan || ""}
-                onChange={(e) => {
-                  setFilters({ ...filters, kecamatan: e.target.value });
-                }}
-                disabled={!filters.kabupaten || isKecamatanDropdownLoading}
-                className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                  backgroundPosition: "right 1rem center",
-                  backgroundRepeat: "no-repeat",
-                  paddingRight: "2.5rem",
-                }}
-              >
-                <option value="">Pilih Kecamatan</option>
-                {listKecamatan.map((kec) => (
-                  <option key={kec.id} value={kec.id}>{kec.name || kec.nama || kec.kecamatan}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex w-full lg:w-auto gap-2">
-              <button
-                onClick={handleResetFilter}
-                className="flex items-center justify-center gap-2 bg-[#F8FAFC] hover:bg-gray-100 text-gray-600 py-3.5 px-5 rounded-[14px] text-sm font-bold transition-colors border border-gray-100/50"
-              >
-                <RotateCcw size={16} />{" "}
-                <span className="hidden sm:inline">Reset</span>
-              </button>
-              <button
-                onClick={handleApplyFilter}
-                className="flex items-center justify-center gap-2 bg-[#00B67A] hover:bg-[#009b68] text-white py-3.5 px-7 rounded-[14px] text-sm font-bold shadow-[0_8px_20px_rgba(0,182,122,0.25)] hover:shadow-[0_8px_25px_rgba(0,182,122,0.4)] hover:-translate-y-0.5"
-              >
-                <Filter size={16} /> Filter Data
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* TABS NAVIGASI */}
-        <div className="flex items-center gap-2 mb-6 bg-gray-100/50 p-1.5 rounded-full w-fit border border-gray-200/50">
-          {["Ringkasan", "Visualisasi Data"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab ? "bg-white text-[#00B67A] shadow-[0_4px_15px_rgb(0,0,0,0.05)] border border-white" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"}`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
-        {activeTab === "Ringkasan" && (
-          <>
-            {/* STATS UTAMA */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {[
-                {
-                  title: "Total Desa",
-                  value: ringkasanData?.total_desa || 0,
-                  icon: <Home size={22} strokeWidth={2.5} />,
-                  color: "blue",
-                },
-                {
-                  title: "Dalam Kawasan Hutan",
-                  value: ringkasanData?.total_desa_dalam || 0,
-                  pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_dalam / ringkasanData.total_desa) * 100).toFixed(1) : 0,
-                  icon: <TreePine size={22} strokeWidth={2.5} />,
-                  color: "orange",
-                },
-                {
-                  title: "Beririsan Kawasan Hutan",
-                  value: ringkasanData?.total_desa_beririsan_sebagian || 0,
-                  pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_beririsan_sebagian / ringkasanData.total_desa) * 100).toFixed(1) : 0,
-                  icon: <Activity size={22} strokeWidth={2.5} />,
-                  color: "amber",
-                },
-                {
-                  title: "Di Luar Kawasan Hutan",
-                  value: ringkasanData?.total_desa_luar_kawasan || 0,
-                  pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_luar_kawasan / ringkasanData.total_desa) * 100).toFixed(1) : 0,
-                  icon: <Leaf size={22} strokeWidth={2.5} />,
-                  color: "emerald",
-                },
-              ].map((card, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group relative overflow-hidden"
+      {!isFullscreen && (
+        <div className="block animate-in fade-in duration-500">
+          {/* FILTER & SEARCH */}
+          {activeTab === "Ringkasan" && (
+            <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">
+              <div className="relative w-full lg:w-96 flex-1 group">
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors"
+                  size={18}
+                />
+                <input
+                  type="text"
+                  placeholder="Cari direktori data provinsi..."
+                  className="w-full bg-[#F8FAFC] border-none text-gray-700 py-3.5 pl-11 pr-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
+                />
+              </div>
+              <div className="flex gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
+                <select
+                  value={filters.provinsi || ""}
+                  onChange={(e) => {
+                    setFilters({ ...filters, provinsi: e.target.value, kabupaten: null, kecamatan: null });
+                  }}
+                  className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 1rem center",
+                    backgroundRepeat: "no-repeat",
+                    paddingRight: "2.5rem",
+                  }}
                 >
-                  {isRingkasanLoading ? (
-                    <div className="animate-pulse flex flex-col gap-3">
-                      <div className="h-12 w-12 bg-gray-200 rounded-[16px]"></div>
-                      <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                  <option value="">Pilih Provinsi</option>
+                  {listProvinsi.map((prov) => (
+                    <option key={prov.id} value={prov.id}>{prov.name || prov.nama || prov.provinsi}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={filters.kabupaten || ""}
+                  onChange={(e) => {
+                    setFilters({ ...filters, kabupaten: e.target.value, kecamatan: null });
+                  }}
+                  disabled={!filters.provinsi || isKabupatenDropdownLoading}
+                  className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 1rem center",
+                    backgroundRepeat: "no-repeat",
+                    paddingRight: "2.5rem",
+                  }}
+                >
+                  <option value="">Pilih Kabupaten</option>
+                  {listKabupaten.map((kab) => (
+                    <option key={kab.id} value={kab.id}>{kab.name || kab.nama || kab.kabupaten}</option>
+                  ))}
+                </select>
+
+                <select
+                  value={filters.kecamatan || ""}
+                  onChange={(e) => {
+                    setFilters({ ...filters, kecamatan: e.target.value });
+                  }}
+                  disabled={!filters.kabupaten || isKecamatanDropdownLoading}
+                  className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 1rem center",
+                    backgroundRepeat: "no-repeat",
+                    paddingRight: "2.5rem",
+                  }}
+                >
+                  <option value="">Pilih Kecamatan</option>
+                  {listKecamatan.map((kec) => (
+                    <option key={kec.id} value={kec.id}>{kec.name || kec.nama || kec.kecamatan}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex w-full lg:w-auto gap-2">
+                <button
+                  onClick={handleResetFilter}
+                  className="flex items-center justify-center gap-2 bg-[#F8FAFC] hover:bg-gray-100 text-gray-600 py-3.5 px-5 rounded-[14px] text-sm font-bold transition-colors border border-gray-100/50"
+                >
+                  <RotateCcw size={16} />{" "}
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
+                <button
+                  onClick={handleApplyFilter}
+                  className="flex items-center justify-center gap-2 bg-[#00B67A] hover:bg-[#009b68] text-white py-3.5 px-7 rounded-[14px] text-sm font-bold shadow-[0_8px_20px_rgba(0,182,122,0.25)] hover:shadow-[0_8px_25px_rgba(0,182,122,0.4)] hover:-translate-y-0.5"
+                >
+                  <Filter size={16} /> Filter Data
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* TABS NAVIGASI */}
+          <div className="flex items-center gap-2 mb-6 bg-gray-100/50 p-1.5 rounded-full w-fit border border-gray-200/50">
+            {["Ringkasan", "Visualisasi Data"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab ? "bg-white text-[#00B67A] shadow-[0_4px_15px_rgb(0,0,0,0.05)] border border-white" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "Ringkasan" && (
+            <>
+              {/* STATS UTAMA */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                {[
+                  {
+                    title: "Total Desa",
+                    value: ringkasanData?.total_desa || 0,
+                    icon: <Home size={22} strokeWidth={2.5} />,
+                    color: "blue",
+                  },
+                  {
+                    title: "Dalam Kawasan Hutan",
+                    value: ringkasanData?.total_desa_dalam || 0,
+                    pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_dalam / ringkasanData.total_desa) * 100).toFixed(1) : 0,
+                    icon: <TreePine size={22} strokeWidth={2.5} />,
+                    color: "orange",
+                  },
+                  {
+                    title: "Beririsan Kawasan Hutan",
+                    value: ringkasanData?.total_desa_beririsan_sebagian || 0,
+                    pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_beririsan_sebagian / ringkasanData.total_desa) * 100).toFixed(1) : 0,
+                    icon: <Activity size={22} strokeWidth={2.5} />,
+                    color: "amber",
+                  },
+                  {
+                    title: "Di Luar Kawasan Hutan",
+                    value: ringkasanData?.total_desa_luar_kawasan || 0,
+                    pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_luar_kawasan / ringkasanData.total_desa) * 100).toFixed(1) : 0,
+                    icon: <Leaf size={22} strokeWidth={2.5} />,
+                    color: "emerald",
+                  },
+                ].map((card, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group relative overflow-hidden"
+                  >
+                    {isRingkasanLoading ? (
+                      <div className="animate-pulse flex flex-col gap-3">
+                        <div className="h-12 w-12 bg-gray-200 rounded-[16px]"></div>
+                        <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex justify-between items-start mb-4">
+                          <div
+                            className={`w-12 h-12 rounded-[16px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
+                          >
+                            {card.icon}
+                          </div>
+                          {card.pct !== undefined && card.pct !== 0 && (
+                            <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
+                              {card.pct}%
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-3xl font-extrabold text-gray-800 mb-1">
+                          {card.value.toLocaleString('id-ID')}
+                        </div>
+                        <div className="text-xs text-gray-500 font-bold">
+                          {card.title}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* LUAS AREA CARDS */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {[
+                  {
+                    title: "Total Luas Desa",
+                    value: ringkasanData?.total_luas_desa_ha || 0,
+                    icon: <MapPin size={22} strokeWidth={2.5} />,
+                    color: "blue",
+                  },
+                  {
+                    title: "Total Luas Kawasan Hutan",
+                    value: ringkasanData?.total_luas_hutan_ha || 0,
+                    icon: <Trees size={22} strokeWidth={2.5} />,
+                    color: "emerald",
+                  },
+                  {
+                    title: "Total Luas Irisan Desa-Hutan",
+                    value: ringkasanData?.total_luas_irisan_ha || 0,
+                    icon: <Layers size={22} strokeWidth={2.5} />,
+                    color: "purple",
+                  },
+                ].map((card, i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group"
+                  >
+                    {isRingkasanLoading ? (
+                      <div className="animate-pulse flex flex-col gap-3">
+                        <div className="h-12 w-12 bg-gray-200 rounded-[14px]"></div>
+                        <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                        <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center gap-4 mb-4">
+                          <div
+                            className={`w-12 h-12 rounded-[14px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
+                          >
+                            {card.icon}
+                          </div>
+                          <div className="text-sm font-bold text-gray-500">
+                            {card.title}
+                          </div>
+                        </div>
+                        <div className="text-3xl font-extrabold text-gray-800">
+                          {card.value.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-sm font-bold text-gray-400">Ha</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* TABEL LIST: DESA PER FUNGSI KAWASAN HUTAN */}
+              <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden mb-8">
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+                  <h3 className="text-lg font-extrabold text-gray-800">
+                    Desa per Fungsi Kawasan Hutan
+                  </h3>
+                  <button
+                    onClick={() => setIsDesaPerFungsiOpen(!isDesaPerFungsiOpen)}
+                    className="text-gray-500 hover:text-gray-700 transition-colors"
+                  >
+                    {isDesaPerFungsiOpen ? (
+                      <ChevronDown size={20} />
+                    ) : (
+                      <ChevronRight size={20} />
+                    )}
+                  </button>
+                </div>
+                {isDesaPerFungsiOpen && (
+                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-[#F8FAFC]">
+                    {isRingkasanLoading ? (
+                      [1, 2, 3].map((i) => (
+                        <div key={i} className="animate-pulse bg-white border border-gray-100 shadow-sm rounded-xl h-32 w-full" />
+                      ))
+                    ) : ringkasanData?.desa_per_fungsi_kawasan_hutan?.length > 0 ? (
+                      [...ringkasanData.desa_per_fungsi_kawasan_hutan].sort((a, b) => b.total_desa - a.total_desa).map((row, idx) => {
+                        const pct = ringkasanData.total_desa_beririsan ? ((row.total_desa / ringkasanData.total_desa_beririsan) * 100).toFixed(1) : 0;
+                        return (
+                          <div key={idx} className="bg-white rounded-[16px] p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                            <div className="font-extrabold text-gray-800 mb-4 text-base">{row.fungsi_kawasan_hutan}</div>
+                            <div className="flex justify-between items-end mb-3">
+                              <div>
+                                <div className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-1">Total Desa</div>
+                                <div className="text-2xl font-extrabold text-emerald-600">{row.total_desa.toLocaleString('id-ID')}</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="text-[10px] text-gray-400 font-medium mb-1">Dlm: <span className="font-bold text-gray-700">{row.total_desa_dalam.toLocaleString('id-ID')}</span> | Iris: <span className="font-bold text-gray-700">{row.total_desa_beririsan.toLocaleString('id-ID')}</span></div>
+                                <div className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md inline-block mt-0.5">{pct}% dr total</div>
+                              </div>
+                            </div>
+                            <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
+                              <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }}></div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="col-span-full text-center py-8 text-gray-500 text-sm">
+                        Tidak ada data fungsi kawasan hutan yang tersedia.
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* TABEL DATA */}
+              <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
+                <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-lg font-extrabold text-gray-800">
+                      Direktori Desa Hutan
+                    </h3>
+                    <span className="bg-gray-100 text-gray-600 text-[11px] font-bold px-3 py-1 rounded-full border border-gray-200">
+                      Total 268 Data
+                    </span>
+                  </div>
+                  <button className="bg-white border-2 border-gray-200 hover:border-[#00B67A] hover:text-[#00B67A] text-gray-700 px-5 py-2.5 rounded-[12px] text-sm font-bold transition-colors">
+                    Export CSV
+                  </button>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                      <tr className="bg-gray-50/50 text-[11px] uppercase tracking-widest font-extrabold text-gray-500 border-b border-gray-100">
+                        <th className="py-5 px-6 w-16 text-center">NO</th>
+                        <th className="py-5 px-4">PROVINSI</th>
+                        <th className="py-5 px-4">TOTAL DESA HUTAN</th>
+                        <th className="py-5 px-4">LUAS TOTAL (Ha)</th>
+                        <th className="py-5 px-6 text-center">AKSI</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-sm font-medium text-gray-600">
+                      {isProvincesLoading ? (
+                        <tr>
+                          <td colSpan={8}>
+                            <Loading />
+                          </td>
+                        </tr>
+                      ) : (
+                        provincesForMap?.map((row, idx) => (
+                          <tr
+                            key={idx}
+                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group"
+                          >
+                            <td className="py-4 px-6 text-center text-gray-400 font-bold">
+                              {idx + 1}
+                            </td>
+                            <td className="py-4 px-4">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
+                                  <TreePine size={14} className="text-emerald-600" />
+                                </div>
+                                <span className="font-bold text-gray-800">
+                                  {row.provinsi}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-4 px-4 font-semibold text-gray-600">
+                              {row.totalDesaHutan}{" "}
+                              <span className="text-[11px] font-medium text-gray-400 ml-1">
+                                Desa
+                              </span>
+                            </td>
+                            <td className="py-4 px-4 font-semibold text-gray-600">
+                              {row.totalLuasDesaHa.toLocaleString('id-ID')}
+                            </td>
+                            <td className="py-4 px-6 text-center">
+                              <button
+                                onClick={() =>
+                                  handleGoToDetail(decodeURIComponent(row.provinsi))
+                                }
+                                className="text-gray-400 hover:text-white bg-gray-100 hover:bg-[#00B67A] p-2.5 rounded-[10px] transition-all"
+                                title="Lihat Detail"
+                              >
+                                <Eye size={16} strokeWidth={2.5} />
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
+                  <div>Menampilkan 1-7 dari 268 data provinsi</div>
+                  <div className="flex items-center gap-1.5">
+                    <button className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors">
+                      <ChevronLeft size={16} />
+                    </button>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-[8px] bg-[#00B67A] text-white shadow-sm font-bold">
+                      1
+                    </button>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-gray-100 hover:text-gray-800 transition-colors">
+                      2
+                    </button>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-gray-100 hover:text-gray-800 transition-colors">
+                      3
+                    </button>
+                    <span className="px-1 text-gray-400">...</span>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-gray-100 hover:text-gray-800 transition-colors">
+                      39
+                    </button>
+                    <button className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors">
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+
+          {activeTab === "Visualisasi Data" && (
+            <>
+              {/* FILTER & CONTROLS FOR VISUALISASI DATA */}
+              <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
+                    <TrendingUp size={20} className="text-[#00B67A]" />
+                    Visualisasi Matriks Spasial & Pembangunan Desa
+                  </h3>
+                  <p className="text-xs text-gray-500 mt-1 font-semibold">
+                    Menganalisis korelasi status Indeks Desa Membangun (IDM) dengan klasifikasi tata ruang kehutanan secara dinamis.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center gap-4">
+                  {/* Tahun Filter */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tahun:</span>
+                    <select
+                      value={selectedTahun}
+                      onChange={(e) => setSelectedTahun(e.target.value)}
+                      className="bg-[#F8FAFC] border border-gray-200 text-gray-700 py-2.5 px-4 rounded-[14px] text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer hover:bg-gray-50 transition-all appearance-none pr-10"
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                        backgroundPosition: "right 0.75rem center",
+                        backgroundRepeat: "no-repeat",
+                      }}
+                    >
+                      {listTahun.map((t) => (
+                        <option key={t} value={t}>
+                          Tahun {t}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* PSN Toggle Switch */}
+                  <div className="flex items-center gap-3 bg-[#F8FAFC] border border-gray-200 px-4 py-2 rounded-[14px]">
+                    <span className="text-xs font-bold text-gray-600">Hanya Desa PSN</span>
+                    <label className="cursor-pointer relative inline-flex items-center">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={onlyPsn}
+                        onChange={() => setOnlyPsn(!onlyPsn)}
+                      />
+                      <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00B67A]"></div>
+                    </label>
+                  </div>
+
+                  {/* Reset Button */}
+                  <button
+                    onClick={() => {
+                      setSelectedTahun(listTahun[0] || "2025");
+                      setOnlyPsn(true);
+                    }}
+                    className="bg-[#F8FAFC] hover:bg-gray-100 text-gray-600 py-2.5 px-4 rounded-[14px] text-xs font-bold border border-gray-200/50 flex items-center gap-1.5 transition-colors"
+                  >
+                    <RotateCcw size={14} />
+                    Reset
+                  </button>
+                </div>
+              </div>
+
+              {/* HIGH-LEVEL SPATIAL MATRIKS SUMMARY CARDS */}
+              {isMatrixLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 animate-pulse">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 h-32 flex flex-col justify-center gap-3">
+                      <div className="w-10 h-10 bg-gray-200 rounded-[14px]"></div>
+                      <div className="h-6 bg-gray-200 rounded w-1/2"></div>
                       <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                  ) : (
-                    <>
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+                  {[
+                    {
+                      title: "Total Desa",
+                      value: matrixData?.totalDesa || 0,
+                      icon: <Home size={22} strokeWidth={2.5} />,
+                      color: "blue",
+                      pct: null
+                    },
+                    {
+                      title: "Dalam Kawasan Hutan",
+                      value: matrixData?.ringkasanKawasan?.dalamKawasan || 0,
+                      icon: <TreePine size={22} strokeWidth={2.5} />,
+                      color: "orange",
+                      pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.dalamKawasan / matrixData.totalDesa) * 100).toFixed(1) : 0
+                    },
+                    {
+                      title: "Beririsan Kawasan Hutan",
+                      value: matrixData?.ringkasanKawasan?.beririsan || 0,
+                      icon: <Activity size={22} strokeWidth={2.5} />,
+                      color: "amber",
+                      pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.beririsan / matrixData.totalDesa) * 100).toFixed(1) : 0
+                    },
+                    {
+                      title: "Di Luar Kawasan Hutan",
+                      value: matrixData?.ringkasanKawasan?.luarKawasan || 0,
+                      icon: <Leaf size={22} strokeWidth={2.5} />,
+                      color: "emerald",
+                      pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.luarKawasan / matrixData.totalDesa) * 100).toFixed(1) : 0
+                    }
+                  ].map((card, i) => (
+                    <div
+                      key={i}
+                      className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group relative overflow-hidden"
+                    >
                       <div className="flex justify-between items-start mb-4">
                         <div
                           className={`w-12 h-12 rounded-[16px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
                         >
                           {card.icon}
                         </div>
-                        {card.pct !== undefined && card.pct !== 0 && (
+                        {card.pct !== null && card.pct !== "0.0" && (
                           <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
                             {card.pct}%
                           </span>
@@ -1188,823 +1533,476 @@ const Dashboard = () => {
                       <div className="text-xs text-gray-500 font-bold">
                         {card.title}
                       </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* LUAS AREA CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-              {[
-                {
-                  title: "Total Luas Desa",
-                  value: ringkasanData?.total_luas_desa_ha || 0,
-                  icon: <MapPin size={22} strokeWidth={2.5} />,
-                  color: "blue",
-                },
-                {
-                  title: "Total Luas Kawasan Hutan",
-                  value: ringkasanData?.total_luas_hutan_ha || 0,
-                  icon: <Trees size={22} strokeWidth={2.5} />,
-                  color: "emerald",
-                },
-                {
-                  title: "Total Luas Irisan Desa-Hutan",
-                  value: ringkasanData?.total_luas_irisan_ha || 0,
-                  icon: <Layers size={22} strokeWidth={2.5} />,
-                  color: "purple",
-                },
-              ].map((card, i) => (
-                <div
-                  key={i}
-                  className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group"
-                >
-                  {isRingkasanLoading ? (
-                    <div className="animate-pulse flex flex-col gap-3">
-                      <div className="h-12 w-12 bg-gray-200 rounded-[14px]"></div>
-                      <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-                      <div className="h-4 bg-gray-200 rounded w-2/3"></div>
                     </div>
-                  ) : (
-                    <>
-                      <div className="flex items-center gap-4 mb-4">
-                        <div
-                          className={`w-12 h-12 rounded-[14px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
-                        >
-                          {card.icon}
-                        </div>
-                        <div className="text-sm font-bold text-gray-500">
-                          {card.title}
-                        </div>
-                      </div>
-                      <div className="text-3xl font-extrabold text-gray-800">
-                        {card.value.toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} <span className="text-sm font-bold text-gray-400">Ha</span>
-                      </div>
-                    </>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* TABEL LIST: DESA PER FUNGSI KAWASAN HUTAN */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden mb-8">
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-                <h3 className="text-lg font-extrabold text-gray-800">
-                  Desa per Fungsi Kawasan Hutan
-                </h3>
-                <button
-                  onClick={() => setIsDesaPerFungsiOpen(!isDesaPerFungsiOpen)}
-                  className="text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  {isDesaPerFungsiOpen ? (
-                    <ChevronDown size={20} />
-                  ) : (
-                    <ChevronRight size={20} />
-                  )}
-                </button>
-              </div>
-              {isDesaPerFungsiOpen && (
-                <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 bg-[#F8FAFC]">
-                  {isRingkasanLoading ? (
-                    [1, 2, 3].map((i) => (
-                      <div key={i} className="animate-pulse bg-white border border-gray-100 shadow-sm rounded-xl h-32 w-full" />
-                    ))
-                  ) : ringkasanData?.desa_per_fungsi_kawasan_hutan?.length > 0 ? (
-                    [...ringkasanData.desa_per_fungsi_kawasan_hutan].sort((a, b) => b.total_desa - a.total_desa).map((row, idx) => {
-                      const pct = ringkasanData.total_desa_beririsan ? ((row.total_desa / ringkasanData.total_desa_beririsan) * 100).toFixed(1) : 0;
-                      return (
-                        <div key={idx} className="bg-white rounded-[16px] p-5 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                          <div className="font-extrabold text-gray-800 mb-4 text-base">{row.fungsi_kawasan_hutan}</div>
-                          <div className="flex justify-between items-end mb-3">
-                            <div>
-                              <div className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-1">Total Desa</div>
-                              <div className="text-2xl font-extrabold text-emerald-600">{row.total_desa.toLocaleString('id-ID')}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="text-[10px] text-gray-400 font-medium mb-1">Dlm: <span className="font-bold text-gray-700">{row.total_desa_dalam.toLocaleString('id-ID')}</span> | Iris: <span className="font-bold text-gray-700">{row.total_desa_beririsan.toLocaleString('id-ID')}</span></div>
-                              <div className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md inline-block mt-0.5">{pct}% dr total</div>
-                            </div>
-                          </div>
-                          <div className="w-full bg-gray-100 h-2 rounded-full overflow-hidden">
-                            <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${pct}%` }}></div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="col-span-full text-center py-8 text-gray-500 text-sm">
-                      Tidak ada data fungsi kawasan hutan yang tersedia.
-                    </div>
-                  )}
+                  ))}
                 </div>
               )}
-            </div>
 
-            {/* TABEL DATA */}
-            <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <h3 className="text-lg font-extrabold text-gray-800">
-                    Direktori Desa Hutan
-                  </h3>
-                  <span className="bg-gray-100 text-gray-600 text-[11px] font-bold px-3 py-1 rounded-full border border-gray-200">
-                    Total 268 Data
-                  </span>
-                </div>
-                <button className="bg-white border-2 border-gray-200 hover:border-[#00B67A] hover:text-[#00B67A] text-gray-700 px-5 py-2.5 rounded-[12px] text-sm font-bold transition-colors">
-                  Export CSV
-                </button>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[1000px]">
-                  <thead>
-                    <tr className="bg-gray-50/50 text-[11px] uppercase tracking-widest font-extrabold text-gray-500 border-b border-gray-100">
-                      <th className="py-5 px-6 w-16 text-center">NO</th>
-                      <th className="py-5 px-4">PROVINSI</th>
-                      <th className="py-5 px-4">TOTAL DESA HUTAN</th>
-                      <th className="py-5 px-4">LUAS TOTAL (Ha)</th>
-                      <th className="py-5 px-6 text-center">AKSI</th>
-                    </tr>
-                  </thead>
-                  <tbody className="text-sm font-medium text-gray-600">
-                    {isProvincesLoading ? (
-                      <tr>
-                        <td colSpan={8}>
-                          <Loading />
-                        </td>
-                      </tr>
-                    ) : (
-                      provincesForMap?.map((row, idx) => (
-                        <tr
-                          key={idx}
-                          className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors group"
-                        >
-                          <td className="py-4 px-6 text-center text-gray-400 font-bold">
-                            {idx + 1}
-                          </td>
-                          <td className="py-4 px-4">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center shrink-0">
-                                <TreePine size={14} className="text-emerald-600" />
-                              </div>
-                              <span className="font-bold text-gray-800">
-                                {row.provinsi}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="py-4 px-4 font-semibold text-gray-600">
-                            {row.totalDesaHutan}{" "}
-                            <span className="text-[11px] font-medium text-gray-400 ml-1">
-                              Desa
-                            </span>
-                          </td>
-                          <td className="py-4 px-4 font-semibold text-gray-600">
-                            {row.totalLuasDesaHa.toLocaleString('id-ID')}
-                          </td>
-                          <td className="py-4 px-6 text-center">
-                            <button
-                              onClick={() =>
-                                handleGoToDetail(decodeURIComponent(row.provinsi))
-                              }
-                              className="text-gray-400 hover:text-white bg-gray-100 hover:bg-[#00B67A] p-2.5 rounded-[10px] transition-all"
-                              title="Lihat Detail"
+              {/* DUAL INTERACTIVE CHARTS */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+                {/* Pie Chart Card (Status IDM) */}
+                <div className="lg:col-span-7 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
+                  <div className="mb-4">
+                    <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-[#00B67A]"></div>
+                      Sebaran Status IDM (Indeks Desa Membangun)
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5 font-semibold">
+                      Klik potongan chart atau legenda untuk melihat daftar desa secara spesifik (drill-down).
+                    </p>
+                  </div>
+
+                  {isMatrixLoading ? (
+                    <div className="h-80 flex items-center justify-center">
+                      <Loading />
+                    </div>
+                  ) : !matrixData?.daftarMatriks?.[0]?.dataChart?.length ? (
+                    <div className="h-80 flex items-center justify-center text-gray-500 text-xs font-bold">
+                      Tidak ada data chart yang tersedia.
+                    </div>
+                  ) : (
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
+                      {/* Responsive Pie Chart Container */}
+                      <div className="w-full md:w-1/2 h-64 relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={matrixData.daftarMatriks[0].dataChart}
+                              nameKey="label"
+                              dataKey="jumlah"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={90}
+                              paddingAngle={3}
+                              fill="#8884d8"
+                              onClick={(data) => {
+                                if (data && data.label) {
+                                  setModalFilter({ status: data.label, kawasan: null });
+                                  setKawasanFilter("");
+                                  setIsModalOpen(true);
+                                }
+                              }}
+                              className="cursor-pointer"
                             >
-                              <Eye size={16} strokeWidth={2.5} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-              <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
-                <div>Menampilkan 1-7 dari 268 data provinsi</div>
-                <div className="flex items-center gap-1.5">
-                  <button className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors">
-                    <ChevronLeft size={16} />
-                  </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-[8px] bg-[#00B67A] text-white shadow-sm font-bold">
-                    1
-                  </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-gray-100 hover:text-gray-800 transition-colors">
-                    2
-                  </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-gray-100 hover:text-gray-800 transition-colors">
-                    3
-                  </button>
-                  <span className="px-1 text-gray-400">...</span>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-[8px] hover:bg-gray-100 hover:text-gray-800 transition-colors">
-                    39
-                  </button>
-                  <button className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors">
-                    <ChevronRight size={16} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          </>
-        )}
-
-        {activeTab === "Visualisasi Data" && (
-          <>
-            {/* FILTER & CONTROLS FOR VISUALISASI DATA */}
-            <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div>
-                <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
-                  <TrendingUp size={20} className="text-[#00B67A]" />
-                  Visualisasi Matriks Spasial & Pembangunan Desa
-                </h3>
-                <p className="text-xs text-gray-500 mt-1 font-semibold">
-                  Menganalisis korelasi status Indeks Desa Membangun (IDM) dengan klasifikasi tata ruang kehutanan secara dinamis.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-4">
-                {/* Tahun Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tahun:</span>
-                  <select
-                    value={selectedTahun}
-                    onChange={(e) => setSelectedTahun(e.target.value)}
-                    className="bg-[#F8FAFC] border border-gray-200 text-gray-700 py-2.5 px-4 rounded-[14px] text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer hover:bg-gray-50 transition-all appearance-none pr-10"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                      backgroundPosition: "right 0.75rem center",
-                      backgroundRepeat: "no-repeat",
-                    }}
-                  >
-                    {listTahun.map((t) => (
-                      <option key={t} value={t}>
-                        Tahun {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* PSN Toggle Switch */}
-                <div className="flex items-center gap-3 bg-[#F8FAFC] border border-gray-200 px-4 py-2 rounded-[14px]">
-                  <span className="text-xs font-bold text-gray-600">Hanya Desa PSN</span>
-                  <label className="cursor-pointer relative inline-flex items-center">
-                    <input
-                      type="checkbox"
-                      className="sr-only peer"
-                      checked={onlyPsn}
-                      onChange={() => setOnlyPsn(!onlyPsn)}
-                    />
-                    <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00B67A]"></div>
-                  </label>
-                </div>
-
-                {/* Reset Button */}
-                <button
-                  onClick={() => {
-                    setSelectedTahun(listTahun[0] || "2025");
-                    setOnlyPsn(true);
-                  }}
-                  className="bg-[#F8FAFC] hover:bg-gray-100 text-gray-600 py-2.5 px-4 rounded-[14px] text-xs font-bold border border-gray-200/50 flex items-center gap-1.5 transition-colors"
-                >
-                  <RotateCcw size={14} />
-                  Reset
-                </button>
-              </div>
-            </div>
-
-            {/* HIGH-LEVEL SPATIAL MATRIKS SUMMARY CARDS */}
-            {isMatrixLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 animate-pulse">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 h-32 flex flex-col justify-center gap-3">
-                    <div className="w-10 h-10 bg-gray-200 rounded-[14px]"></div>
-                    <div className="h-6 bg-gray-200 rounded w-1/2"></div>
-                    <div className="h-4 bg-gray-200 rounded w-2/3"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-                {[
-                  {
-                    title: "Total Desa",
-                    value: matrixData?.totalDesa || 0,
-                    icon: <Home size={22} strokeWidth={2.5} />,
-                    color: "blue",
-                    pct: null
-                  },
-                  {
-                    title: "Dalam Kawasan Hutan",
-                    value: matrixData?.ringkasanKawasan?.dalamKawasan || 0,
-                    icon: <TreePine size={22} strokeWidth={2.5} />,
-                    color: "orange",
-                    pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.dalamKawasan / matrixData.totalDesa) * 100).toFixed(1) : 0
-                  },
-                  {
-                    title: "Beririsan Kawasan Hutan",
-                    value: matrixData?.ringkasanKawasan?.beririsan || 0,
-                    icon: <Activity size={22} strokeWidth={2.5} />,
-                    color: "amber",
-                    pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.beririsan / matrixData.totalDesa) * 100).toFixed(1) : 0
-                  },
-                  {
-                    title: "Di Luar Kawasan Hutan",
-                    value: matrixData?.ringkasanKawasan?.luarKawasan || 0,
-                    icon: <Leaf size={22} strokeWidth={2.5} />,
-                    color: "emerald",
-                    pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.luarKawasan / matrixData.totalDesa) * 100).toFixed(1) : 0
-                  }
-                ].map((card, i) => (
-                  <div
-                    key={i}
-                    className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group relative overflow-hidden"
-                  >
-                    <div className="flex justify-between items-start mb-4">
-                      <div
-                        className={`w-12 h-12 rounded-[16px] bg-${card.color}-50 text-${card.color}-500 flex items-center justify-center group-hover:bg-${card.color}-500 group-hover:text-white transition-colors`}
-                      >
-                        {card.icon}
+                              {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => (
+                                <Cell
+                                  key={`cell-${idx}`}
+                                  fill={COLORS[entry.label.toUpperCase()] || '#cbd5e1'}
+                                  className="transition-all duration-300 hover:opacity-85 focus:outline-none"
+                                />
+                              ))}
+                            </Pie>
+                            <ChartTooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
+                                      <div className="flex items-center gap-1.5 mb-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[data.label.toUpperCase()] }}></div>
+                                        <span className="font-extrabold text-sm">{data.label}</span>
+                                      </div>
+                                      <div className="flex flex-col gap-1 text-[11px] text-slate-300">
+                                        <div className="flex justify-between gap-4">
+                                          <span>Jumlah Desa:</span>
+                                          <span className="font-bold text-white">{data.jumlah} Desa</span>
+                                        </div>
+                                        <div className="w-full h-px bg-slate-700/50 my-1"></div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Dalam Kawasan:</span>
+                                          <span className="font-bold text-red-400">{data.breakdown?.dalamKawasan || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Beririsan Hutan:</span>
+                                          <span className="font-bold text-amber-400">{data.breakdown?.beririsan || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Luar Kawasan:</span>
+                                          <span className="font-bold text-emerald-400">{data.breakdown?.luarKawasan || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                          <div className="text-2xl font-extrabold text-gray-800">
+                            {matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0)}
+                          </div>
+                          <div className="text-[10px] text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
+                        </div>
                       </div>
-                      {card.pct !== null && card.pct !== "0.0" && (
-                        <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
-                          {card.pct}%
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-3xl font-extrabold text-gray-800 mb-1">
-                      {card.value.toLocaleString('id-ID')}
-                    </div>
-                    <div className="text-xs text-gray-500 font-bold">
-                      {card.title}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
 
-            {/* DUAL INTERACTIVE CHARTS */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
-              {/* Pie Chart Card (Status IDM) */}
-              <div className="lg:col-span-7 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
-                <div className="mb-4">
-                  <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-[#00B67A]"></div>
-                    Sebaran Status IDM (Indeks Desa Membangun)
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5 font-semibold">
-                    Klik potongan chart atau legenda untuk melihat daftar desa secara spesifik (drill-down).
-                  </p>
-                </div>
-
-                {isMatrixLoading ? (
-                  <div className="h-80 flex items-center justify-center">
-                    <Loading />
-                  </div>
-                ) : !matrixData?.daftarMatriks?.[0]?.dataChart?.length ? (
-                  <div className="h-80 flex items-center justify-center text-gray-500 text-xs font-bold">
-                    Tidak ada data chart yang tersedia.
-                  </div>
-                ) : (
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
-                    {/* Responsive Pie Chart Container */}
-                    <div className="w-full md:w-1/2 h-64 relative">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={matrixData.daftarMatriks[0].dataChart}
-                            nameKey="label"
-                            dataKey="jumlah"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
-                            paddingAngle={3}
-                            fill="#8884d8"
-                            onClick={(data) => {
-                              if (data && data.label) {
-                                setModalFilter({ status: data.label, kawasan: null });
+                      {/* Legenda Chart */}
+                      <div className="w-full md:w-1/2 flex flex-col gap-2">
+                        {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => {
+                          const total = matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0);
+                          const percent = total ? ((entry.jumlah / total) * 100).toFixed(1) : 0;
+                          const color = COLORS[entry.label.toUpperCase()] || '#cbd5e1';
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setModalFilter({ status: entry.label, kawasan: null });
                                 setKawasanFilter("");
                                 setIsModalOpen(true);
-                              }
-                            }}
-                            className="cursor-pointer"
-                          >
-                            {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => (
-                              <Cell
-                                key={`cell-${idx}`}
-                                fill={COLORS[entry.label.toUpperCase()] || '#cbd5e1'}
-                                className="transition-all duration-300 hover:opacity-85 focus:outline-none"
-                              />
-                            ))}
-                          </Pie>
-                          <ChartTooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
-                                    <div className="flex items-center gap-1.5 mb-1.5">
-                                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[data.label.toUpperCase()] }}></div>
-                                      <span className="font-extrabold text-sm">{data.label}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1 text-[11px] text-slate-300">
-                                      <div className="flex justify-between gap-4">
-                                        <span>Jumlah Desa:</span>
-                                        <span className="font-bold text-white">{data.jumlah} Desa</span>
-                                      </div>
-                                      <div className="w-full h-px bg-slate-700/50 my-1"></div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Dalam Kawasan:</span>
-                                        <span className="font-bold text-red-400">{data.breakdown?.dalamKawasan || 0}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Beririsan Hutan:</span>
-                                        <span className="font-bold text-amber-400">{data.breakdown?.beririsan || 0}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Luar Kawasan:</span>
-                                        <span className="font-bold text-emerald-400">{data.breakdown?.luarKawasan || 0}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                        <div className="text-2xl font-extrabold text-gray-800">
-                          {matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0)}
-                        </div>
-                        <div className="text-[10px] text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
+                              }}
+                              className="flex items-center justify-between p-2.5 rounded-[12px] bg-[#F8FAFC] border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full shrink-0 group-hover:scale-110 transition-transform" style={{ backgroundColor: color }}></div>
+                                <span className="text-xs font-bold text-gray-700">{entry.label}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-extrabold text-gray-800">{entry.jumlah} <span className="text-[9px] text-gray-400 font-bold">Desa</span></span>
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 shrink-0">{percent}%</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-
-                    {/* Legenda Chart */}
-                    <div className="w-full md:w-1/2 flex flex-col gap-2">
-                      {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => {
-                        const total = matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0);
-                        const percent = total ? ((entry.jumlah / total) * 100).toFixed(1) : 0;
-                        const color = COLORS[entry.label.toUpperCase()] || '#cbd5e1';
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setModalFilter({ status: entry.label, kawasan: null });
-                              setKawasanFilter("");
-                              setIsModalOpen(true);
-                            }}
-                            className="flex items-center justify-between p-2.5 rounded-[12px] bg-[#F8FAFC] border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full shrink-0 group-hover:scale-110 transition-transform" style={{ backgroundColor: color }}></div>
-                              <span className="text-xs font-bold text-gray-700">{entry.label}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs font-extrabold text-gray-800">{entry.jumlah} <span className="text-[9px] text-gray-400 font-bold">Desa</span></span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 shrink-0">{percent}%</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Bar Chart Card (Average IDM Score Breakdown) */}
-              <div className="lg:col-span-5 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
-                <div className="mb-4">
-                  <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                    Rata-rata Skor IDM per Letak Spasial
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5 font-semibold">
-                    Perbandingan rata-rata nilai indeks desa lintas zona tata ruang kehutanan.
-                  </p>
+                  )}
                 </div>
 
-                {isMatrixLoading ? (
-                  <div className="h-80 flex items-center justify-center">
-                    <Loading />
+                {/* Bar Chart Card (Average IDM Score Breakdown) */}
+                <div className="lg:col-span-5 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
+                  <div className="mb-4">
+                    <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
+                      <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                      Rata-rata Skor IDM per Letak Spasial
+                    </h3>
+                    <p className="text-xs text-gray-400 mt-0.5 font-semibold">
+                      Perbandingan rata-rata nilai indeks desa lintas zona tata ruang kehutanan.
+                    </p>
                   </div>
-                ) : (
-                  <div className="h-80 flex flex-col justify-between">
-                    <div className="w-full h-56 mt-2">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={[
-                            { name: "Dalam Kawasan", score: onlyPsn ? 0.635 : 0.612, fill: "#EF4444" },
-                            { name: "Beririsan Hutan", score: onlyPsn ? 0.718 : 0.684, fill: "#F59E0B" },
-                            { name: "Luar Kawasan", score: onlyPsn ? 0.776 : 0.742, fill: "#10B981" }
-                          ]}
-                          margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                          <XAxis
-                            dataKey="name"
-                            tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            domain={[0, 1.0]}
-                            tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <ChartTooltip
-                            cursor={{ fill: '#F8FAFC' }}
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
-                                    <span className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">{data.name}</span>
-                                    <span className="text-sm font-extrabold text-emerald-400">{data.score.toFixed(3)}</span>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Bar
-                            dataKey="score"
-                            radius={[8, 8, 0, 0]}
-                            maxBarSize={45}
-                          >
-                            {[
+
+                  {isMatrixLoading ? (
+                    <div className="h-80 flex items-center justify-center">
+                      <Loading />
+                    </div>
+                  ) : (
+                    <div className="h-80 flex flex-col justify-between">
+                      <div className="w-full h-56 mt-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart
+                            data={[
                               { name: "Dalam Kawasan", score: onlyPsn ? 0.635 : 0.612, fill: "#EF4444" },
                               { name: "Beririsan Hutan", score: onlyPsn ? 0.718 : 0.684, fill: "#F59E0B" },
                               { name: "Luar Kawasan", score: onlyPsn ? 0.776 : 0.742, fill: "#10B981" }
-                            ].map((entry, idx) => (
-                              <Cell key={`bar-cell-${idx}`} fill={entry.fill} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Insight Teks Card */}
-                    <div className="bg-[#F8FAFC] border border-gray-100 p-3 rounded-2xl flex gap-3 items-center">
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                        <Info size={14} />
+                            ]}
+                            margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
+                            <XAxis
+                              dataKey="name"
+                              tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <YAxis
+                              domain={[0, 1.0]}
+                              tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
+                              axisLine={false}
+                              tickLine={false}
+                            />
+                            <ChartTooltip
+                              cursor={{ fill: '#F8FAFC' }}
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
+                                      <span className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">{data.name}</span>
+                                      <span className="text-sm font-extrabold text-emerald-400">{data.score.toFixed(3)}</span>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Bar
+                              dataKey="score"
+                              radius={[8, 8, 0, 0]}
+                              maxBarSize={45}
+                            >
+                              {[
+                                { name: "Dalam Kawasan", score: onlyPsn ? 0.635 : 0.612, fill: "#EF4444" },
+                                { name: "Beririsan Hutan", score: onlyPsn ? 0.718 : 0.684, fill: "#F59E0B" },
+                                { name: "Luar Kawasan", score: onlyPsn ? 0.776 : 0.742, fill: "#10B981" }
+                              ].map((entry, idx) => (
+                                <Cell key={`bar-cell-${idx}`} fill={entry.fill} />
+                              ))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
                       </div>
-                      <p className="text-[10px] leading-relaxed text-gray-500 font-bold">
-                        Desa di <strong className="text-gray-700">Luar Kawasan Hutan</strong> memiliki rata-rata IDM tertinggi disebabkan oleh aksesibilitas infrastruktur publik yang lebih optimal dibandingkan desa di dalam kawasan.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </>
-        )}
 
-        {/* =========================================
+                      {/* Insight Teks Card */}
+                      <div className="bg-[#F8FAFC] border border-gray-100 p-3 rounded-2xl flex gap-3 items-center">
+                        <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
+                          <Info size={14} />
+                        </div>
+                        <p className="text-[10px] leading-relaxed text-gray-500 font-bold">
+                          Desa di <strong className="text-gray-700">Luar Kawasan Hutan</strong> memiliki rata-rata IDM tertinggi disebabkan oleh aksesibilitas infrastruktur publik yang lebih optimal dibandingkan desa di dalam kawasan.
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* =========================================
             DRILL-DOWN MODAL - DETAIL MATRIKS IDM
         ========================================= */}
-        {isModalOpen && (
-          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-[28px] shadow-2xl border border-gray-100 w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-              {/* Header Modal */}
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-[#F8FAFC]">
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="text-lg font-extrabold text-gray-800">
-                      Detail Desa Hutan - IDM {modalFilter.status}
-                    </h3>
-                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
-                      Tahun {selectedTahun}
-                    </span>
-                    {onlyPsn && (
-                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
-                        Hanya PSN
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-gray-400 mt-1 font-medium">
-                    Menampilkan direktori desa spasial berdasarkan klasifikasi IDM yang terpilih.
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    setIsModalOpen(false);
-                    setKawasanFilter("");
-                  }}
-                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 hover:scale-105 text-gray-500 hover:text-gray-700 flex items-center justify-center transition-all focus:outline-none"
-                >
-                  <X size={18} />
-                </button>
-              </div>
-
-              {/* Quick Filters Tab Spasial */}
-              <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
-                <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 p-1 rounded-full border border-gray-200/50">
-                  {[
-                    { key: "", label: "Semua", count: totalRecords && kawasanFilter === "" ? totalRecords : ((detailKawasanSummary?.dalamKawasan || 0) + (detailKawasanSummary?.beririsan || 0) + (detailKawasanSummary?.luarKawasan || 0)) },
-                    { key: "dalamKawasan", label: "Dalam Kawasan", count: detailKawasanSummary?.dalamKawasan || 0 },
-                    { key: "beririsan", label: "Beririsan Hutan", count: detailKawasanSummary?.beririsan || 0 },
-                    { key: "luarKawasan", label: "Luar Kawasan", count: detailKawasanSummary?.luarKawasan || 0 }
-                  ].map((tab) => {
-                    const isActive = kawasanFilter === tab.key;
-                    return (
-                      <button
-                        key={tab.key}
-                        onClick={() => {
-                          setKawasanFilter(tab.key);
-                          setCurrentPage(1);
-                        }}
-                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 ${isActive
-                          ? "bg-white text-[#00B67A] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-white"
-                          : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/30"
-                          }`}
-                      >
-                        {tab.label}
-                        <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full ${isActive ? "bg-[#00B67A] text-white" : "bg-gray-200 text-gray-600"
-                          }`}>
-                          {tab.count}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="text-xs text-gray-500 font-semibold bg-gray-50 border border-gray-100 rounded-xl px-4 py-2">
-                  Total Ditemukan: <span className="font-extrabold text-gray-800">{totalRecords} Desa</span>
-                </div>
-              </div>
-
-              {/* Area Tabel List (Scrollable) */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar">
-                {modalLoading ? (
-                  <div className="p-12">
-                    <Loading />
-                  </div>
-                ) : desaList.length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 text-sm font-bold flex flex-col items-center justify-center gap-3">
-                    <Home size={32} className="text-gray-300" />
-                    Tidak ada desa yang terdaftar untuk filter ini.
-                  </div>
-                ) : (
-                  <table className="w-full text-left border-collapse min-w-[800px]">
-                    <thead>
-                      <tr className="bg-gray-50/50 text-[10px] uppercase tracking-wider font-extrabold text-gray-400 border-b border-gray-100">
-                        <th className="py-4 px-6 w-16 text-center">NO</th>
-                        <th className="py-4 px-4">NAMA DESA</th>
-                        <th className="py-4 px-4">KODE KEMENDAGRI</th>
-                        <th className="py-4 px-4">WILAYAH</th>
-                        <th className="py-4 px-4 text-center">DESA PSN</th>
-                        <th className="py-4 px-6 text-center">KLASIFIKASI SPASIAL</th>
-                      </tr>
-                    </thead>
-                    <tbody className="text-xs font-semibold text-gray-600">
-                      {desaList.map((row, idx) => {
-                        const absoluteNo = (currentPage - 1) * pageSize + idx + 1;
-
-                        // Spasial Category styling
-                        const letak = row.kawasan?.kategori || row.kawasan?.letakSpasial || "";
-                        let spatialBadgeClass = "bg-gray-50 text-gray-500 border-gray-200";
-                        let spatialLabel = "Luar Kawasan";
-
-                        if (letak === "dalamKawasan") {
-                          spatialBadgeClass = "bg-red-50 text-red-600 border-red-200";
-                          spatialLabel = "Dalam Kawasan";
-                        } else if (letak === "beririsan") {
-                          spatialBadgeClass = "bg-amber-50 text-amber-600 border-amber-200";
-                          spatialLabel = "Beririsan Hutan";
-                        }
-
-                        // Intersection Forest list cleanup (no duplicates)
-                        const rawKawasan = row.kawasan?.daftarKawasan || [];
-                        const countKawasan = rawKawasan.length;
-                        const uniqueKawasan = Array.from(new Set(rawKawasan.map(k => k.namaFungsiKawasan))).filter(Boolean);
-
-                        return (
-                          <tr
-                            key={row.id || idx}
-                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors"
-                          >
-                            <td className="py-3 px-6 text-center text-gray-400 font-bold">
-                              {absoluteNo}
-                            </td>
-                            <td className="py-3 px-4">
-                              <span className="font-extrabold text-[#00B67A]">{row.namaDesa}</span>
-                            </td>
-                            <td className="py-3 px-4 font-mono text-gray-500">
-                              {row.kodeKemendagri}
-                            </td>
-                            <td className="py-3 px-4 font-medium text-gray-500">
-                              <div className="flex items-center gap-1">
-                                <span>{row.provinsi}</span>
-                                <ChevronRight size={10} className="text-gray-300" />
-                                <span>{row.kabupaten}</span>
-                                <ChevronRight size={10} className="text-gray-300" />
-                                <span>{row.kecamatan}</span>
-                              </div>
-                            </td>
-                            <td className="py-3 px-4 text-center">
-                              {row.isPsn ? (
-                                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/50">
-                                  YA
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-400">
-                                  TIDAK
-                                </span>
-                              )}
-                            </td>
-                            <td className="py-3 px-6 text-center">
-                              <div className="flex items-center justify-center gap-1.5">
-                                <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border ${spatialBadgeClass}`}>
-                                  {spatialLabel}
-                                </span>
-                                {countKawasan > 0 && uniqueKawasan.length > 0 && (
-                                  <div className="relative group/tooltip inline-block shrink-0">
-                                    <span className="cursor-help inline-flex items-center justify-center text-slate-500 hover:text-slate-600 transition-colors">
-                                      <Info size={14} className="ml-0.5" />
-                                    </span>
-                                    {/* Beautiful Interactive Tooltip popup */}
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-xl p-3 shadow-xl z-[99] text-left">
-                                      <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 mb-1.5">
-                                        Daftar Fungsi Kawasan Hutan ({uniqueKawasan.length}):
-                                      </div>
-                                      <div className="flex flex-col gap-1">
-                                        {uniqueKawasan.map((k, kIdx) => (
-                                          <div key={kIdx} className="flex items-center gap-1.5 text-[11px] text-slate-200 font-bold">
-                                            <div className="w-1.5 h-1.5 bg-[#00B67A] rounded-full shrink-0"></div>
-                                            <span className="truncate">{k}</span>
-                                          </div>
-                                        ))}
-                                      </div>
-                                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-slate-900"></div>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                )}
-              </div>
-
-              {/* Paginator Footer Modal */}
-              {!modalLoading && totalRecords > pageSize && (
-                <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-[#F8FAFC]">
+          {isModalOpen && (
+            <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-white rounded-[28px] shadow-2xl border border-gray-100 w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                {/* Header Modal */}
+                <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-[#F8FAFC]">
                   <div>
-                    Menampilkan {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalRecords)} dari {totalRecords} data desa
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="text-lg font-extrabold text-gray-800">
+                        Detail Desa Hutan - IDM {modalFilter.status}
+                      </h3>
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                        Tahun {selectedTahun}
+                      </span>
+                      {onlyPsn && (
+                        <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                          Hanya PSN
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1 font-medium">
+                      Menampilkan direktori desa spasial berdasarkan klasifikasi IDM yang terpilih.
+                    </p>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      disabled={currentPage === 1}
-                      onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                      className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <ChevronLeft size={16} />
-                    </button>
-                    {Array.from({ length: Math.ceil(totalRecords / pageSize) }).map((_, i) => {
-                      const pageNum = i + 1;
-                      // Max 5 page numbers visible
-                      const isNear = Math.abs(currentPage - pageNum) <= 2;
-                      const isFirstOrLast = pageNum === 1 || pageNum === Math.ceil(totalRecords / pageSize);
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setKawasanFilter("");
+                    }}
+                    className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 hover:scale-105 text-gray-500 hover:text-gray-700 flex items-center justify-center transition-all focus:outline-none"
+                  >
+                    <X size={18} />
+                  </button>
+                </div>
 
-                      if (!isNear && !isFirstOrLast) {
-                        if (pageNum === 2 || pageNum === Math.ceil(totalRecords / pageSize) - 1) {
-                          return <span key={pageNum} className="px-1 text-gray-400">...</span>;
-                        }
-                        return null;
-                      }
-
+                {/* Quick Filters Tab Spasial */}
+                <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 p-1 rounded-full border border-gray-200/50">
+                    {[
+                      { key: "", label: "Semua", count: totalRecords && kawasanFilter === "" ? totalRecords : ((detailKawasanSummary?.dalamKawasan || 0) + (detailKawasanSummary?.beririsan || 0) + (detailKawasanSummary?.luarKawasan || 0)) },
+                      { key: "dalamKawasan", label: "Dalam Kawasan", count: detailKawasanSummary?.dalamKawasan || 0 },
+                      { key: "beririsan", label: "Beririsan Hutan", count: detailKawasanSummary?.beririsan || 0 },
+                      { key: "luarKawasan", label: "Luar Kawasan", count: detailKawasanSummary?.luarKawasan || 0 }
+                    ].map((tab) => {
+                      const isActive = kawasanFilter === tab.key;
                       return (
                         <button
-                          key={pageNum}
-                          onClick={() => setCurrentPage(pageNum)}
-                          className={`w-8 h-8 flex items-center justify-center rounded-[8px] font-bold transition-all ${currentPage === pageNum
-                            ? "bg-[#00B67A] text-white shadow-sm"
-                            : "hover:bg-gray-100 hover:text-gray-800"
+                          key={tab.key}
+                          onClick={() => {
+                            setKawasanFilter(tab.key);
+                            setCurrentPage(1);
+                          }}
+                          className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 ${isActive
+                            ? "bg-white text-[#00B67A] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-white"
+                            : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/30"
                             }`}
                         >
-                          {pageNum}
+                          {tab.label}
+                          <span className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full ${isActive ? "bg-[#00B67A] text-white" : "bg-gray-200 text-gray-600"
+                            }`}>
+                            {tab.count}
+                          </span>
                         </button>
                       );
                     })}
-                    <button
-                      disabled={currentPage === Math.ceil(totalRecords / pageSize)}
-                      onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalRecords / pageSize)))}
-                      className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
-                    >
-                      <ChevronRight size={16} />
-                    </button>
+                  </div>
+
+                  <div className="text-xs text-gray-500 font-semibold bg-gray-50 border border-gray-100 rounded-xl px-4 py-2">
+                    Total Ditemukan: <span className="font-extrabold text-gray-800">{totalRecords} Desa</span>
                   </div>
                 </div>
-              )}
+
+                {/* Area Tabel List (Scrollable) */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar">
+                  {modalLoading ? (
+                    <div className="p-12">
+                      <Loading />
+                    </div>
+                  ) : desaList.length === 0 ? (
+                    <div className="p-12 text-center text-gray-500 text-sm font-bold flex flex-col items-center justify-center gap-3">
+                      <Home size={32} className="text-gray-300" />
+                      Tidak ada desa yang terdaftar untuk filter ini.
+                    </div>
+                  ) : (
+                    <table className="w-full text-left border-collapse min-w-[800px]">
+                      <thead>
+                        <tr className="bg-gray-50/50 text-[10px] uppercase tracking-wider font-extrabold text-gray-400 border-b border-gray-100">
+                          <th className="py-4 px-6 w-16 text-center">NO</th>
+                          <th className="py-4 px-4">NAMA DESA</th>
+                          <th className="py-4 px-4">KODE KEMENDAGRI</th>
+                          <th className="py-4 px-4">WILAYAH</th>
+                          <th className="py-4 px-4 text-center">DESA PSN</th>
+                          <th className="py-4 px-6 text-center">KLASIFIKASI SPASIAL</th>
+                        </tr>
+                      </thead>
+                      <tbody className="text-xs font-semibold text-gray-600">
+                        {desaList.map((row, idx) => {
+                          const absoluteNo = (currentPage - 1) * pageSize + idx + 1;
+
+                          // Spasial Category styling
+                          const letak = row.kawasan?.kategori || row.kawasan?.letakSpasial || "";
+                          let spatialBadgeClass = "bg-gray-50 text-gray-500 border-gray-200";
+                          let spatialLabel = "Luar Kawasan";
+
+                          if (letak === "dalamKawasan") {
+                            spatialBadgeClass = "bg-red-50 text-red-600 border-red-200";
+                            spatialLabel = "Dalam Kawasan";
+                          } else if (letak === "beririsan") {
+                            spatialBadgeClass = "bg-amber-50 text-amber-600 border-amber-200";
+                            spatialLabel = "Beririsan Hutan";
+                          }
+
+                          // Intersection Forest list cleanup (no duplicates)
+                          const rawKawasan = row.kawasan?.daftarKawasan || [];
+                          const countKawasan = rawKawasan.length;
+                          const uniqueKawasan = Array.from(new Set(rawKawasan.map(k => k.namaFungsiKawasan))).filter(Boolean);
+
+                          return (
+                            <tr
+                              key={row.id || idx}
+                              className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors"
+                            >
+                              <td className="py-3 px-6 text-center text-gray-400 font-bold">
+                                {absoluteNo}
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="font-extrabold text-[#00B67A]">{row.namaDesa}</span>
+                              </td>
+                              <td className="py-3 px-4 font-mono text-gray-500">
+                                {row.kodeKemendagri}
+                              </td>
+                              <td className="py-3 px-4 font-medium text-gray-500">
+                                <div className="flex items-center gap-1">
+                                  <span>{row.provinsi}</span>
+                                  <ChevronRight size={10} className="text-gray-300" />
+                                  <span>{row.kabupaten}</span>
+                                  <ChevronRight size={10} className="text-gray-300" />
+                                  <span>{row.kecamatan}</span>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                {row.isPsn ? (
+                                  <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/50">
+                                    YA
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-400">
+                                    TIDAK
+                                  </span>
+                                )}
+                              </td>
+                              <td className="py-3 px-6 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border ${spatialBadgeClass}`}>
+                                    {spatialLabel}
+                                  </span>
+                                  {countKawasan > 0 && uniqueKawasan.length > 0 && (
+                                    <div className="relative group/tooltip inline-block shrink-0">
+                                      <span className="cursor-help inline-flex items-center justify-center text-slate-500 hover:text-slate-600 transition-colors">
+                                        <Info size={14} className="ml-0.5" />
+                                      </span>
+                                      {/* Beautiful Interactive Tooltip popup */}
+                                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-xl p-3 shadow-xl z-[99] text-left">
+                                        <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 mb-1.5">
+                                          Daftar Fungsi Kawasan Hutan ({uniqueKawasan.length}):
+                                        </div>
+                                        <div className="flex flex-col gap-1">
+                                          {uniqueKawasan.map((k, kIdx) => (
+                                            <div key={kIdx} className="flex items-center gap-1.5 text-[11px] text-slate-200 font-bold">
+                                              <div className="w-1.5 h-1.5 bg-[#00B67A] rounded-full shrink-0"></div>
+                                              <span className="truncate">{k}</span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-slate-900"></div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  )}
+                </div>
+
+                {/* Paginator Footer Modal */}
+                {!modalLoading && totalRecords > pageSize && (
+                  <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-[#F8FAFC]">
+                    <div>
+                      Menampilkan {((currentPage - 1) * pageSize) + 1} - {Math.min(currentPage * pageSize, totalRecords)} dari {totalRecords} data desa
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        disabled={currentPage === 1}
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <ChevronLeft size={16} />
+                      </button>
+                      {Array.from({ length: Math.ceil(totalRecords / pageSize) }).map((_, i) => {
+                        const pageNum = i + 1;
+                        // Max 5 page numbers visible
+                        const isNear = Math.abs(currentPage - pageNum) <= 2;
+                        const isFirstOrLast = pageNum === 1 || pageNum === Math.ceil(totalRecords / pageSize);
+
+                        if (!isNear && !isFirstOrLast) {
+                          if (pageNum === 2 || pageNum === Math.ceil(totalRecords / pageSize) - 1) {
+                            return <span key={pageNum} className="px-1 text-gray-400">...</span>;
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`w-8 h-8 flex items-center justify-center rounded-[8px] font-bold transition-all ${currentPage === pageNum
+                              ? "bg-[#00B67A] text-white shadow-sm"
+                              : "hover:bg-gray-100 hover:text-gray-800"
+                              }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      <button
+                        disabled={currentPage === Math.ceil(totalRecords / pageSize)}
+                        onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalRecords / pageSize)))}
+                        className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        <ChevronRight size={16} />
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
       {/* =========================================
           GLOBAL CSS OVERRIDE

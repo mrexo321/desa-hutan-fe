@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable"; // Sesuaikan path
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -18,20 +18,30 @@ import {
 
 const IndikatorPerhitungan = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tahunIndikatorPerhitunganId = searchParams.get("tahunIndikatorPerhitunganId");
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch All Data
+  // Fetch All Data (filtered by tahunIndikatorPerhitunganId if exists)
   const {
     data: responseData,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["allFormulaIndicators"],
-    queryFn: () => indikatorService.getAllFormula(),
+    queryKey: ["allFormulaIndicators", tahunIndikatorPerhitunganId],
+    queryFn: () => {
+      const params = {};
+      if (tahunIndikatorPerhitunganId) {
+        params.tahunIndikatorPerhitunganId = tahunIndikatorPerhitunganId;
+      }
+      return indikatorService.getAllFormula(params);
+    },
   });
 
   const rawData = responseData?.data || responseData || [];
+
+  console.log(rawData);
 
   // Client-side search filtering
   const filteredData = rawData.filter((item) =>
@@ -216,7 +226,13 @@ const IndikatorPerhitungan = () => {
                 </div>
                 <button
                   onClick={() =>
-                    navigate("/dashboard/indikator-perhitungan/tambah")
+                    navigate(
+                      `/dashboard/indikator-perhitungan/tambah${
+                        tahunIndikatorPerhitunganId
+                          ? `?tahunId=${tahunIndikatorPerhitunganId}`
+                          : ""
+                      }`
+                    )
                   }
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
                 >

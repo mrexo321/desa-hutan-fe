@@ -1,43 +1,44 @@
 import authInstance from "../../api/authInstance";
 
-const userService = {
-    async getUser() {
-        const response = await authInstance.get("/users");
-        return response.data.data;
-    },
+export const userService = {
+  async getUser() {
+    const response = await authInstance.get("/users");
+    return response.data.data;
+  },
 
-    async getUserById(id) {
-        const response = await authInstance.get(`/users/${id}`);
-        return response.data.data;
-    },
+  async getUserById(id) {
+    const response = await authInstance.get(`/users/${id}`);
+    return response.data.data;
+  },
 
-    async createUser(payload){
-        const response = await authInstance.post(`/users`, payload)
-        return response.data;
-    },
+  async createUser(payload) {
+    const response = await authInstance.post(`/users`, payload);
+    return response.data;
+  },
 
-    async updateUser(id, payload){
-        const response = await authInstance.put(`/users/${id}`, payload)
-        return response.data;
-    },
+  async updateUser(id, payload) {
+    const response = await authInstance.put(`/users/${id}`, payload);
+    return response.data;
+  },
 
-    async deleteUser(id){
-        const response = await authInstance.delete(`/users/${id}`)
-        return response.data;
-    },
+  async deleteUser(id) {
+    const response = await authInstance.delete(`/users/${id}`);
+    return response.data;
+  },
 
-    async createUserBulk(payload){
-        const response = await authInstance.post(`/users/bulk`, payload)
-        return response.data;
-    },
+  createUserBulk: async (payloadArray) => {
+    // Pada POST: argumen kedua adalah payload (langsung masukkan array-nya)
+    const response = await authInstance.post("/users/bulk", payloadArray);
+    return response.data;
+  },
 
-
-    async deleteUserBulk(payload){
-        const response = await authInstance.delete(`/users/bulk`, payload)
-        return response.data;
-    },
-
-
+  deleteUserBulk: async (idsArray) => {
+    // PENTING PADA DELETE: Payload WAJIB dibungkus dalam object { data: ... }
+    const response = await authInstance.delete("/users/bulk", {
+      data: idsArray,
+    });
+    return response.data;
+  },
 };
 
 export default userService;

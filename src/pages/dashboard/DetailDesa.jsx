@@ -12,9 +12,21 @@ import {
   Layers,
   MapPinned,
   AlertCircle,
+  Tag,
+  Info,
+  CheckCircle,
 } from "lucide-react";
 
-const DesaDetail = () => {
+// Helper formatting dipindah keluar dari komponen agar tidak di-recreate setiap kali render
+const formatJenisInteraksi = (jenis) => {
+  if (!jenis) return "-";
+  return jenis
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+const DetailDesa = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -90,7 +102,7 @@ const DesaDetail = () => {
               <div>
                 <div className="flex flex-wrap items-center gap-3 mb-2">
                   <h1 className="text-3xl font-black text-gray-900 tracking-tight">
-                    Desa {desa.nama}
+                    Desa {typeof desa.nama === 'object' && desa.nama !== null ? desa.nama.nama : desa.nama}
                   </h1>
                   <span className="text-xs font-bold px-3 py-1 bg-gray-100 text-gray-600 rounded-lg border border-gray-200 uppercase tracking-wider">
                     {desa.kodeKemendagri || "NO CODE"}
@@ -99,11 +111,11 @@ const DesaDetail = () => {
                 <div className="flex flex-wrap items-center gap-4 text-sm font-medium text-gray-500 mt-3">
                   <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg border border-blue-100">
                     <Map size={16} />
-                    <span>Kec. {desa.kecamatan}</span>
+                    <span>Kec. {typeof desa.kecamatan === 'object' && desa.kecamatan !== null ? desa.kecamatan.nama : desa.kecamatan}</span>
                   </div>
                   <div className="flex items-center gap-2 bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg border border-purple-100">
                     <MapPin size={16} />
-                    <span>Kab. {desa.kabupaten}</span>
+                    <span>Kab. {typeof desa.kabupaten === 'object' && desa.kabupaten !== null ? desa.kabupaten.nama : desa.kabupaten}</span>
                   </div>
                 </div>
               </div>
@@ -115,8 +127,8 @@ const DesaDetail = () => {
               </p>
               <div
                 className={`inline-flex items-center px-4 py-2 rounded-xl border ${isMayoritas
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                    : "bg-amber-50 border-amber-200 text-amber-700"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-amber-50 border-amber-200 text-amber-700"
                   }`}
               >
                 <span className="font-bold capitalize text-lg">
@@ -127,9 +139,10 @@ const DesaDetail = () => {
           </div>
 
           {/* --- STATISTICS CARDS --- */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300">
-              <div className="flex items-center gap-3 mb-4 text-gray-500">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors"></div>
+              <div className="flex items-center gap-3 mb-4 text-gray-500 relative z-10">
                 <div className="p-2.5 bg-emerald-50 rounded-xl">
                   <Maximize size={20} className="text-emerald-600" />
                 </div>
@@ -143,8 +156,9 @@ const DesaDetail = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300">
-              <div className="flex items-center gap-3 mb-4 text-gray-500">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-amber-50 rounded-full blur-2xl group-hover:bg-amber-100 transition-colors"></div>
+              <div className="flex items-center gap-3 mb-4 text-gray-500 relative z-10">
                 <div className="p-2.5 bg-amber-50 rounded-xl">
                   <PieChart size={20} className="text-amber-600" />
                 </div>
@@ -158,8 +172,27 @@ const DesaDetail = () => {
               </div>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300">
-              <div className="flex items-center gap-3 mb-5 text-gray-500">
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-50 rounded-full blur-2xl group-hover:bg-indigo-100 transition-colors"></div>
+              <div className="flex items-center gap-3 mb-4 text-gray-500 relative z-10">
+                <div className="p-2.5 bg-indigo-50 rounded-xl">
+                  <Layers size={20} className="text-indigo-600" />
+                </div>
+                <span className="text-sm font-bold uppercase tracking-wider">
+                  Total Kawasan
+                </span>
+              </div>
+              <div className="text-3xl xl:text-4xl font-black text-gray-800 relative z-10">
+                {desa.ringkasanInteraksi?.totalHutan || "0"}
+                <span className="text-base xl:text-lg text-gray-400 font-medium ml-1">
+                  Titik
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm flex flex-col justify-center transition-transform hover:-translate-y-1 duration-300 relative overflow-hidden group">
+              <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full blur-2xl group-hover:bg-blue-100 transition-colors"></div>
+              <div className="flex items-center gap-3 mb-5 text-gray-500 relative z-10">
                 <div className="p-2.5 bg-blue-50 rounded-xl">
                   <Activity size={20} className="text-blue-600" />
                 </div>
@@ -175,7 +208,7 @@ const DesaDetail = () => {
                   }}
                 />
               </div>
-              <div className="flex justify-between items-center text-sm font-bold">
+              <div className="flex justify-between items-center text-sm font-bold z-10 relative">
                 <span className="text-emerald-600">
                   {desa.ringkasanInteraksi?.totalPersenIrisan || 0}% Tercover Hutan
                 </span>
@@ -213,7 +246,7 @@ const DesaDetail = () => {
                   {desa.detailHutan.map((hutan, idx) => (
                     <div
                       key={idx}
-                      className="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-md transition-all group"
+                      className="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
                     >
                       {/* Card Header: icon + nama + badge klasifikasi */}
                       <div className="flex justify-between items-start mb-5">
@@ -244,7 +277,7 @@ const DesaDetail = () => {
                           <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                             Jenis Interaksi
                           </span>
-                          <span className="text-xs font-bold px-3 py-1 bg-gray-100 text-gray-700 rounded-lg">
+                          <span className="text-[11px] font-bold px-2.5 py-1 bg-gray-50 text-gray-700 rounded-lg border border-gray-100">
                             {formatJenisInteraksi(hutan.jenisInteraksi)}
                           </span>
                         </div>

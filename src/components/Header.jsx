@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { clearUserData } from "../store/userSlice";
@@ -11,154 +11,99 @@ import {
   ChevronDown,
   ShieldCheck,
   Command,
-  LayoutDashboard,
-  Trees,
-  LineChart,
-  Sprout,
-  Target,
-  Calculator,
-  Layers,
-  Map,
-  Users,
-  MapPinned,
-  Database,
   X,
   ArrowRight,
 } from "lucide-react";
 
-export default function Header() {
+// 1. Impor data menu dari folder constants
+import { homeMenus, metadataMenus } from "../constants/sidebarMenus";
+
+// =========================================================
+// DATA COMMAND PALETTE (Dibuat dinamis dari konstan)
+// =========================================================
+const searchItems = [
+  // Map data Menu Utama
+  ...homeMenus.map((item, index) => {
+    const Icon = item.icon; // Ambil referensi komponen ikon
+    return {
+      id: `h${index}`,
+      title: item.name,
+      path: item.path,
+      icon: <Icon size={18} />, // Render ikon dengan ukuran spesifik untuk search
+      category: "Menu Utama",
+    };
+  }),
+
+  // Map data Pengaturan Data
+  ...metadataMenus.map((item, index) => {
+    const Icon = item.icon;
+    return {
+      id: `m${index}`,
+      title: item.name,
+      path: item.path,
+      icon: <Icon size={18} />,
+      category: "Pengaturan Data",
+    };
+  }),
+
+  // Tambahan menu statis khusus untuk Akun
+  {
+    id: "p1",
+    title: "Profil Saya",
+    path: "/profile",
+    icon: <UserIcon size={18} />,
+    category: "Akun Saya",
+  },
+  {
+    id: "p2",
+    title: "Pengaturan Akun",
+    path: "/settings",
+    icon: <Settings size={18} />,
+    category: "Akun Saya",
+  },
+];
+
+const Header = React.memo(function Header() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const profileDropdownRef = useRef(null);
   const searchInputRef = useRef(null);
+  const resultListRef = useRef(null);
+
+  // Mencegah konflik auto-scroll keyboard dengan hover mouse
+  const lastInteractionType = useRef("mouse");
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // Ambil data user dari Redux
   const user = useSelector((state) => state.user);
   const displayName = user?.name || user?.username || "Admin Utama";
   const displayRole = user?.roles?.[0] || "Superadmin";
 
-  // =========================================================
-  // DATA COMMAND PALETTE (Disesuaikan dengan Sidebar Asli)
-  // =========================================================
-  const searchItems = [
-    // --- Menu Utama ---
-    {
-      id: "h1",
-      title: "Dashboard",
-      path: "/dashboard",
-      icon: <LayoutDashboard size={18} />,
-      category: "Menu Utama",
-    },
-    {
-      id: "h2",
-      title: "Desa Hutan",
-      path: "/dashboard/desa-hutan",
-      icon: <Trees size={18} />,
-      category: "Menu Utama",
-    },
-    {
-      id: "h3",
-      title: "Performa Desa",
-      path: "/dashboard/performa-desa",
-      icon: <LineChart size={18} />,
-      category: "Menu Utama",
-    },
-    {
-      id: "h4",
-      title: "Potensi Desa",
-      path: "/dashboard/potensi-desa",
-      icon: <Sprout size={18} />,
-      category: "Menu Utama",
-    },
+  // Filter pencarian
+  const filteredSearchItems = useMemo(() => {
+    if (!searchQuery.trim()) return searchItems;
+    const lowerQuery = searchQuery.toLowerCase();
+    return searchItems.filter(
+      (item) =>
+        item.title.toLowerCase().includes(lowerQuery) ||
+        item.category.toLowerCase().includes(lowerQuery),
+    );
+  }, [searchQuery]);
 
-    // --- Pengaturan Data (Metadata) ---
-    {
-      id: "m1",
-      title: "Indikator",
-      path: "/dashboard/indikator",
-      icon: <Target size={18} />,
-      category: "Pengaturan Data",
-    },
-    {
-      id: "m2",
-      title: "Indikator Perhitungan",
-      path: "/dashboard/indikator-perhitungan",
-      icon: <Calculator size={18} />,
-      category: "Pengaturan Data",
-    },
-    {
-      id: "m3",
-      title: "Klasifikasi",
-      path: "/dashboard/klasifikasi",
-      icon: <Layers size={18} />,
-      category: "Pengaturan Data",
-    },
-    {
-      id: "m4",
-      title: "Wilayah",
-      path: "/dashboard/wilayah",
-      icon: <Map size={18} />,
-      category: "Pengaturan Data",
-    },
-    {
-      id: "m5",
-      title: "Manajemen User",
-      path: "/dashboard/manajemen-user",
-      icon: <Users size={18} />,
-      category: "Pengaturan Data",
-    },
-    {
-      id: "m6",
-      title: "Manajemen Role",
-      path: "/dashboard/manajemen-role",
-      icon: <ShieldCheck size={18} />,
-      category: "Pengaturan Data",
-    },
-    {
-      id: "m7",
-      title: "Master Wilayah",
-      path: "/dashboard/master-wilayah",
-      icon: <MapPinned size={18} />,
-      category: "Pengaturan Data",
-    },
-    {
-      id: "m8",
-      title: "Master Potensi",
-      path: "/dashboard/master-potensi",
-      icon: <Database size={18} />,
-      category: "Pengaturan Data",
-    },
+  // Tanggal saat ini
+  const todayDate = useMemo(() => {
+    return new Intl.DateTimeFormat("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(new Date());
+  }, []);
 
-    // --- Pengaturan Akun & Profil ---
-    {
-      id: "p1",
-      title: "Profil Saya",
-      path: "/profile",
-      icon: <UserIcon size={18} />,
-      category: "Akun Saya",
-    },
-    {
-      id: "p2",
-      title: "Pengaturan Akun",
-      path: "/settings",
-      icon: <Settings size={18} />,
-      category: "Akun Saya",
-    },
-  ];
-
-  // Logika Filter Pencarian
-  const filteredSearchItems = searchItems.filter(
-    (item) =>
-      item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchQuery.toLowerCase()),
-  );
-
-  // --- Utility Functions ---
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour >= 5 && hour < 11) return "Selamat Pagi";
@@ -166,13 +111,6 @@ export default function Header() {
     if (hour >= 15 && hour < 18) return "Selamat Sore";
     return "Selamat Malam";
   };
-
-  const todayDate = new Intl.DateTimeFormat("id-ID", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
 
   // --- Event Listeners ---
   useEffect(() => {
@@ -189,7 +127,7 @@ export default function Header() {
   }, []);
 
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleGlobalKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
         setIsSearchOpen(true);
@@ -199,15 +137,32 @@ export default function Header() {
         setSearchQuery("");
       }
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener("keydown", handleGlobalKeyDown);
+    return () => document.removeEventListener("keydown", handleGlobalKeyDown);
   }, [isSearchOpen]);
 
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
+      setSelectedIndex(0);
     }
   }, [isSearchOpen]);
+
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (
+      lastInteractionType.current === "keyboard" &&
+      resultListRef.current &&
+      resultListRef.current.children[selectedIndex]
+    ) {
+      resultListRef.current.children[selectedIndex].scrollIntoView({
+        block: "nearest",
+      });
+    }
+  }, [selectedIndex]);
 
   // --- Handlers ---
   const handleLogout = () => {
@@ -220,6 +175,25 @@ export default function Header() {
     navigate(path);
     setIsSearchOpen(false);
     setSearchQuery("");
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (filteredSearchItems.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      lastInteractionType.current = "keyboard";
+      setSelectedIndex((prev) =>
+        Math.min(prev + 1, filteredSearchItems.length - 1),
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      lastInteractionType.current = "keyboard";
+      setSelectedIndex((prev) => Math.max(prev - 1, 0));
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      handleNavigate(filteredSearchItems[selectedIndex].path);
+    }
   };
 
   return (
@@ -250,7 +224,6 @@ export default function Header() {
               size={18}
             />
             <span className="truncate">Cari menu atau halaman...</span>
-
             <div className="absolute right-3 hidden sm:flex items-center gap-1 bg-white border border-gray-200/80 px-2 py-1 rounded-md shadow-sm">
               <Command size={10} className="text-gray-400" />
               <span className="text-[10px] font-extrabold text-gray-400 leading-none">
@@ -291,7 +264,6 @@ export default function Header() {
                   className="w-full h-full object-cover"
                 />
               </div>
-
               <div className="hidden sm:flex flex-col">
                 <p className="text-sm font-bold text-gray-800 leading-none group-hover:text-[#2D7344] transition-colors">
                   {displayName}
@@ -300,21 +272,20 @@ export default function Header() {
                   {displayRole}
                 </p>
               </div>
-
               <ChevronDown
                 size={16}
                 strokeWidth={2.5}
                 className={`text-gray-400 transition-transform duration-300 ml-1 ${isProfileOpen
-                    ? "rotate-180 text-[#2D7344]"
-                    : "rotate-0 group-hover:text-[#2D7344]"
+                  ? "rotate-180 text-[#2D7344]"
+                  : "rotate-0 group-hover:text-[#2D7344]"
                   }`}
               />
             </div>
 
             <div
               className={`absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 py-2 z-50 transition-all duration-300 origin-top-right ${isProfileOpen
-                  ? "opacity-100 scale-100 translate-y-0 visible"
-                  : "opacity-0 scale-95 -translate-y-2 invisible"
+                ? "opacity-100 scale-100 translate-y-0 visible"
+                : "opacity-0 scale-95 -translate-y-2 invisible"
                 }`}
             >
               <div className="px-5 py-4 border-b border-gray-100/80 mb-2 flex items-center gap-4 bg-gray-50/50 rounded-t-xl mx-2 mt-[-8px]">
@@ -330,7 +301,6 @@ export default function Header() {
                   </p>
                 </div>
               </div>
-
               <div className="px-3 space-y-1">
                 <button
                   onClick={() => handleNavigate("/profile")}
@@ -355,9 +325,7 @@ export default function Header() {
                   Pengaturan Akun
                 </button>
               </div>
-
               <div className="h-px bg-gray-100/80 my-2 mx-4"></div>
-
               <div className="px-3">
                 <button
                   onClick={handleLogout}
@@ -381,21 +349,20 @@ export default function Header() {
       ========================================== */}
       {isSearchOpen && (
         <div className="fixed inset-0 z-50 flex items-start justify-center pt-[10vh] sm:pt-[15vh] px-4 bg-slate-900/40 backdrop-blur-sm transition-opacity">
-          {/* Overlay click to close */}
           <div
             className="absolute inset-0"
             onClick={() => setIsSearchOpen(false)}
           ></div>
 
-          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-200 border border-slate-100">
-            {/* Search Input Area */}
-            <div className="flex items-center px-4 py-4 border-b border-gray-100 bg-gray-50/50">
+          <div className="relative w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 slide-in-from-top-4 duration-200 border border-slate-100 flex flex-col max-h-[80vh]">
+            <div className="flex items-center px-4 py-4 border-b border-gray-100 bg-gray-50/50 shrink-0">
               <Search className="text-gray-400 ml-2 shrink-0" size={24} />
               <input
                 ref={searchInputRef}
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={handleInputKeyDown}
                 placeholder="Cari menu, halaman, atau pengaturan..."
                 className="w-full bg-transparent border-none focus:ring-0 text-gray-800 text-lg px-4 py-2 placeholder-gray-400 outline-none"
               />
@@ -407,35 +374,49 @@ export default function Header() {
               </button>
             </div>
 
-            {/* Search Results Area */}
-            <div className="max-h-[60vh] overflow-y-auto p-4 custom-scrollbar bg-white">
+            <div className="overflow-y-auto p-4 custom-scrollbar bg-white flex-1">
               {filteredSearchItems.length > 0 ? (
-                <div className="space-y-1">
-                  {filteredSearchItems.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleNavigate(item.path)}
-                      className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-[#2D7344]/5 group transition-colors text-left"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="p-2.5 bg-gray-100 text-gray-500 rounded-xl group-hover:bg-white group-hover:text-[#2D7344] group-hover:shadow-sm transition-all">
-                          {item.icon}
+                <div className="space-y-1" ref={resultListRef}>
+                  {filteredSearchItems.map((item, index) => {
+                    const isActive = index === selectedIndex;
+
+                    return (
+                      <button
+                        key={item.id}
+                        onMouseMove={() => {
+                          if (lastInteractionType.current !== "mouse") {
+                            lastInteractionType.current = "mouse";
+                          }
+                          if (selectedIndex !== index) setSelectedIndex(index);
+                        }}
+                        onClick={() => handleNavigate(item.path)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-colors text-left group ${isActive ? "bg-[#2D7344]/10" : "hover:bg-[#2D7344]/5"
+                          }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className={`p-2.5 rounded-xl transition-all ${isActive ? "bg-white text-[#2D7344] shadow-sm" : "bg-gray-100 text-gray-500 group-hover:bg-white group-hover:text-[#2D7344] group-hover:shadow-sm"}`}
+                          >
+                            {item.icon}
+                          </div>
+                          <div>
+                            <p
+                              className={`font-bold text-sm transition-colors ${isActive ? "text-[#2D7344]" : "text-gray-800 group-hover:text-[#2D7344]"}`}
+                            >
+                              {item.title}
+                            </p>
+                            <p className="text-xs font-semibold text-gray-400 mt-0.5">
+                              {item.category}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-bold text-sm text-gray-800 group-hover:text-[#2D7344] transition-colors">
-                            {item.title}
-                          </p>
-                          <p className="text-xs font-semibold text-gray-400 mt-0.5">
-                            {item.category}
-                          </p>
-                        </div>
-                      </div>
-                      <ArrowRight
-                        size={18}
-                        className="text-gray-300 opacity-0 group-hover:opacity-100 group-hover:text-[#2D7344] -translate-x-2 group-hover:translate-x-0 transition-all duration-300"
-                      />
-                    </button>
-                  ))}
+                        <ArrowRight
+                          size={18}
+                          className={`transition-all duration-300 ${isActive ? "text-[#2D7344] translate-x-0 opacity-100" : "text-gray-300 opacity-0 group-hover:opacity-100 group-hover:text-[#2D7344] -translate-x-2 group-hover:translate-x-0"}`}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="py-12 flex flex-col items-center justify-center text-center">
@@ -453,14 +434,26 @@ export default function Header() {
               )}
             </div>
 
-            {/* Footer Modal Search */}
-            <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-xs text-gray-500 font-medium">
-              <div className="flex items-center gap-2">
-                <span>Tekan</span>
-                <span className="px-1.5 py-0.5 bg-white border border-gray-200 rounded shadow-sm">
-                  Esc
-                </span>
-                <span>untuk menutup</span>
+            <div className="px-4 py-3 border-t border-gray-100 bg-gray-50 flex items-center justify-between text-xs text-gray-500 font-medium shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.5 bg-white border border-gray-200 rounded shadow-sm flex items-center">
+                    ↑↓
+                  </span>
+                  <span>Navigasi</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.5 bg-white border border-gray-200 rounded shadow-sm">
+                    Enter
+                  </span>
+                  <span>Pilih</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <span className="px-1.5 py-0.5 bg-white border border-gray-200 rounded shadow-sm">
+                    Esc
+                  </span>
+                  <span>Tutup</span>
+                </div>
               </div>
             </div>
           </div>
@@ -468,4 +461,6 @@ export default function Header() {
       )}
     </>
   );
-}
+});
+
+export default Header;

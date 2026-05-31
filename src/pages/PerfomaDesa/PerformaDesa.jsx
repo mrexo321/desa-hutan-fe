@@ -267,79 +267,90 @@ export default function PerformaDesa() {
                   <X size={20} />
                 </button>
               </div>
-
-              <form onSubmit={handleUploadSubmit} className="space-y-4">
-                {/* Formula */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Formula</label>
-                  <select
-                    value={uploadFormulaId}
-                    onChange={(e) => setUploadFormulaId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 focus:outline-none focus:border-[#2D7344]"
-                    required
-                  >
-                    <option value="">-- Pilih Formula --</option>
-                    {formulaList.map((f) => (
-                      <option key={f.id} value={f.id}>{f.nama || f.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Tahun */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tahun</label>
-                  <select
-                    value={uploadTahunId}
-                    onChange={(e) => setUploadTahunId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 focus:outline-none focus:border-[#2D7344]"
-                    required
-                  >
-                    <option value="">-- Pilih Tahun --</option>
-                    {tahunList.map((t) => (
-                      <option key={t.id} value={t.id}>{t.tahun}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* File Upload */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">File Excel (.xlsx)</label>
-                  <div
-                    onClick={() => fileRef.current?.click()}
-                    className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-[#2D7344] hover:bg-green-50/30 transition-all"
-                  >
-                    <FileUp size={28} className="text-gray-300 mb-2" />
-                    {uploadFile ? (
-                      <p className="text-sm font-semibold text-[#2D7344]">{uploadFile.name}</p>
-                    ) : (
-                      <p className="text-sm text-gray-400">Klik untuk memilih file Excel</p>
-                    )}
-                    <input
-                      ref={fileRef}
-                      type="file"
-                      accept=".xlsx,.xls"
-                      className="hidden"
-                      onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                  <button type="button" onClick={() => setIsUploadModalOpen(false)}
-                    className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
-                    disabled={uploadMutation.isPending}>
-                    Batal
-                  </button>
-                  <button type="submit" disabled={uploadMutation.isPending}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1d4d2b] text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-70 shadow-sm">
-                    {uploadMutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Mengunggah...</> : <><Upload size={16} /> Upload</>}
-                  </button>
-                </div>
-              </form>
             </div>
+
+            <form onSubmit={handleUploadSubmit} className="space-y-4">
+              {/* Formula */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Formula</label>
+                <select
+                  value={uploadFormulaId}
+                  onChange={(e) => setUploadFormulaId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 focus:outline-none focus:border-[#2D7344]"
+                  required
+                >
+                  <option value="">-- Pilih Formula --</option>
+                  {formulaList.map((f) => (
+                    <option key={f.id} value={f.id}>{f.nama || f.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Tahun */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tahun</label>
+                <select
+                  value={uploadTahunId}
+                  onChange={(e) => setUploadTahunId(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 focus:outline-none focus:border-[#2D7344]"
+                  required
+                >
+                  <option value="">-- Pilih Tahun --</option>
+                  {tahunList.map((t) => (
+                    <option key={t.id} value={t.id}>{t.tahun}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* File Upload */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">File Excel (.xlsx)</label>
+                <div
+                  onClick={() => fileRef.current?.click()}
+                  className="border-2 border-dashed border-gray-200 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:border-[#2D7344] hover:bg-green-50/30 transition-all"
+                >
+                  <FileUp size={28} className="text-gray-300 mb-2" />
+                  {uploadFile ? (
+                    <p className="text-sm font-semibold text-[#2D7344]">{uploadFile.name}</p>
+                  ) : (
+                    <p className="text-sm text-gray-400">Klik untuk memilih file Excel</p>
+                  )}
+                  <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".xlsx,.xls"
+                    className="hidden"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-[15px] font-bold text-slate-800">
+                    Tabel Data Performa Tahun {years.find((y) => y.id === selectedTahun)?.tahun || ""}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium mt-1 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Formula: <span className="font-semibold text-slate-700">{formulasMain.find((f) => f.id === selectedFormula)?.nama || "Tidak ada nama"}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <button type="button" onClick={() => setIsUploadModalOpen(false)}
+                  className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                  disabled={uploadMutation.isPending}>
+                  Batal
+                </button>
+                <button type="submit" disabled={uploadMutation.isPending}
+                  className="flex items-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1d4d2b] text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-70 shadow-sm">
+                  {uploadMutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Mengunggah...</> : <><Upload size={16} /> Upload</>}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
-      )}
-    </DashboardLayout>
+        </div>
+  )
+}
+    </DashboardLayout >
   );
 }

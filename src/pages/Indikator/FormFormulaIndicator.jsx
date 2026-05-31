@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { indikatorService } from "../../services/master/indikatorService";
@@ -23,6 +23,8 @@ import {
 const FormFormulaIndicator = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const tahunIdParam = searchParams.get("tahunId");
   const queryClient = useQueryClient();
   const isEditMode = !!id;
 
@@ -31,7 +33,7 @@ const FormFormulaIndicator = () => {
   const [formData, setFormData] = useState({
     nama: "",
     formula: "",
-    tahunIndikatorPerhitunganId: "",
+    tahunIndikatorPerhitunganId: tahunIdParam || "",
   });
 
   const [selectedIndicators, setSelectedIndicators] = useState([]);
@@ -400,8 +402,8 @@ const FormFormulaIndicator = () => {
                               tahunIndikatorPerhitunganId: e.target.value,
                             })
                           }
-                          disabled={isLoadingTahun} // Disable saat loading
-                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                          disabled={isLoadingTahun || !!tahunIdParam} // Disable saat loading atau di-lock
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100"
                         >
                           <option value="" disabled>
                             {isLoadingTahun

@@ -241,7 +241,7 @@ export default function Header() {
         {/* KANAN: Search, Notifikasi, Profile */}
         <div className="flex items-center gap-3 md:gap-5 ml-auto">
           {/* SEARCH TRIGGER BUTTON */}
-          <button
+          {/* <button
             onClick={() => setIsSearchOpen(true)}
             className="hidden lg:flex relative group items-center w-72 bg-gray-50/80 hover:bg-gray-100/80 border border-gray-200/80 text-gray-400 py-2.5 pl-4 pr-12 rounded-2xl text-sm transition-all duration-300 font-medium shadow-inner text-left"
           >
@@ -257,18 +257,18 @@ export default function Header() {
                 K
               </span>
             </div>
-          </button>
+          </button> */}
 
           {/* Tombol Search Mobile */}
-          <button
+          {/* <button
             onClick={() => setIsSearchOpen(true)}
             className="lg:hidden p-2.5 rounded-xl text-gray-500 hover:text-[#2D7344] hover:bg-green-50 transition-all border border-transparent"
           >
             <Search size={20} strokeWidth={2.2} />
-          </button>
+          </button> */}
 
           {/* Tombol Notifikasi */}
-          <button className="relative p-2.5 rounded-xl text-gray-500 hover:text-[#2D7344] hover:bg-green-50 transition-all duration-300 border border-transparent hover:border-green-100 focus:outline-none shadow-sm hover:shadow-md">
+          {/* <button className="relative p-2.5 rounded-xl text-gray-500 hover:text-[#2D7344] hover:bg-green-50 transition-all duration-300 border border-transparent hover:border-green-100 focus:outline-none shadow-sm hover:shadow-md">
             <Bell size={20} strokeWidth={2.2} />
             <span className="absolute top-2.5 right-2.5 flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -276,7 +276,7 @@ export default function Header() {
             </span>
           </button>
 
-          <div className="hidden md:block w-px h-8 bg-gradient-to-b from-transparent via-gray-200 to-transparent mx-1"></div>
+          <div className="hidden md:block w-px h-8 bg-gradient-to-b from-transparent via-gray-200 to-transparent mx-1"></div> */}
 
           {/* Profile Dropdown */}
           <div className="relative" ref={profileDropdownRef}>
@@ -304,20 +304,18 @@ export default function Header() {
               <ChevronDown
                 size={16}
                 strokeWidth={2.5}
-                className={`text-gray-400 transition-transform duration-300 ml-1 ${
-                  isProfileOpen
+                className={`text-gray-400 transition-transform duration-300 ml-1 ${isProfileOpen
                     ? "rotate-180 text-[#2D7344]"
                     : "rotate-0 group-hover:text-[#2D7344]"
-                }`}
+                  }`}
               />
             </div>
 
             <div
-              className={`absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 py-2 z-50 transition-all duration-300 origin-top-right ${
-                isProfileOpen
+              className={`absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.1)] border border-gray-100 py-2 z-50 transition-all duration-300 origin-top-right ${isProfileOpen
                   ? "opacity-100 scale-100 translate-y-0 visible"
                   : "opacity-0 scale-95 -translate-y-2 invisible"
-              }`}
+                }`}
             >
               <div className="px-5 py-4 border-b border-gray-100/80 mb-2 flex items-center gap-4 bg-gray-50/50 rounded-t-xl mx-2 mt-[-8px]">
                 <div className="bg-[#2D7344]/10 p-2.5 rounded-xl text-[#2D7344] shadow-sm">

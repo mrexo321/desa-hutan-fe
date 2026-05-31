@@ -28,6 +28,7 @@ import {
   Moon,
   Info,
   Loader2,
+  Zap,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -115,8 +116,11 @@ const Dashboard = () => {
   // =========================================
   const [showLayerHutan, setShowLayerHutan] = useState(false);
   const [showLayerDesa, setShowLayerDesa] = useState(false);
+  const [showLayerPsn, setShowLayerPsn] = useState(false);
   const [opacityHutan, setOpacityHutan] = useState(80);
   const [opacityDesa, setOpacityDesa] = useState(80);
+  const [opacityPsn, setOpacityPsn] = useState(80);
+  const [tahunPsn, setTahunPsn] = useState(2025);
 
   // =========================================
   // 3. STATE PENCARIAN PETA (API SEARCH-MAP)
@@ -334,6 +338,7 @@ const Dashboard = () => {
   // =========================================
 
   const WMS_BASE = import.meta.env.VITE_GEOSERVER_GWC_BASE;
+  const WMS_DIRECT = import.meta.env.VITE_GEOSERVER_WMS_BASE;
   const WMS_HUTAN = useMemo(
     () =>
       `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:vw_wilayah_hutan&styles=desa-gis:wilayah_hutan_style&TILED=true&_v=${hutanVersion}`,
@@ -344,6 +349,12 @@ const Dashboard = () => {
     () =>
       `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:wilayah_desa_geom&styles=desa-gis:wilayah_desa_style&TILED=true`,
     [WMS_BASE],
+  );
+
+  const WMS_PSN = useMemo(
+    () =>
+      `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_psn&styles=desa-gis:desa_psn_style&TILED=true&CQL_FILTER=tahun=${tahunPsn}`,
+    [WMS_DIRECT, tahunPsn],
   );
 
   useEffect(() => {
@@ -475,6 +486,20 @@ const Dashboard = () => {
                   id="layer-desa"
                   type="raster"
                   paint={{ "raster-opacity": opacityDesa / 100 }}
+                />
+              </Source>
+            )}
+            {showLayerPsn && (
+              <Source
+                id="geoserver-psn"
+                type="raster"
+                tiles={[WMS_PSN]}
+                tileSize={256}
+              >
+                <Layer
+                  id="layer-psn"
+                  type="raster"
+                  paint={{ "raster-opacity": opacityPsn / 100 }}
                 />
               </Source>
             )}
@@ -781,7 +806,7 @@ const Dashboard = () => {
                   className={`flex items-center justify-center w-11 h-11 rounded-[14px] backdrop-blur-xl border shadow-lg transition-all ${activeMenu === "layer" ? "bg-white border-[#00B67A]/50 text-[#00B67A] scale-105" : "bg-white/80 border-white/50 text-gray-700 hover:bg-white hover:text-[#00B67A]"}`}
                 >
                   <Layers size={20} strokeWidth={2} />
-                  {(showLayerHutan || showLayerDesa) && (
+                  {(showLayerHutan || showLayerDesa || showLayerPsn) && (
                     <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
                   )}
                 </button>
@@ -884,6 +909,71 @@ const Dashboard = () => {
                               }
                               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
                             />
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        className={`p-3.5 rounded-[14px] border transition-all ${showLayerPsn ? "bg-white border-purple-100 shadow-sm" : "bg-gray-50 border-transparent opacity-70"}`}
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`p-1.5 rounded-lg ${showLayerPsn ? "bg-purple-100 text-purple-600" : "bg-gray-200 text-gray-400"}`}
+                            >
+                              <Zap size={14} />
+                            </div>
+                            <div
+                              className={`text-xs font-bold ${showLayerPsn ? "text-gray-800" : "text-gray-500"}`}
+                            >
+                              Desa PSN
+                            </div>
+                          </div>
+                          <label className="cursor-pointer relative inline-flex items-center">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={showLayerPsn}
+                              onChange={() => setShowLayerPsn(!showLayerPsn)}
+                            />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                          </label>
+                        </div>
+                        {showLayerPsn && (
+                          <div className="flex flex-col gap-3">
+                            <div>
+                              <div className="flex justify-between text-[9px] font-bold text-gray-400 mb-1">
+                                <span>TRANSPARANSI</span>
+                                <span>{opacityPsn}%</span>
+                              </div>
+                              <input
+                                type="range"
+                                min="10"
+                                max="100"
+                                value={opacityPsn}
+                                onChange={(e) =>
+                                  setOpacityPsn(parseInt(e.target.value))
+                                }
+                                className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-500"
+                              />
+                            </div>
+                            <div>
+                              <div className="flex justify-between text-[9px] font-bold text-gray-400 mb-1.5">
+                                <span>TAHUN TARGET ({tahunPsn})</span>
+                              </div>
+                              <div className="grid grid-cols-5 gap-0.5 bg-gray-100 p-0.5 rounded-lg">
+                                {[2025, 2026, 2027, 2028, 2029].map((yr) => (
+                                  <button
+                                    key={yr}
+                                    type="button"
+                                    onClick={() => setTahunPsn(yr)}
+                                    className={`py-0.5 text-center font-bold text-[10px] rounded transition-all ${tahunPsn === yr ? "bg-purple-600 text-white shadow-sm" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200"}`}
+                                  >
+                                    {yr}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>

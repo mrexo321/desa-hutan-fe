@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Trees,
@@ -22,8 +22,15 @@ import {
 } from "lucide-react";
 
 export default function Sidebar({ activeMenu }) {
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpenMobile, setIsOpenMobile] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    navigate("/");
+  };
 
   // Ukuran ikon disesuaikan agar proporsional
   const iconProps = { size: 20, strokeWidth: 2 };
@@ -261,8 +268,9 @@ export default function Sidebar({ activeMenu }) {
         {/* --- FOOTER SIDEBAR (Tombol Keluar) --- */}
         <div className="p-4 mt-auto border-t border-white/5">
           <button
+            onClick={handleLogout}
             title={isCollapsed ? "Keluar" : ""}
-            className={`w-full flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl text-[#7B9E8D] hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group`}
+            className={`w-full flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl text-[#7B9E8D] hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group cursor-pointer`}
           >
             <div className="flex-shrink-0 transition-transform duration-200 group-hover:-translate-x-1">
               <LogOut size={20} strokeWidth={2} />

@@ -207,11 +207,16 @@ export default function PerformaDesa() {
                       <tr key={row.id} className="border-b border-gray-100 even:bg-[#E8EEF2] hover:bg-green-50 transition-colors">
                         <td className="py-3 px-4 text-center">{(page - 1) * pageSize + idx + 1}</td>
                         <td className="py-3 px-4 font-semibold text-gray-800">{row.desa?.nama || "-"}</td>
-                        {columns.map((col) => (
-                          <td key={col.kode} className="py-3 px-4">
-                            {row.nilaiIndikator?.[col.kode] ?? "-"}
-                          </td>
-                        ))}
+                        {columns.map((col) => {
+                          const indVal = Array.isArray(row.nilaiIndikator)
+                            ? row.nilaiIndikator.find((x) => x.kode === col.kode)
+                            : null;
+                          return (
+                            <td key={col.kode} className="py-3 px-4">
+                              {indVal ? (indVal.label ?? indVal.nilai ?? "-") : "-"}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))
                   )}

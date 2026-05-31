@@ -14,6 +14,18 @@ export const performaDesaService = {
   },
 
   /**
+   * GET /performa-desa-hutan/index
+   * Menampilkan data performa desa hutan.
+   * Response: { items: [...], pagination: { total, perPage, currentPage, totalPage } }
+   */
+  async getIndexPerformaDesaHutan({ page = 1, size = 10, tahun } = {}) {
+    const response = await masterInstance.get("/performa-desa-hutan/index", {
+      params: { page, size, tahun },
+    });
+    return response.data;
+  },
+
+  /**
    * GET /performa-desa-hutan/template
    * Download template Excel berdasarkan formulaId.
    * WAJIB responseType: 'blob'

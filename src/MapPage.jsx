@@ -26,6 +26,7 @@ import {
   Info,
   Loader2,
   ArrowLeft,
+  Zap,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -92,10 +93,15 @@ export default function MapPage() {
   // 3. State Visibilitas Layer WMS (ON/OFF)
   const [showLayerHutan, setShowLayerHutan] = useState(false);
   const [showLayerDesa, setShowLayerDesa] = useState(false);
+  const [showLayerPsn, setShowLayerPsn] = useState(false);
 
   // 4. State Opacity Layer WMS (0 - 100)
   const [opacityHutan, setOpacityHutan] = useState(80);
   const [opacityDesa, setOpacityDesa] = useState(80);
+  const [opacityPsn, setOpacityPsn] = useState(80);
+
+  // 5. State Filter Tahun WMS PSN
+  const [tahunPsn, setTahunPsn] = useState(2025);
 
   // State hutan refresh tile
   const [hutanVersion, setHutanVersion] = useState(Date.now());
@@ -119,6 +125,8 @@ export default function MapPage() {
 
   const WMS_BASE = import.meta.env.VITE_GEOSERVER_GWC_BASE;
 
+  const WMS_DIRECT = import.meta.env.VITE_GEOSERVER_WMS_BASE;
+
   const WMS_HUTAN = useMemo(
     () =>
       `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:vw_wilayah_hutan&styles=desa-gis:wilayah_hutan_style&TILED=true&_v=${hutanVersion}`,
@@ -129,6 +137,12 @@ export default function MapPage() {
     () =>
       `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:wilayah_desa_geom&styles=desa-gis:wilayah_desa_style&TILED=true`,
     [WMS_BASE],
+  );
+
+  const WMS_PSN = useMemo(
+    () =>
+      `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_psn&styles=desa-gis:desa_psn_style&TILED=true&CQL_FILTER=tahun=${tahunPsn}`,
+    [WMS_DIRECT, tahunPsn],
   );
 
   useEffect(() => {
@@ -283,6 +297,27 @@ export default function MapPage() {
               type="raster"
               paint={{
                 "raster-opacity": opacityDesa / 100,
+                "raster-fade-duration": 0,
+                "raster-resampling": "linear",
+              }}
+            />
+          </Source>
+        )}
+
+        {/* --- LAYER WMS: DESA PSN --- */}
+        {showLayerPsn && (
+          <Source
+            id="geoserver-psn"
+            type="raster"
+            tiles={[WMS_PSN]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="layer-psn"
+              type="raster"
+              paint={{
+                "raster-opacity": opacityPsn / 100,
                 "raster-fade-duration": 0,
                 "raster-resampling": "linear",
               }}
@@ -606,7 +641,7 @@ export default function MapPage() {
             className={`flex items-center justify-center w-12 h-12 rounded-[16px] backdrop-blur-xl border shadow-[0_8px_20px_rgb(0,0,0,0.08)] transition-all duration-300 focus:outline-none ${activeMenu === "layer" ? "bg-white border-[#2D7344]/50 text-[#2D7344] scale-105" : "bg-white/70 border-white/50 text-gray-600 hover:bg-white hover:text-[#2D7344]"}`}
           >
             <Layers size={22} strokeWidth={1.5} />
-            {(showLayerHutan || showLayerDesa) && (
+            {(showLayerHutan || showLayerDesa || showLayerPsn) && (
               <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></div>
             )}
           </button>
@@ -741,6 +776,94 @@ export default function MapPage() {
                         }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                       />
+                    </div>
+                  )}
+                </div>
+
+                {/* --- KONTROL: LAYER DESA PSN --- */}
+                <div
+                  className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerPsn ? "bg-white/90 border-purple-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-xl transition-colors ${showLayerPsn ? "bg-purple-100 text-purple-600" : "bg-gray-200 text-gray-400"}`}
+                      >
+                        <Zap size={16} strokeWidth={2} />
+                      </div>
+                      <div>
+                        <div
+                          className={`text-sm font-bold transition-colors ${showLayerPsn ? "text-gray-800" : "text-gray-500"}`}
+                        >
+                          Desa PSN
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-medium">
+                          GeoServer WMS
+                        </div>
+                      </div>
+                    </div>
+                    <label className="cursor-pointer">
+                      <div
+                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerPsn ? "bg-purple-600" : "bg-gray-300"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={showLayerPsn}
+                          onChange={() => setShowLayerPsn(!showLayerPsn)}
+                        />
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-spring ${showLayerPsn ? "translate-x-5" : "translate-x-0"}`}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  {showLayerPsn && (
+                    <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200 flex flex-col gap-3">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Transparansi
+                          </span>
+                          <span className="font-mono text-xs font-bold text-purple-600">
+                            {opacityPsn}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="100"
+                          value={opacityPsn}
+                          onChange={(e) =>
+                            setOpacityPsn(parseInt(e.target.value))
+                          }
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Tahun Target
+                          </span>
+                          <span className="font-mono text-xs font-bold text-purple-600">
+                            {tahunPsn}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-5 gap-1 bg-gray-100 p-1 rounded-xl">
+                          {[2025, 2026, 2027, 2028, 2029].map((yr) => (
+                            <button
+                              key={yr}
+                              type="button"
+                              onClick={() => setTahunPsn(yr)}
+                              className={`py-1 text-center font-bold text-xs rounded-lg transition-all ${tahunPsn === yr ? "bg-purple-600 text-white shadow-sm scale-105" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200"}`}
+                            >
+                              {yr}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   )}
                 </div>

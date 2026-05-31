@@ -587,7 +587,7 @@ const Dashboard = () => {
                                 Kawasan Hutan
                               </p>
                               <p
-                                className="font-bold text-gray-800 text-sm truncate"
+                                className="font-bold text-gray-800 text-sm"
                                 title={detailData.hutan?.fungsiKawasan?.nama}
                               >
                                 {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}

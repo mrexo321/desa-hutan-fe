@@ -554,7 +554,7 @@ export default function DesaDetailTab({ periode, onBack }) {
             : "text-slate-550 hover:text-slate-800 hover:bg-slate-200/30"
             }`}
         >
-          Tampilan Kartu
+          Card View
         </button>
         <button
           type="button"
@@ -766,7 +766,7 @@ export default function DesaDetailTab({ periode, onBack }) {
               <tbody className="divide-y divide-slate-300">
                 {filteredDesas.flatMap((desa) => {
                   const years = Array.isArray(desa.indikatorDesa) ? desa.indikatorDesa : [];
-                  
+
                   if (years.length === 0) {
                     return [
                       <tr key={`${desa.id}-empty`} className="hover:bg-slate-50/50">
@@ -802,7 +802,7 @@ export default function DesaDetailTab({ periode, onBack }) {
 
                   years.forEach((indikator) => {
                     const nilaiArray = Array.isArray(indikator.nilai) ? indikator.nilai : [];
-                    
+
                     if (nilaiArray.length === 0) {
                       rows.push({
                         indikator,
@@ -852,8 +852,8 @@ export default function DesaDetailTab({ periode, onBack }) {
                       )}
 
                       {item.isFirstOfYear && (
-                        <td 
-                          rowSpan={item.yearSpan} 
+                        <td
+                          rowSpan={item.yearSpan}
                           className="border border-slate-300 px-3 py-2 font-extrabold text-slate-900 bg-slate-50 text-center align-middle w-24 border-b border-slate-200"
                         >
                           <span className="inline-flex items-center px-2 py-0.5 bg-emerald-50 text-[#2D7344] text-[10px] font-extrabold rounded border border-emerald-250">

@@ -26,6 +26,7 @@ import {
   Info,
   Loader2,
   ArrowLeft,
+  Zap,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -57,37 +58,28 @@ export default function MapPage() {
   const [clickedLocation, setClickedLocation] = useState(null);
   const navigate = useNavigate();
 
-  // --- STATE PENCARIAN (LOKAL) ---
+  // --- STATE PENCARIAN (API SEARCH-MAP) ---
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
 
-  // --- FETCHING SEMUA DATA DESA DARI API INTERNAL UNTUK PENCARIAN ---
-  const { data: responseDesa, isLoading: isFetchingDesaData } = useQuery({
-    queryKey: ["allVillagesMap"],
-    queryFn: () => wilayahDesaService.getAllDesa(1, 1000), // Ambil banyak data sekaligus
-    staleTime: 60000,
+  // Debounce search query (400ms)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // --- FETCHING SEARCH-MAP DARI API ---
+  const { data: searchResponse, isFetching: isFetchingSearch } = useQuery({
+    queryKey: ["searchMapDesa", debouncedQuery],
+    queryFn: () => wilayahDesaService.searchMap(debouncedQuery, 5),
+    enabled: debouncedQuery.trim().length >= 2,
+    staleTime: 30000,
   });
 
-  const listDesa = responseDesa?.items || [];
-
-  console.log(listDesa);
-
-  // --- FILTERING LOKAL BERDASARKAN INPUT ---
-  const searchResults = useMemo(() => {
-    if (!searchQuery.trim() || searchQuery.length < 2) return [];
-
-    const query = searchQuery.toLowerCase();
-    return listDesa
-      .filter(
-        (desa) =>
-          desa.nama?.toLowerCase().includes(query) ||
-          desa.kecamatan?.toLowerCase().includes(query) ||
-          desa.kabupaten?.toLowerCase().includes(query) ||
-          desa.provinsi?.toLowerCase().includes(query) ||
-          desa.kodeKemendagri?.toLowerCase().includes(query),
-      )
-      .slice(0, 8); // Batasi maksimal 8 hasil agar dropdown tidak terlalu panjang
-  }, [searchQuery, listDesa]);
+  const searchResults = searchResponse?.data || [];
 
   // 2. State Tema Peta
   const [mapStyle, setMapStyle] = useState(
@@ -96,12 +88,17 @@ export default function MapPage() {
   const [activeMenu, setActiveMenu] = useState(null);
 
   // 3. State Visibilitas Layer WMS (ON/OFF)
-  const [showLayerHutan, setShowLayerHutan] = useState(true);
-  const [showLayerDesa, setShowLayerDesa] = useState(true);
+  const [showLayerHutan, setShowLayerHutan] = useState(false);
+  const [showLayerDesa, setShowLayerDesa] = useState(false);
+  const [showLayerPsn, setShowLayerPsn] = useState(false);
 
   // 4. State Opacity Layer WMS (0 - 100)
   const [opacityHutan, setOpacityHutan] = useState(80);
   const [opacityDesa, setOpacityDesa] = useState(80);
+  const [opacityPsn, setOpacityPsn] = useState(80);
+
+  // 5. State Filter Tahun WMS PSN
+  const [tahunPsn, setTahunPsn] = useState(2025);
 
   // State hutan refresh tile
   const [hutanVersion, setHutanVersion] = useState(Date.now());
@@ -123,20 +120,26 @@ export default function MapPage() {
     staleTime: 5000,
   });
 
-  const WMS_BASE = import.meta.env.VITE_GEOSERVER_WMS_BASE;
+  const WMS_BASE = import.meta.env.VITE_GEOSERVER_GWC_BASE;
 
-  const wmsHutanTiles = useMemo(
-    () => [
-      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa-gis:vw_wilayah_hutan&styles=wilayah_hutan_style&_v=${hutanVersion}`
-    ],
-    [WMS_BASE, hutanVersion],
+  const WMS_DIRECT = import.meta.env.VITE_GEOSERVER_WMS_BASE;
+
+  const WMS_HUTAN = useMemo(
+    () =>
+      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:vw_wilayah_hutan&styles=desa-gis:wilayah_hutan_style&TILED=true&_v=${hutanVersion}`,
+    [hutanVersion, WMS_BASE],
   );
 
-  const wmsDesaTiles = useMemo(
-    () => [
-      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=512&height=512&layers=desa-gis:wilayah_desa_geom&styles=wilayah_desa_style`
-    ],
+  const WMS_DESA = useMemo(
+    () =>
+      `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:wilayah_desa_geom&styles=desa-gis:wilayah_desa_style&TILED=true`,
     [WMS_BASE],
+  );
+
+  const WMS_PSN = useMemo(
+    () =>
+      `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_psn&styles=desa-gis:desa_psn_style&TILED=true&CQL_FILTER=tahun=${tahunPsn}`,
+    [WMS_DIRECT, tahunPsn],
   );
 
   const paintHutan = useMemo(() => ({
@@ -214,24 +217,25 @@ export default function MapPage() {
     setSearchQuery(desa.nama);
     setShowDropdown(false);
 
-    // Ambil koordinat dari data desa (sesuaikan dengan nama properti dari API Anda)
-    // Jika API tidak mengirimkan coord, fallback ke posisi saat ini agar tidak error
-    const lng = Number(desa.longitude) || Number(desa.lng) || 106.8229;
-    const lat = Number(desa.latitude) || Number(desa.lat) || -6.2088;
+    // Ambil koordinat dari centroid response API search-map
+    const lat = desa.centroid?.lat;
+    const lng = desa.centroid?.lng;
 
-    // Animasi terbang ke lokasi
-    mapRef.current?.flyTo({
-      center: [lng, lat],
-      zoom: 15,
-      duration: 2500,
-      essential: true,
-    });
+    if (lat && lng) {
+      // Animasi terbang ke lokasi desa
+      mapRef.current?.flyTo({
+        center: [lng, lat],
+        zoom: 14,
+        duration: 2500,
+        essential: true,
+      });
 
-    // Otomatis pasang marker popup di lokasi desa
-    setClickedLocation({
-      longitude: lng,
-      latitude: lat,
-    });
+      // Otomatis pasang marker popup di lokasi desa
+      setClickedLocation({
+        longitude: lng,
+        latitude: lat,
+      });
+    }
   };
 
   if (!MAPBOX_TOKEN) {
@@ -298,6 +302,27 @@ export default function MapPage() {
               id="layer-desa"
               type="raster"
               paint={paintDesa}
+            />
+          </Source>
+        )}
+
+        {/* --- LAYER WMS: DESA PSN --- */}
+        {showLayerPsn && (
+          <Source
+            id="geoserver-psn"
+            type="raster"
+            tiles={[WMS_PSN]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="layer-psn"
+              type="raster"
+              paint={{
+                "raster-opacity": opacityPsn / 100,
+                "raster-fade-duration": 0,
+                "raster-resampling": "linear",
+              }}
             />
           </Source>
         )}
@@ -393,13 +418,13 @@ export default function MapPage() {
             </button>
           </div>
 
-          {/* HASIL PENCARIAN LOKAL */}
+          {/* HASIL PENCARIAN API */}
           {showDropdown && searchQuery.length >= 2 && (
             <div className="absolute top-[110%] left-0 w-full bg-white/95 backdrop-blur-xl border border-white shadow-[0_15px_40px_rgb(0,0,0,0.12)] rounded-[16px] overflow-hidden z-10 animate-in fade-in slide-in-from-top-2 duration-200">
-              {isFetchingDesaData ? (
+              {isFetchingSearch ? (
                 <div className="text-center py-5 text-xs text-gray-500 flex flex-col items-center gap-2">
                   <Loader2 size={16} className="animate-spin text-[#2D7344]" />
-                  <span>Memuat database desa...</span>
+                  <span>Mencari desa...</span>
                 </div>
               ) : searchResults.length > 0 ? (
                 <div className="max-h-[300px] overflow-y-auto custom-scrollbar">
@@ -417,11 +442,11 @@ export default function MapPage() {
                         <span className="text-sm font-bold text-gray-800 line-clamp-1">
                           {desa.nama}
                         </span>
-                        <span className="text-[11px] text-gray-500 line-clamp-1 mt-0.5">
-                          Kec. {desa.kecamatan}, {desa.kabupaten || desa.kabupaten}
+                        <span className="text-[11px] text-gray-500 line-clamp-1">
+                          {desa.kecamatan}, {desa.kabupaten} • {desa.provinsi}
                         </span>
-                        <span className="text-[10px] text-gray-400 mt-0.5">
-                          {desa.provinsi} • Kode: {desa.kodeKemendagri}
+                        <span className="text-[10px] text-gray-400 font-mono">
+                          {desa.kode_kemendagri}
                         </span>
                       </div>
                     </button>
@@ -488,7 +513,7 @@ export default function MapPage() {
             className={`flex items-center justify-center w-12 h-12 rounded-[16px] backdrop-blur-xl border shadow-[0_8px_20px_rgb(0,0,0,0.08)] transition-all duration-300 focus:outline-none ${activeMenu === "layer" ? "bg-white border-[#2D7344]/50 text-[#2D7344] scale-105" : "bg-white/70 border-white/50 text-gray-600 hover:bg-white hover:text-[#2D7344]"}`}
           >
             <Layers size={22} strokeWidth={1.5} />
-            {(showLayerHutan || showLayerDesa) && (
+            {(showLayerHutan || showLayerDesa || showLayerPsn) && (
               <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></div>
             )}
           </button>
@@ -626,6 +651,94 @@ export default function MapPage() {
                     </div>
                   )}
                 </div>
+
+                {/* --- KONTROL: LAYER DESA PSN --- */}
+                <div
+                  className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerPsn ? "bg-white/90 border-purple-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-xl transition-colors ${showLayerPsn ? "bg-purple-100 text-purple-600" : "bg-gray-200 text-gray-400"}`}
+                      >
+                        <Zap size={16} strokeWidth={2} />
+                      </div>
+                      <div>
+                        <div
+                          className={`text-sm font-bold transition-colors ${showLayerPsn ? "text-gray-800" : "text-gray-500"}`}
+                        >
+                          Desa PSN
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-medium">
+                          GeoServer WMS
+                        </div>
+                      </div>
+                    </div>
+                    <label className="cursor-pointer">
+                      <div
+                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerPsn ? "bg-purple-600" : "bg-gray-300"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={showLayerPsn}
+                          onChange={() => setShowLayerPsn(!showLayerPsn)}
+                        />
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-spring ${showLayerPsn ? "translate-x-5" : "translate-x-0"}`}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  {showLayerPsn && (
+                    <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200 flex flex-col gap-3">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Transparansi
+                          </span>
+                          <span className="font-mono text-xs font-bold text-purple-600">
+                            {opacityPsn}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="100"
+                          value={opacityPsn}
+                          onChange={(e) =>
+                            setOpacityPsn(parseInt(e.target.value))
+                          }
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Tahun Target
+                          </span>
+                          <span className="font-mono text-xs font-bold text-purple-600">
+                            {tahunPsn}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-5 gap-1 bg-gray-100 p-1 rounded-xl">
+                          {[2025, 2026, 2027, 2028, 2029].map((yr) => (
+                            <button
+                              key={yr}
+                              type="button"
+                              onClick={() => setTahunPsn(yr)}
+                              className={`py-1 text-center font-bold text-xs rounded-lg transition-all ${tahunPsn === yr ? "bg-purple-600 text-white shadow-sm scale-105" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200"}`}
+                            >
+                              {yr}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
@@ -685,7 +798,7 @@ export default function MapPage() {
                     </h3>
                     <p className="text-xs text-gray-500 mb-4 leading-relaxed">
                       Kec. {detailData.desa?.kecamatan || "-"}, {detailData.desa?.kabupaten || "-"}
-                      <br/>
+                      <br />
                       {detailData.desa?.provinsi || "-"}
                     </p>
                     <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
@@ -734,7 +847,7 @@ export default function MapPage() {
                       <p className="text-emerald-100 text-[11px] uppercase tracking-widest font-semibold mb-6">
                         {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
                       </p>
-                      
+
                       <div className="w-full bg-black/20 rounded-xl p-4 backdrop-blur-sm border border-white/10">
                         <div className="flex justify-between items-end mb-2">
                           <span className="text-xs text-emerald-100 font-medium">Luas Beririsan</span>

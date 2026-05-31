@@ -3,7 +3,6 @@ import { useParams, useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
   ChevronLeft,
-  ChevronRight,
   Search,
   MapPin,
   TreePine,
@@ -12,6 +11,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { analystSpatialService } from "../../services/master/analystSpatialService";
 import { Loading } from "../../components/Loading";
+import Pagination from "../../components/Pagination";
 
 const ProvinceDetail = () => {
   const { provinceName } = useParams();
@@ -21,7 +21,6 @@ const ProvinceDetail = () => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
 
-  // Fetching Data Detail
   const { data: detailResponse, isLoading } = useQuery({
     queryKey: ["provinceDetail", provinceName, page, size],
     queryFn: () =>
@@ -30,38 +29,39 @@ const ProvinceDetail = () => {
     keepPreviousData: true,
   });
 
-  // Ekstraksi Data
   const rawData =
-    detailResponse?.data || detailResponse?.items || detailResponse || [];
-  const meta = detailResponse?.pagination || {
+    detailResponse?.data?.items ||
+    detailResponse?.items ||
+    detailResponse?.data ||
+    [];
+
+  const meta = detailResponse?.data?.pagination ||
+    detailResponse?.pagination || {
     total: rawData.length || 0,
     perPage: size,
-    currentPage: 1,
+    currentPage: page,
     totalPage: Math.ceil((rawData.length || 0) / size) || 1,
   };
 
-  // Logika Filter Pencarian dengan useMemo untuk optimasi performa (mencegah lag)
-  const filteredData = useMemo(() => {
-    return rawData.filter((desa) => {
-      const searchLower = searchTerm.toLowerCase();
-      
-      // Helper function untuk mengambil string jika datanya berupa object (seperti kecamatan/kabupaten)
-      const getString = (val) => (typeof val === 'object' && val !== null ? val.nama || '' : val || '');
-      
-      return (
-        getString(desa.nama).toLowerCase().includes(searchLower) ||
-        getString(desa.kecamatan).toLowerCase().includes(searchLower) ||
-        getString(desa.kabupaten).toLowerCase().includes(searchLower) ||
-        getString(desa.kodeKemendagri).toLowerCase().includes(searchLower)
-      );
-    });
-  }, [rawData, searchTerm]);
+  // Filter hanya di client-side untuk search (pagination tetap dari server)
+  const filteredData = rawData.filter((desa) => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      desa.nama?.toLowerCase().includes(q) ||
+      desa.kecamatan?.toLowerCase().includes(q) ||
+      desa.kabupaten?.toLowerCase().includes(q) ||
+      desa.kodeKemendagri?.toLowerCase().includes(q)
+    );
+  });
 
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
+  const handleSearchChange = (e) => {
+    setSearchTerm(e.target.value);
+    setPage(1); // reset ke halaman 1 saat search
+  };
 
-  // FUNGSI BARU: Pindah Halaman ke Detail Desa
   const handleViewDetail = (desa) => {
-    navigate(`/dashboard/desa-detail/${desa.id || desa.desaId}`, {
+    navigate(`/desa-detail/${desa.id}`, {
       state: {
         desaData: desa,
         provinceName: provinceName,
@@ -73,6 +73,7 @@ const ProvinceDetail = () => {
     <DashboardLayout activeMenu={"Dashboard"}>
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#F8FAFC]">
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
+
           {/* --- HEADER SECTION --- */}
           <div className="mb-8">
             <button
@@ -92,8 +93,7 @@ const ProvinceDetail = () => {
                   Wilayah: {decodeURIComponent(provinceName)}
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
-                  Rincian interaksi spasial desa dan kawasan hutan secara
-                  spesifik.
+                  Rincian interaksi spasial desa dan kawasan hutan secara spesifik.
                 </p>
               </div>
             </div>
@@ -101,6 +101,7 @@ const ProvinceDetail = () => {
 
           {/* --- MAIN CARD --- */}
           <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 flex flex-col min-h-[500px] overflow-hidden mb-8">
+
             {/* Toolbar */}
             <div className="px-6 py-5 border-b border-gray-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-white">
               <div className="flex items-center gap-3">
@@ -150,10 +151,8 @@ const ProvinceDetail = () => {
                   <tbody className="text-sm font-medium text-gray-600">
                     {filteredData.map((desa, idx) => {
                       const isMayoritas =
-                        desa.ringkasanInteraksi?.klasifikasi?.toLowerCase() ===
-                        "mayoritas";
-                      const rowNumber =
-                        (meta.currentPage - 1) * meta.perPage + idx + 1;
+                        desa.ringkasanInteraksi?.klasifikasi?.toLowerCase() === "mayoritas";
+                      const rowNumber = (meta.currentPage - 1) * meta.perPage + idx + 1;
 
                       return (
                         <tr
@@ -166,37 +165,27 @@ const ProvinceDetail = () => {
                           <td className="py-4 px-4">
                             <div className="flex items-center gap-3">
                               <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center flex-shrink-0">
-                                <TreePine
-                                  size={14}
-                                  className="text-emerald-600"
-                                />
+                                <TreePine size={14} className="text-emerald-600" />
                               </div>
-                              <span className="font-bold text-gray-800">
-                                {desa.nama}
-                              </span>
+                              <span className="font-bold text-gray-800">{desa.nama}</span>
                             </div>
                           </td>
                           <td className="py-4 px-4 text-gray-500 font-mono text-xs">
                             {desa.kodeKemendagri || "-"}
                           </td>
-                          <td className="py-4 px-4 text-gray-500">
-                            {typeof desa.kecamatan === 'object' && desa.kecamatan !== null ? desa.kecamatan.nama : (desa.kecamatan || "-")}
-                          </td>
-                          <td className="py-4 px-4 text-gray-500">
-                            {typeof desa.kabupaten === 'object' && desa.kabupaten !== null ? desa.kabupaten.nama : (desa.kabupaten || "-")}
-                          </td>
+                          <td className="py-4 px-4 text-gray-500">{desa.kecamatan || "-"}</td>
+                          <td className="py-4 px-4 text-gray-500">{desa.kabupaten || "-"}</td>
                           <td className="py-4 px-4 text-right text-gray-700 font-semibold">
                             {desa.luas_desa_ha?.toLocaleString() || "0"}
                           </td>
                           <td className="py-4 px-4 text-center">
                             <span
-                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full border ${isMayoritas
+                              className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize ${isMayoritas
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-200"
                                 : "bg-amber-50 text-amber-600 border-amber-200"
                                 }`}
                             >
-                              {desa.ringkasanInteraksi?.klasifikasi ||
-                                "Minoritas"}
+                              {desa.ringkasanInteraksi?.klasifikasi || "Minoritas"}
                             </span>
                           </td>
                           <td className="py-4 px-6 text-center">
@@ -227,12 +216,23 @@ const ProvinceDetail = () => {
               )}
             </div>
 
-            {/* Pagination Footer (Sama seperti sebelumnya) */}
-            {/* ... */}
+            {/* Pagination */}
+            {!isLoading && rawData.length > 0 && (
+              <Pagination
+                currentPage={meta.currentPage}
+                totalPage={meta.totalPage}
+                perPage={meta.perPage}
+                total={meta.total}
+                onPageChange={(newPage) => setPage(newPage)}
+                onSizeChange={(newSize) => {
+                  setSize(newSize);
+                  setPage(1);
+                }}
+              />
+            )}
           </div>
         </div>
       </main>
-
     </DashboardLayout>
   );
 };

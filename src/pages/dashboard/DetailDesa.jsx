@@ -26,7 +26,7 @@ const formatJenisInteraksi = (jenis) => {
     .join(" ");
 };
 
-const DetailDesa = () => {
+const DesaDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
 

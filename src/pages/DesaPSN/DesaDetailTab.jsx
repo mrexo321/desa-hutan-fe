@@ -156,6 +156,7 @@ export default function DesaDetailTab({ periode, onBack }) {
   const [importing, setImporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [useDummy, setUseDummy] = useState(false);
+  const [activeViewTab, setActiveViewTab] = useState("cards"); // 'cards' | 'table'
 
   // Pagination states
   const [page, setPage] = useState(1);
@@ -459,7 +460,7 @@ export default function DesaDetailTab({ periode, onBack }) {
                   setPage(1);
                 }}
                 disabled={loadingProvinsi}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold text-slate-700 disabled:bg-slate-50 cursor-pointer"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold text-slate-700 disabled:bg-slate-50 cursor-pointer"
               >
                 <option value="">Semua Provinsi</option>
                 {listProvinsi.map((prov) => (
@@ -484,7 +485,7 @@ export default function DesaDetailTab({ periode, onBack }) {
                   setPage(1);
                 }}
                 disabled={!filterProvinsi || loadingKabupaten}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold text-slate-700 disabled:bg-slate-50 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold text-slate-700 disabled:bg-slate-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 <option value="">Semua Kabupaten</option>
                 {listKabupaten.map((kab) => (
@@ -509,7 +510,7 @@ export default function DesaDetailTab({ periode, onBack }) {
                   setPage(1);
                 }}
                 disabled={!filterKabupaten || loadingKecamatan}
-                className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold text-slate-700 disabled:bg-slate-50 cursor-pointer disabled:cursor-not-allowed"
+                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold text-slate-700 disabled:bg-slate-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 <option value="">Semua Kecamatan</option>
                 {listKecamatan.map((kec) => (
@@ -530,7 +531,7 @@ export default function DesaDetailTab({ periode, onBack }) {
           <button
             type="button"
             onClick={handleResetFilters}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-600 hover:text-slate-800 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all duration-200 cursor-pointer"
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-50 hover:bg-slate-100 active:bg-slate-200 text-slate-600 hover:text-slate-800 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all duration-200 cursor-pointer"
             title="Reset semua filter"
           >
             <RotateCcw size={14} strokeWidth={2.5} className="text-slate-500" />
@@ -538,9 +539,33 @@ export default function DesaDetailTab({ periode, onBack }) {
           </button>
         </div>
 
-        <div className="flex-1 text-right text-xs text-slate-400 font-semibold xl:pl-4">
+        <div className="shrink-0 text-slate-400 text-xs font-semibold xl:pl-4 xl:text-right xl:ml-auto">
           Menampilkan {filteredDesas.length} dari {useDummy ? dummyDesas.length : desas.length} Desa
         </div>
+      </div>
+
+      {/* VIEW TABS CONTROLLER */}
+      <div className="flex p-1 bg-slate-100 rounded-xl w-max mb-6 border border-slate-200/50 shadow-inner-sm">
+        <button
+          type="button"
+          onClick={() => setActiveViewTab("cards")}
+          className={`px-5 py-2 text-xs font-bold rounded-lg transition-all duration-300 cursor-pointer ${activeViewTab === "cards"
+            ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
+            : "text-slate-550 hover:text-slate-800 hover:bg-slate-200/30"
+            }`}
+        >
+          Card View
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveViewTab("table")}
+          className={`px-5 py-2 text-xs font-bold rounded-lg transition-all duration-300 cursor-pointer ${activeViewTab === "table"
+            ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
+            : "text-slate-550 hover:text-slate-800 hover:bg-slate-200/30"
+            }`}
+        >
+          Tabel Data
+        </button>
       </div>
 
 
@@ -550,8 +575,21 @@ export default function DesaDetailTab({ periode, onBack }) {
           <table className="w-full border-collapse text-left">
             <thead>
               <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-xs font-bold tracking-wider">
-                <th className="py-4 px-6 w-1/3">Identitas & Wilayah Desa</th>
-                <th className="py-4 px-6 w-2/3">Dimensi & Nilai Indikator Desa</th>
+                {activeViewTab === "cards" ? (
+                  <>
+                    <th className="py-4 px-6 w-1/3">Identitas & Wilayah Desa</th>
+                    <th className="py-4 px-6 w-2/3">Dimensi & Nilai Indikator Desa</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="py-4 px-6 w-36">Kode Kemendagri</th>
+                    <th className="py-4 px-6 w-48">Nama Desa</th>
+                    <th className="py-4 px-6 w-36">Provinsi</th>
+                    <th className="py-4 px-6 w-36">Kabupaten/Kota</th>
+                    <th className="py-4 px-6 w-36">Kecamatan</th>
+                    <th className="py-4 px-6">Indikator Dimensi</th>
+                  </>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -586,7 +624,7 @@ export default function DesaDetailTab({ periode, onBack }) {
             </tbody>
           </table>
         </div>
-      ) : (
+      ) : activeViewTab === "cards" ? (
         <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-left min-w-[900px]">
@@ -610,16 +648,16 @@ export default function DesaDetailTab({ periode, onBack }) {
                         <span className="text-slate-400 text-xs font-mono font-medium tracking-tighter">
                           KODE KEMENDAGRI: {desa.kodeDesa}
                         </span>
-                        <div className="flex flex-wrap gap-1.5 mt-3">
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">
-                            <MapPin size={10} />
-                            Kec. {desa.kecamatan}
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50/80 text-[#2D7344] rounded-lg text-xs font-extrabold border border-emerald-100">
+                            {desa.provinsi}
                           </span>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold border border-slate-200">
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-extrabold border border-slate-200">
                             Kab. {desa.kabupaten}
                           </span>
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-50/50 text-[#2D7344] rounded-lg text-[10px] font-bold border border-emerald-100/30">
-                            {desa.provinsi}
+                          <span className="inline-flex items-center gap-1 px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-xs font-extrabold border border-slate-200">
+                            <MapPin size={12} strokeWidth={2.5} />
+                            Kec. {desa.kecamatan}
                           </span>
                         </div>
                       </div>
@@ -698,20 +736,162 @@ export default function DesaDetailTab({ periode, onBack }) {
                             ? "Belum ada desa yang terdaftar untuk periode ini."
                             : "Hasil pencarian tidak ditemukan."}
                         </span>
-                        {/* {desas.length === 0 && !useDummy && (
-                          <div className="flex flex-col items-center mt-3">
-                            <span className="text-xs text-slate-450 mb-4 block">
-                              Silakan import data desa dari berkas Excel menggunakan tombol di kanan atas.
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => setUseDummy(true)}
-                              className="px-4 py-2.5 bg-emerald-50 hover:bg-emerald-100 text-[#2D7344] text-xs font-bold rounded-xl border border-emerald-250 transition-all cursor-pointer shadow-sm shadow-emerald-800/10"
-                            >
-                              Aktifkan Mode Demo (Data s/d 2030)
-                            </button>
-                          </div>
-                        )} */}
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-slate-300 text-left min-w-[1100px]">
+              <thead>
+                <tr className="bg-slate-100 text-slate-700 uppercase text-xs font-bold tracking-wider">
+                  <th rowSpan="2" className="border border-slate-300 py-2.5 px-4 w-40 text-[11px] font-extrabold uppercase text-center align-middle">Kode Kemendagri</th>
+                  <th rowSpan="2" className="border border-slate-300 py-2.5 px-4 w-48 text-[11px] font-extrabold uppercase text-center align-middle">Nama Desa</th>
+                  <th rowSpan="2" className="border border-slate-300 py-2.5 px-4 w-40 text-[11px] font-extrabold uppercase text-center align-middle">Provinsi</th>
+                  <th rowSpan="2" className="border border-slate-300 py-2.5 px-4 w-44 text-[11px] font-extrabold uppercase text-center align-middle">Kabupaten/Kota</th>
+                  <th rowSpan="2" className="border border-slate-300 py-2.5 px-4 w-44 text-[11px] font-extrabold uppercase text-center align-middle">Kecamatan</th>
+                  <th colSpan="3" className="border border-slate-300 py-2 px-4 text-[11px] font-extrabold uppercase text-center">Indikator Dimensi</th>
+                </tr>
+                <tr className="bg-slate-50 text-slate-600 uppercase text-[10px] font-bold tracking-wider">
+                  <th className="border border-slate-300 py-1.5 px-3 w-24 text-center">Tahun</th>
+                  <th className="border border-slate-300 py-1.5 px-3">Nama Indikator</th>
+                  <th className="border border-slate-300 py-1.5 px-3 w-36">Nilai</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-300">
+                {filteredDesas.flatMap((desa) => {
+                  const years = Array.isArray(desa.indikatorDesa) ? desa.indikatorDesa : [];
+
+                  if (years.length === 0) {
+                    return [
+                      <tr key={`${desa.id}-empty`} className="hover:bg-slate-50/50">
+                        <td className="border border-slate-300 py-2.5 px-4 font-mono text-xs font-bold text-slate-500 bg-slate-50/20 align-middle">
+                          {desa.kodeDesa}
+                        </td>
+                        <td className="border border-slate-300 py-2.5 px-4 text-slate-900 font-extrabold text-sm align-middle">
+                          {desa.namaDesa}
+                        </td>
+                        <td className="border border-slate-300 py-2.5 px-4 text-slate-700 font-bold text-xs align-middle">
+                          {desa.provinsi}
+                        </td>
+                        <td className="border border-slate-300 py-2.5 px-4 text-slate-700 font-bold text-xs align-middle">
+                          {desa.kabupaten}
+                        </td>
+                        <td className="border border-slate-300 py-2.5 px-4 text-slate-700 font-bold text-xs align-middle">
+                          {desa.kecamatan}
+                        </td>
+                        <td className="border border-slate-300 py-2.5 px-4 text-center text-slate-400 italic bg-white align-middle" colSpan="3">
+                          Belum ada data indikator dimensi untuk desa ini.
+                        </td>
+                      </tr>
+                    ];
+                  }
+
+                  const totalRows = years.reduce((acc, yr) => {
+                    const vals = Array.isArray(yr.nilai) ? yr.nilai : [];
+                    return acc + (vals.length || 1);
+                  }, 0);
+
+                  const rows = [];
+                  let desaRendered = false;
+
+                  years.forEach((indikator) => {
+                    const nilaiArray = Array.isArray(indikator.nilai) ? indikator.nilai : [];
+
+                    if (nilaiArray.length === 0) {
+                      rows.push({
+                        indikator,
+                        val: null,
+                        isFirstOfYear: true,
+                        yearSpan: 1,
+                        isFirstOfDesa: !desaRendered,
+                        totalRows
+                      });
+                      desaRendered = true;
+                      return;
+                    }
+
+                    nilaiArray.forEach((val, idx) => {
+                      rows.push({
+                        indikator,
+                        val,
+                        isFirstOfYear: idx === 0,
+                        yearSpan: nilaiArray.length,
+                        isFirstOfDesa: !desaRendered,
+                        totalRows
+                      });
+                      desaRendered = true;
+                    });
+                  });
+
+                  return rows.map((item, rowIndex) => (
+                    <tr key={`${desa.id}-${item.indikator.tahun}-${rowIndex}`} className="hover:bg-slate-50/50 transition-colors">
+                      {item.isFirstOfDesa && (
+                        <>
+                          <td rowSpan={item.totalRows} className="border border-slate-300 py-2.5 px-4 font-mono text-xs font-bold text-slate-500 bg-slate-50/20 align-middle">
+                            {desa.kodeDesa}
+                          </td>
+                          <td rowSpan={item.totalRows} className="border border-slate-300 py-2.5 px-4 text-slate-900 font-extrabold text-sm align-middle">
+                            {desa.namaDesa}
+                          </td>
+                          <td rowSpan={item.totalRows} className="border border-slate-300 py-2.5 px-4 text-slate-700 font-bold text-xs align-middle">
+                            {desa.provinsi}
+                          </td>
+                          <td rowSpan={item.totalRows} className="border border-slate-300 py-2.5 px-4 text-slate-700 font-bold text-xs align-middle">
+                            {desa.kabupaten}
+                          </td>
+                          <td rowSpan={item.totalRows} className="border border-slate-300 py-2.5 px-4 text-slate-700 font-bold text-xs align-middle">
+                            {desa.kecamatan}
+                          </td>
+                        </>
+                      )}
+
+                      {item.isFirstOfYear && (
+                        <td
+                          rowSpan={item.yearSpan}
+                          className="border border-slate-300 px-3 py-2 font-extrabold text-slate-900 bg-slate-50 text-center align-middle w-24 border-b border-slate-200"
+                        >
+                          <span className="inline-flex items-center px-2 py-0.5 bg-emerald-50 text-[#2D7344] text-[10px] font-extrabold rounded border border-emerald-250">
+                            Tahun {item.indikator.tahun}
+                          </span>
+                        </td>
+                      )}
+
+                      {item.val ? (
+                        <>
+                          <td className="border border-slate-300 px-3 py-1.5 text-slate-600 font-semibold align-middle border-b border-slate-255">
+                            {item.val.nama || item.val.kode}
+                          </td>
+                          <td className="border border-slate-300 px-3 py-1.5 text-slate-900 font-extrabold align-middle w-36 border-b border-slate-255">
+                            {typeof item.val.nilai === "number"
+                              ? item.val.nilai.toLocaleString("id-ID", { minimumFractionDigits: 4 })
+                              : item.val.nilai}
+                          </td>
+                        </>
+                      ) : (
+                        <td colSpan="2" className="border border-slate-300 px-3 py-2 text-slate-400 italic bg-white text-center align-middle border-b border-slate-255">
+                          Tidak ada nilai indikator
+                        </td>
+                      )}
+                    </tr>
+                  ));
+                })}
+
+                {filteredDesas.length === 0 && (
+                  <tr>
+                    <td colSpan="8" className="py-12 text-center text-slate-400 border border-slate-300 bg-white">
+                      <div className="max-w-sm mx-auto flex flex-col items-center">
+                        <Info size={24} className="mb-2 text-slate-300" />
+                        <span className="text-sm font-semibold text-slate-500">
+                          {desas.length === 0
+                            ? "Belum ada desa yang terdaftar untuk periode ini."
+                            : "Hasil pencarian tidak ditemukan."}
+                        </span>
                       </div>
                     </td>
                   </tr>

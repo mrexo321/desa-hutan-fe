@@ -26,6 +26,7 @@ import {
   Info,
   Loader2,
   ArrowLeft,
+  Zap,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -89,10 +90,15 @@ export default function MapPage() {
   // 3. State Visibilitas Layer WMS (ON/OFF)
   const [showLayerHutan, setShowLayerHutan] = useState(false);
   const [showLayerDesa, setShowLayerDesa] = useState(false);
+  const [showLayerPsn, setShowLayerPsn] = useState(false);
 
   // 4. State Opacity Layer WMS (0 - 100)
   const [opacityHutan, setOpacityHutan] = useState(80);
   const [opacityDesa, setOpacityDesa] = useState(80);
+  const [opacityPsn, setOpacityPsn] = useState(80);
+
+  // 5. State Filter Tahun WMS PSN
+  const [tahunPsn, setTahunPsn] = useState(2025);
 
   // State hutan refresh tile
   const [hutanVersion, setHutanVersion] = useState(Date.now());
@@ -116,6 +122,8 @@ export default function MapPage() {
 
   const WMS_BASE = import.meta.env.VITE_GEOSERVER_GWC_BASE;
 
+  const WMS_DIRECT = import.meta.env.VITE_GEOSERVER_WMS_BASE;
+
   const WMS_HUTAN = useMemo(
     () =>
       `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:vw_wilayah_hutan&styles=desa-gis:wilayah_hutan_style&TILED=true&_v=${hutanVersion}`,
@@ -126,6 +134,12 @@ export default function MapPage() {
     () =>
       `${WMS_BASE}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:wilayah_desa_geom&styles=desa-gis:wilayah_desa_style&TILED=true`,
     [WMS_BASE],
+  );
+
+  const WMS_PSN = useMemo(
+    () =>
+      `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_psn&styles=desa-gis:desa_psn_style&TILED=true&CQL_FILTER=tahun=${tahunPsn}`,
+    [WMS_DIRECT, tahunPsn],
   );
 
   const paintHutan = useMemo(() => ({
@@ -263,7 +277,7 @@ export default function MapPage() {
           <Source
             id="geoserver-hutan"
             type="raster"
-            tiles={wmsHutanTiles}
+            tiles={[WMS_HUTAN]}
             tileSize={256}
             scheme="xyz"
           >
@@ -280,7 +294,7 @@ export default function MapPage() {
           <Source
             id="geoserver-desa"
             type="raster"
-            tiles={wmsDesaTiles}
+            tiles={[WMS_DESA]}
             tileSize={256}
             scheme="xyz"
           >
@@ -288,6 +302,27 @@ export default function MapPage() {
               id="layer-desa"
               type="raster"
               paint={paintDesa}
+            />
+          </Source>
+        )}
+
+        {/* --- LAYER WMS: DESA PSN --- */}
+        {showLayerPsn && (
+          <Source
+            id="geoserver-psn"
+            type="raster"
+            tiles={[WMS_PSN]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="layer-psn"
+              type="raster"
+              paint={{
+                "raster-opacity": opacityPsn / 100,
+                "raster-fade-duration": 0,
+                "raster-resampling": "linear",
+              }}
             />
           </Source>
         )}
@@ -301,13 +336,133 @@ export default function MapPage() {
               anchor="bottom"
             >
               <div className="relative flex flex-col items-center justify-center animate-in zoom-in duration-200">
-                <div className="bg-gray-900 text-white p-2 rounded-full shadow-lg border-2 border-white z-10">
+                <div className="bg-[#2D7344] text-white p-2 rounded-full shadow-lg border-2 border-white z-10">
                   <Crosshair size={16} strokeWidth={2.5} />
                 </div>
-                <div className="w-1 h-3 bg-gray-900 mt-0.5"></div>
+                <div className="w-1 h-3 bg-[#2D7344] mt-0.5"></div>
               </div>
             </Marker>
 
+            <Popup
+              longitude={clickedLocation.longitude}
+              latitude={clickedLocation.latitude}
+              anchor="top"
+              closeButton={false}
+              closeOnClick={false}
+              offset={15}
+              className="custom-popup"
+              maxWidth="320px"
+            >
+              <div className="bg-white/95 backdrop-blur-xl border border-white rounded-[20px] shadow-2xl overflow-hidden w-[280px] sm:w-[320px]">
+                <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 bg-gray-50/50">
+                  <div className="flex items-center gap-2 text-[#2D7344]">
+                    <Activity size={16} strokeWidth={2.5} />
+                    <span className="font-bold text-xs uppercase tracking-widest">
+                      Detail Spasial
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setClickedLocation(null)}
+                    className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+
+                <div className="p-4 max-h-[350px] overflow-y-auto custom-scrollbar text-sm text-gray-700">
+                  {isFetchingDetail ? (
+                    <div className="flex flex-col items-center justify-center py-8 gap-3">
+                      <div className="w-6 h-6 border-2 border-[#2D7344] border-t-transparent rounded-full animate-spin"></div>
+                      <span className="text-xs text-gray-500 font-medium">
+                        Menganalisis koordinat...
+                      </span>
+                    </div>
+                  ) : detailData ? (
+                    <div className="flex flex-col gap-4">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
+                            {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
+                          </span>
+                          <span className="font-mono text-xs font-semibold text-gray-400">
+                            {detailData.desa?.kodeKemendagri || '-'}
+                          </span>
+                        </div>
+                        <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
+                          {detailData.desa?.nama || 'Area Tidak Diketahui'}
+                        </h3>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                            Luas Desa
+                          </p>
+                          <p className="font-bold text-gray-800 text-sm">
+                            {detailData.desa?.luasDesaHa || '-'}{" "}
+                            {detailData.desa?.luasDesaHa && (
+                              <span className="text-xs text-gray-500 font-medium">Ha</span>
+                            )}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                            Kawasan Hutan
+                          </p>
+                          <p
+                            className="font-bold text-gray-800 text-sm"
+                            title={detailData.hutan?.fungsiKawasan?.nama}
+                          >
+                            {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                        <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
+                        <div className="relative z-10">
+                          <div className="flex justify-between items-end mb-3">
+                            <div>
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                Status Interaksi
+                              </p>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-[#2D7344] capitalize text-sm">
+                                  {detailData.status?.replace('_', ' ') || '-'}
+                                </span>
+                                <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
+                                  {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
+                                </span>
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xl font-extrabold text-gray-800">
+                                {detailData.irisan?.luasPersen ?? 0}%
+                              </span>
+                            </div>
+                          </div>
+                          <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
+                              style={{
+                                width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
+                              }}
+                            ></div>
+                          </div>
+                          <p className="text-[10px] text-gray-400 mt-2 font-medium">
+                            Persentase wilayah masuk kawasan hutan
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-6 text-gray-500 text-xs">
+                      Tidak ada data di titik ini.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </Popup>
           </>
         )}
       </Map>
@@ -478,7 +633,7 @@ export default function MapPage() {
             className={`flex items-center justify-center w-12 h-12 rounded-[16px] backdrop-blur-xl border shadow-[0_8px_20px_rgb(0,0,0,0.08)] transition-all duration-300 focus:outline-none ${activeMenu === "layer" ? "bg-white border-[#2D7344]/50 text-[#2D7344] scale-105" : "bg-white/70 border-white/50 text-gray-600 hover:bg-white hover:text-[#2D7344]"}`}
           >
             <Layers size={22} strokeWidth={1.5} />
-            {(showLayerHutan || showLayerDesa) && (
+            {(showLayerHutan || showLayerDesa || showLayerPsn) && (
               <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></div>
             )}
           </button>
@@ -616,155 +771,101 @@ export default function MapPage() {
                     </div>
                   )}
                 </div>
+
+                {/* --- KONTROL: LAYER DESA PSN --- */}
+                <div
+                  className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerPsn ? "bg-white/90 border-purple-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-xl transition-colors ${showLayerPsn ? "bg-purple-100 text-purple-600" : "bg-gray-200 text-gray-400"}`}
+                      >
+                        <Zap size={16} strokeWidth={2} />
+                      </div>
+                      <div>
+                        <div
+                          className={`text-sm font-bold transition-colors ${showLayerPsn ? "text-gray-800" : "text-gray-500"}`}
+                        >
+                          Desa PSN
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-medium">
+                          GeoServer WMS
+                        </div>
+                      </div>
+                    </div>
+                    <label className="cursor-pointer">
+                      <div
+                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerPsn ? "bg-purple-600" : "bg-gray-300"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={showLayerPsn}
+                          onChange={() => setShowLayerPsn(!showLayerPsn)}
+                        />
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-spring ${showLayerPsn ? "translate-x-5" : "translate-x-0"}`}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  {showLayerPsn && (
+                    <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200 flex flex-col gap-3">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Transparansi
+                          </span>
+                          <span className="font-mono text-xs font-bold text-purple-600">
+                            {opacityPsn}%
+                          </span>
+                        </div>
+                        <input
+                          type="range"
+                          min="10"
+                          max="100"
+                          value={opacityPsn}
+                          onChange={(e) =>
+                            setOpacityPsn(parseInt(e.target.value))
+                          }
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                        />
+                      </div>
+
+                      <div>
+                        <div className="flex justify-between items-center mb-1.5">
+                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            Tahun Target
+                          </span>
+                          <span className="font-mono text-xs font-bold text-purple-600">
+                            {tahunPsn}
+                          </span>
+                        </div>
+                        <div className="grid grid-cols-5 gap-1 bg-gray-100 p-1 rounded-xl">
+                          {[2025, 2026, 2027, 2028, 2029].map((yr) => (
+                            <button
+                              key={yr}
+                              type="button"
+                              onClick={() => setTahunPsn(yr)}
+                              className={`py-1 text-center font-bold text-xs rounded-lg transition-all ${tahunPsn === yr ? "bg-purple-600 text-white shadow-sm scale-105" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200"}`}
+                            >
+                              {yr}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           )}
         </div>
       </div>
-
-      {/* =========================================
-          3. BOTTOM SHEET DETAIL DESA (MIRIP GOOGLE MAPS)
-      ========================================= */}
-      {clickedLocation && (
-        <div className="absolute bottom-0 left-0 w-full md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:w-[850px] lg:w-[900px] z-20 pointer-events-auto">
-          <div className="bg-white md:rounded-3xl shadow-[0_-10px_40px_rgb(0,0,0,0.15)] md:shadow-[0_20px_50px_rgb(0,0,0,0.2)] overflow-hidden flex flex-col animate-in slide-in-from-bottom-8 duration-300 border border-gray-100">
-            {/* Header */}
-            <div className="w-full flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-              <div className="flex items-center gap-3">
-                <div className="bg-emerald-100 text-[#2D7344] p-2 rounded-xl">
-                  <Activity size={20} strokeWidth={2.5} />
-                </div>
-                <div>
-                  <h3 className="font-bold text-gray-900 text-base leading-none mb-1">Detail Informasi Spasial</h3>
-                  <p className="text-xs text-gray-500 font-medium font-mono">
-                    {clickedLocation.longitude.toFixed(5)}, {clickedLocation.latitude.toFixed(5)}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={closePopup}
-                className="bg-white border border-gray-200 text-gray-500 hover:text-red-500 hover:bg-red-50 hover:border-red-100 p-2 rounded-xl transition-all shadow-sm"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            {/* Content Area */}
-            <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar bg-gray-50/30">
-              {isFetchingDetail ? (
-                <div className="flex flex-col items-center justify-center py-12 gap-4">
-                  <div className="w-10 h-10 border-4 border-[#2D7344]/20 border-t-[#2D7344] rounded-full animate-spin"></div>
-                  <span className="text-sm text-gray-500 font-medium animate-pulse">
-                    Menganalisis data spasial titik ini...
-                  </span>
-                </div>
-              ) : detailData ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* Kolom 1: Desa Info */}
-                  <div className="bg-white border border-gray-100/80 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
-                        Info {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
-                      </span>
-                      <span className="font-mono text-xs font-semibold text-gray-400">
-                        {detailData.desa?.kodeKemendagri || '-'}
-                      </span>
-                    </div>
-                    <h3 className="font-extrabold text-gray-900 text-xl leading-tight mb-2">
-                      {detailData.desa?.nama || "Area Tidak Diketahui"}
-                    </h3>
-                    <p className="text-xs text-gray-500 mb-4 leading-relaxed">
-                      Kec. {detailData.desa?.kecamatan || "-"}, {detailData.desa?.kabupaten || "-"}
-                      <br/>
-                      {detailData.desa?.provinsi || "-"}
-                    </p>
-                    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
-                      <span className="text-xs text-gray-500 font-bold uppercase">Luas Wilayah</span>
-                      <span className="font-bold text-gray-800 text-base">
-                        {detailData.desa?.luasDesaHa || "0"} <span className="text-xs text-gray-500 font-medium">Ha</span>
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Kolom 2: Hutan Info */}
-                  <div className="bg-white border border-gray-100/80 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-blue-100">
-                        Kawasan Hutan
-                      </span>
-                      <span className="text-[10px] font-bold text-gray-400 uppercase text-right line-clamp-1 w-1/2">
-                        {detailData.hutan?.fungsiKawasan?.nama || "-"}
-                      </span>
-                    </div>
-                    <h3 className="font-extrabold text-gray-900 text-lg leading-tight mb-4 line-clamp-2">
-                      {detailData.hutan?.nama || "Tidak Bernama"}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-2">
-                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase">No SK</span>
-                        <span className="font-bold text-gray-800 text-xs truncate max-w-[120px]" title={detailData.hutan?.noSkKawasan}>{detailData.hutan?.noSkKawasan || "-"}</span>
-                      </div>
-                      <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex justify-between items-center">
-                        <span className="text-[10px] text-gray-400 font-bold uppercase">Luas Hutan</span>
-                        <span className="font-bold text-gray-800 text-sm">{detailData.hutan?.luasHutanHa || "0"} <span className="text-xs font-normal text-gray-500">Ha</span></span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Kolom 3: Interaksi/Irisan */}
-                  <div className="bg-gradient-to-br from-[#1e5230] to-[#2D7344] border border-[#2D7344] rounded-2xl p-6 shadow-md relative overflow-hidden text-white flex flex-col justify-center">
-                    <div className="absolute right-0 top-0 w-32 h-32 bg-white/10 rounded-bl-full pointer-events-none"></div>
-                    <div className="relative z-10">
-                      <p className="text-[11px] text-emerald-200 font-bold uppercase tracking-wider mb-1">
-                        Status Interaksi
-                      </p>
-                      <h4 className="font-bold text-white text-xl mb-1 capitalize">
-                        {detailData.status?.replace('_', ' ') || '-'}
-                      </h4>
-                      <p className="text-emerald-100 text-[11px] uppercase tracking-widest font-semibold mb-6">
-                        {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
-                      </p>
-                      
-                      <div className="w-full bg-black/20 rounded-xl p-4 backdrop-blur-sm border border-white/10">
-                        <div className="flex justify-between items-end mb-2">
-                          <span className="text-xs text-emerald-100 font-medium">Luas Beririsan</span>
-                          <span className="text-2xl font-extrabold text-white">
-                            {detailData.irisan?.luasPersen ?? 0}%
-                          </span>
-                        </div>
-                        <div className="w-full h-2.5 bg-black/30 rounded-full overflow-hidden mb-2">
-                          <div
-                            className="h-full bg-white rounded-full transition-all duration-1000 ease-out"
-                            style={{ width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%` }}
-                          ></div>
-                        </div>
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-emerald-50">{detailData.irisan?.luasHa || 0} Ha</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-12 flex flex-col items-center gap-4">
-                  <div className="bg-white p-4 rounded-full text-gray-300 shadow-sm border border-gray-100">
-                    <Info size={40} />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-gray-800 text-base font-bold">Data Tidak Ditemukan</span>
-                    <span className="text-gray-500 text-sm">
-                      Tidak ada data desa atau kawasan hutan pada titik koordinat ini.
-                    </span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* --- PANEL BAWAH TENGAH (Koordinat Console) --- */}
-      <div className={`absolute left-1/2 -translate-x-1/2 z-10 pointer-events-none transition-all duration-500 ${clickedLocation ? 'bottom-[420px] opacity-0 md:opacity-100 md:bottom-[340px] xl:bottom-[360px]' : 'bottom-10 opacity-100'}`}>
+      <div className="absolute bottom-10 left-1/2 -translate-x-1/2 z-10 pointer-events-none">
         <div className="bg-gray-900/80 backdrop-blur-md border border-gray-700 shadow-2xl rounded-full px-6 py-3 flex items-center gap-6 pointer-events-auto">
           <div className="flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>

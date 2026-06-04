@@ -136,20 +136,6 @@ export default function PerformaDesa() {
               ))}
             </select>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              onClick={handleDownloadTemplate}
-              disabled={isDownloading || !selectedFormulaId}
-              className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isDownloading ? (
-                <Loader2 size={18} className="animate-spin text-emerald-600" />
-              ) : (
-                <Download size={18} className="text-slate-500" />
-              )}
-              {isDownloading ? "Mengunduh..." : "Download Template"}
-            </button>
-          </div>
         </div>
 
         {/* TABEL AREA */}
@@ -221,11 +207,16 @@ export default function PerformaDesa() {
                       <tr key={row.id} className="border-b border-gray-100 even:bg-[#E8EEF2] hover:bg-green-50 transition-colors">
                         <td className="py-3 px-4 text-center">{(page - 1) * pageSize + idx + 1}</td>
                         <td className="py-3 px-4 font-semibold text-gray-800">{row.desa?.nama || "-"}</td>
-                        {columns.map((col) => (
-                          <td key={col.kode} className="py-3 px-4">
-                            {row.nilaiIndikator?.[col.kode] ?? "-"}
-                          </td>
-                        ))}
+                        {columns.map((col) => {
+                          const indVal = Array.isArray(row.nilaiIndikator)
+                            ? row.nilaiIndikator.find((x) => x.kode === col.kode)
+                            : null;
+                          return (
+                            <td key={col.kode} className="py-3 px-4">
+                              {indVal ? (indVal.label ?? indVal.nilai ?? "-") : "-"}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))
                   )}

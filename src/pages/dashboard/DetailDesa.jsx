@@ -17,7 +17,16 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-const DetailDesa = () => {
+// Helper formatting dipindah keluar dari komponen agar tidak di-recreate setiap kali render
+const formatJenisInteraksi = (jenis) => {
+  if (!jenis) return "-";
+  return jenis
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+};
+
+const DesaDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -118,8 +127,8 @@ const DetailDesa = () => {
               </p>
               <div
                 className={`inline-flex items-center px-4 py-2 rounded-xl border ${isMayoritas
-                    ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                    : "bg-amber-50 border-amber-200 text-amber-700"
+                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                  : "bg-amber-50 border-amber-200 text-amber-700"
                   }`}
               >
                 <span className="font-bold capitalize text-lg">
@@ -328,4 +337,4 @@ const DetailDesa = () => {
   );
 };
 
-export default DetailDesa;
+export default DesaDetail;

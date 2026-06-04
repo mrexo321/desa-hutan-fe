@@ -30,11 +30,10 @@ const Navbar = () => {
 
   return (
     <header
-      className={`z-50 w-full text-white transition-all duration-300 ${
-        isHome
+      className={`z-50 w-full text-white transition-all duration-300 ${isHome
           ? "absolute top-0 left-0 bg-transparent"
           : "relative bg-[#0B8457]"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-8 py-6 flex justify-between items-center">
         {/* Logo & Site Name */}
@@ -58,18 +57,17 @@ const Navbar = () => {
         <nav className="hidden md:flex gap-8 text-sm font-medium">
           <Link
             to="/"
-            className={`pb-1 transition-colors ${
-              location.pathname === "/"
+            className={`pb-1 transition-colors ${location.pathname === "/"
                 ? "text-yellow-400 border-b border-yellow-400"
                 : "hover:text-yellow-300"
-            }`}
+              }`}
           >
             Beranda
           </Link>
           <Link to="/map" className="hover:text-yellow-300 transition-colors">
             Peta
           </Link>
-          <Link
+          {/* <Link
             to="/infografis"
             className={`pb-1 transition-colors ${
               location.pathname === "/infografis"
@@ -78,27 +76,25 @@ const Navbar = () => {
             }`}
           >
             Infografis
-          </Link>
-          <Link to="#" className="hover:text-yellow-300 transition-colors">
+          </Link> */}
+          {/* <Link to="#" className="hover:text-yellow-300 transition-colors">
             Data Desa
-          </Link>
+          </Link> */}
           <Link
             to="/about-us"
-            className={`hover:text-yellow-300 transition-colors ${
-              location.pathname === "/about-us"
+            className={`hover:text-yellow-300 transition-colors ${location.pathname === "/about-us"
                 ? "text-yellow-400 border-b border-yellow-400"
                 : "hover:text-yellow-300"
-            }`}
+              }`}
           >
             Tentang Kami
           </Link>
           <Link
             to="/login"
-            className={`hover:text-yellow-300 transition-colors ${
-              location.pathname === "/login"
+            className={`hover:text-yellow-300 transition-colors ${location.pathname === "/login"
                 ? "text-yellow-400 border-b border-yellow-400"
                 : "hover:text-yellow-300"
-            }`}
+              }`}
           >
             Login
           </Link>

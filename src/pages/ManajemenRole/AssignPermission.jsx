@@ -10,8 +10,15 @@ import {
   Loader2,
   KeyRound,
   Search,
-  CheckSquare,
-  Square,
+  Check,
+  Plus,
+  Minus,
+  LayoutGrid,
+  ShieldCheck,
+  ShieldAlert,
+  ArrowRight,
+  ArrowLeft,
+  GripVertical
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -24,6 +31,11 @@ const AssignPermission = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPerms, setSelectedPerms] = useState([]);
   const [initialPerms, setInitialPerms] = useState([]);
+
+  // Drag state for visual feedback
+  const [isDraggingOverUnassigned, setIsDraggingOverUnassigned] = useState(false);
+  const [isDraggingOverAssigned, setIsDraggingOverAssigned] = useState(false);
+  const [draggedItemId, setDraggedItemId] = useState(null);
 
   // =========================================================
   // FETCH DATA
@@ -42,24 +54,132 @@ const AssignPermission = () => {
   // Sinkronisasi data awal
   useEffect(() => {
     if (roleData && Array.isArray(roleData.permissions)) {
-      // Ambil array ID permission yang sudah dimiliki role ini
       const currentIds = roleData.permissions.map((p) =>
         typeof p === "object" ? p.id : p,
       );
-      setSelectedPerms(currentIds);
-      setInitialPerms(currentIds);
+      const t = setTimeout(() => {
+        setSelectedPerms(currentIds);
+        setInitialPerms(currentIds);
+      }, 0);
+      return () => clearTimeout(t);
     }
   }, [roleData]);
 
+  // =========================================================
+  // LOGIC & GROUPING
+  // =========================================================
+  // Filter berdasarkan search query
+  const filteredPermissions = useMemo(() => {
+    if (!allPermissions) return [];
+    return allPermissions.filter((perm) =>
+      perm.name.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  }, [allPermissions, searchQuery]);
+
+  // Pisahkan menjadi Unassigned dan Assigned
+  const { unassigned, assigned } = useMemo(() => {
+    const unassigned = [];
+    const assigned = [];
+    filteredPermissions.forEach(perm => {
+      if (selectedPerms.includes(perm.id)) {
+        assigned.push(perm);
+      } else {
+        unassigned.push(perm);
+      }
+    });
+    return { unassigned, assigned };
+  }, [filteredPermissions, selectedPerms]);
+
+  // Fungsi helper untuk mengelompokkan per modul
+  const groupByModule = (permsArray) => {
+    return permsArray.reduce((acc, perm) => {
+      const moduleName = perm.name.split(":")[0].replace(/_/g, " ").toUpperCase();
+      if (!acc[moduleName]) acc[moduleName] = [];
+      acc[moduleName].push(perm);
+      return acc;
+    }, {});
+  };
+
+  const groupedUnassigned = useMemo(() => groupByModule(unassigned), [unassigned]);
+  const groupedAssigned = useMemo(() => groupByModule(assigned), [assigned]);
+
+  // =========================================================
+  // HANDLERS (CLICK & BULK)
+  // =========================================================
+  const toggleSingle = (permId) => {
+    setSelectedPerms((prev) =>
+      prev.includes(permId)
+        ? prev.filter((id) => id !== permId)
+        : [...prev, permId]
+    );
+  };
+
+  const moveModule = (modulePerms, target) => {
+    const ids = modulePerms.map(p => p.id);
+    if (target === "assigned") {
+      // Tambahkan semua ke selected
+      setSelectedPerms(prev => Array.from(new Set([...prev, ...ids])));
+    } else {
+      // Hapus semua dari selected
+      setSelectedPerms(prev => prev.filter(id => !ids.includes(id)));
+    }
+  };
+
+  // =========================================================
+  // DRAG AND DROP HANDLERS
+  // =========================================================
+  const handleDragStart = (e, permId) => {
+    e.dataTransfer.setData("permId", permId);
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedItemId(permId);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItemId(null);
+    setIsDraggingOverUnassigned(false);
+    setIsDraggingOverAssigned(false);
+  };
+
+  const handleDragOver = (e, zone) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (zone === "assigned") {
+      setIsDraggingOverAssigned(true);
+      setIsDraggingOverUnassigned(false);
+    } else {
+      setIsDraggingOverUnassigned(true);
+      setIsDraggingOverAssigned(false);
+    }
+  };
+
+  const handleDragLeave = (zone) => {
+    if (zone === "assigned") setIsDraggingOverAssigned(false);
+    if (zone === "unassigned") setIsDraggingOverUnassigned(false);
+  };
+
+  const handleDrop = (e, zone) => {
+    e.preventDefault();
+    setIsDraggingOverAssigned(false);
+    setIsDraggingOverUnassigned(false);
+
+    const permId = e.dataTransfer.getData("permId");
+    if (!permId) return;
+
+    if (zone === "assigned" && !selectedPerms.includes(permId)) {
+      setSelectedPerms(prev => [...prev, permId]);
+    } else if (zone === "unassigned" && selectedPerms.includes(permId)) {
+      setSelectedPerms(prev => prev.filter(id => id !== permId));
+    }
+  };
+
+  // =========================================================
+  // SAVE MUTATION
+  // =========================================================
   const savePermissionsMutation = useMutation({
     mutationFn: async () => {
       const addedIds = selectedPerms.filter((id) => !initialPerms.includes(id));
-      const removedIds = initialPerms.filter(
-        (id) => !selectedPerms.includes(id),
-      );
+      const removedIds = initialPerms.filter((id) => !selectedPerms.includes(id));
 
-      // Buat format Payload sesuai permintaan: [{ role_id, permission_id }]
-      // SESUDAH (BENAR)
       const assignPayload = addedIds.map((permId) => ({
         roleId: roleId,
         permissionId: permId,
@@ -71,15 +191,10 @@ const AssignPermission = () => {
 
       const promises = [];
       if (assignPayload.length > 0) {
-        promises.push(
-          rolePermissionService.assignPermissionToRoleBulk(assignPayload),
-        );
+        promises.push(rolePermissionService.assignPermissionToRoleBulk(assignPayload));
       }
       if (unassignPayload.length > 0) {
-        // Pastikan Anda sudah membuat endpoint unassignBulk ini di service Anda
-        promises.push(
-          rolePermissionService.unassignPermissionFromRoleBulk(unassignPayload),
-        );
+        promises.push(rolePermissionService.unassignPermissionFromRoleBulk(unassignPayload));
       }
 
       await Promise.all(promises);
@@ -92,61 +207,9 @@ const AssignPermission = () => {
     },
     onError: (err) => {
       console.error(err);
-      toast.error(
-        err?.response?.data?.message || "Gagal memperbarui hak akses.",
-      );
+      toast.error(err?.response?.data?.message || "Gagal memperbarui hak akses.");
     },
   });
-
-  // =========================================================
-  // LOGIKA PENGELOMPOKAN (GROUPING) & FILTER UX
-  // =========================================================
-  const groupedPermissions = useMemo(() => {
-    if (!allPermissions) return {};
-
-    // Filter berdasarkan pencarian
-    const filtered = allPermissions.filter((perm) =>
-      perm.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
-
-    // Kelompokkan berdasarkan kata sebelum tanda ":" (misal: "user:create" -> "user")
-    return filtered.reduce((acc, perm) => {
-      const moduleName = perm.name
-        .split(":")[0]
-        .replace(/_/g, " ")
-        .toUpperCase();
-      if (!acc[moduleName]) acc[moduleName] = [];
-      acc[moduleName].push(perm);
-      return acc;
-    }, {});
-  }, [allPermissions, searchQuery]);
-
-  // =========================================================
-  // HANDLERS
-  // =========================================================
-  const handleToggleSingle = (permId) => {
-    setSelectedPerms((prev) =>
-      prev.includes(permId)
-        ? prev.filter((id) => id !== permId)
-        : [...prev, permId],
-    );
-  };
-
-  const handleToggleModule = (modulePerms) => {
-    const moduleIds = modulePerms.map((p) => p.id);
-    const isAllSelected = moduleIds.every((id) => selectedPerms.includes(id));
-
-    if (isAllSelected) {
-      // Hapus semua id module ini dari state
-      setSelectedPerms((prev) => prev.filter((id) => !moduleIds.includes(id)));
-    } else {
-      // Tambahkan semua id module ini ke state (hindari duplikat)
-      setSelectedPerms((prev) => {
-        const newSet = new Set([...prev, ...moduleIds]);
-        return Array.from(newSet);
-      });
-    }
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -158,8 +221,86 @@ const AssignPermission = () => {
     !selectedPerms.every((id) => initialPerms.includes(id));
 
   // =========================================================
-  // RENDER LOADING STATE
+  // RENDER HELPERS
   // =========================================================
+  const renderPermissionCard = (perm, type) => {
+    const actionName = perm.name.split(":")[1] || perm.name;
+    const isAssigned = type === "assigned";
+    const isDragged = draggedItemId === perm.id;
+
+    return (
+      <div
+        key={perm.id}
+        draggable
+        onDragStart={(e) => handleDragStart(e, perm.id)}
+        onDragEnd={handleDragEnd}
+        className={`group relative flex items-center justify-between p-2.5 mb-1.5 rounded-xl border transition-all duration-200 cursor-grab active:cursor-grabbing bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] hover:shadow-[0_8px_20px_rgba(0,0,0,0.06)] hover:-translate-y-0.5 ${
+          isDragged ? "opacity-40 border-dashed border-[#2D7344]" : "border-gray-100 hover:border-[#2D7344]/40"
+        } ${isAssigned ? "border-l-4 border-l-[#00C47C]" : "border-l-4 border-l-slate-300"}`}
+      >
+        <div className="flex items-center gap-3 w-full">
+          <div className="text-gray-300 cursor-grab active:cursor-grabbing hover:text-gray-500 transition-colors">
+            <GripVertical size={16} />
+          </div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[13px] font-bold text-gray-800 capitalize truncate">
+              {actionName}
+            </span>
+            <span className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
+              {perm.name}
+            </span>
+          </div>
+        </div>
+
+        {/* Click to move button (Accessibility) */}
+        <button
+          type="button"
+          onClick={() => toggleSingle(perm.id)}
+          className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all opacity-0 group-hover:opacity-100 ${
+            isAssigned
+              ? "bg-red-50 text-red-500 hover:bg-red-500 hover:text-white"
+              : "bg-[#2D7344]/10 text-[#2D7344] hover:bg-[#2D7344] hover:text-white"
+          }`}
+          title={isAssigned ? "Cabut Akses" : "Berikan Akses"}
+        >
+          {isAssigned ? <ArrowLeft size={16} /> : <ArrowRight size={16} />}
+        </button>
+      </div>
+    );
+  };
+
+  const renderModuleGroup = (moduleName, perms, type) => {
+    return (
+      <div key={moduleName} className="mb-4 last:mb-0">
+        <div className="flex items-center justify-between mb-2 sticky top-0 bg-slate-50/90 backdrop-blur-md z-10 py-1.5 border-b border-gray-200/50">
+          <div className="flex items-center gap-2">
+            <LayoutGrid size={14} className="text-gray-400" />
+            <h4 className="text-xs font-bold tracking-wider text-gray-600 uppercase">
+              {moduleName}
+            </h4>
+            <span className="bg-white text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-200 text-gray-500">
+              {perms.length}
+            </span>
+          </div>
+
+          <button
+            onClick={() => moveModule(perms, type === "unassigned" ? "assigned" : "unassigned")}
+            className={`text-[11px] font-bold px-2.5 py-1 rounded-md transition-all ${
+              type === "unassigned"
+                ? "bg-[#2D7344]/10 text-[#2D7344] hover:bg-[#2D7344] hover:text-white"
+                : "bg-red-50 text-red-600 hover:bg-red-600 hover:text-white"
+            }`}
+          >
+            {type === "unassigned" ? "+ Pindahkan Semua" : "- Hapus Semua"}
+          </button>
+        </div>
+        <div>
+          {perms.map(p => renderPermissionCard(p, type))}
+        </div>
+      </div>
+    );
+  };
+
   if (isLoadingRole || isLoadingPerms) {
     return (
       <DashboardLayout activeMenu="Manajemen Role">
@@ -172,187 +313,127 @@ const AssignPermission = () => {
 
   return (
     <DashboardLayout activeMenu="Manajemen Role">
-      <main className="flex-1 flex flex-col h-full bg-[#FAFBFC] relative">
-        <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 pb-32 custom-scrollbar">
-          {/* BREADCRUMB & HEADER */}
-          <button
-            onClick={() => navigate("/dashboard/manajemen-role")}
-            className="flex items-center gap-2 text-gray-500 hover:text-[#2D7344] mb-6 font-semibold text-sm transition-colors w-max"
-          >
-            <ChevronLeft size={16} /> Kembali ke Manajemen Role
-          </button>
-
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 mb-6 overflow-hidden">
-            <div className="bg-gradient-to-r from-[#2D7344] to-[#1E5230] px-8 py-6 text-white flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-sm border border-white/20 shadow-inner">
-                  <KeyRound size={28} />
+      <main className="flex-1 flex flex-col h-full bg-[#F3F4F6] relative">
+        <div className="flex-1 px-4 md:px-8 py-4 flex flex-col h-[calc(100vh-100px)]">
+          {/* HEADER */}
+          <div className="flex items-center justify-between mb-6 shrink-0">
+            <div>
+              <button
+                onClick={() => navigate("/dashboard/manajemen-role")}
+                className="flex items-center gap-2 text-gray-500 hover:text-[#2D7344] mb-2 font-semibold text-xs transition-colors w-max"
+              >
+                <ChevronLeft size={16} /> Kembali
+              </button>
+              <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-3">
+                <div className="w-10 h-10 bg-white shadow-sm border border-gray-200 rounded-xl flex items-center justify-center">
+                  <KeyRound size={20} className="text-[#2D7344]" />
                 </div>
-                <div>
-                  <h1 className="text-2xl font-extrabold tracking-tight">
-                    Kelola Hak Akses
-                  </h1>
-                  <p className="text-green-100/80 font-medium text-sm mt-1">
-                    Role:{" "}
-                    <span className="text-white font-bold underline decoration-green-400/50 underline-offset-2">
-                      {roleData?.name || roleData?.nama}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 backdrop-blur-sm flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-widest text-green-200 font-bold">
-                    Total Akses
-                  </p>
-                  <p className="text-xl font-black">{selectedPerms.length}</p>
-                </div>
-                <div className="w-px h-8 bg-white/20"></div>
-                <div className="text-left">
-                  <p className="text-[10px] uppercase tracking-widest text-green-200 font-bold">
-                    Modul
-                  </p>
-                  <p className="text-xl font-black">
-                    {Object.keys(groupedPermissions).length}
-                  </p>
-                </div>
-              </div>
+                Assign Hak Akses: <span className="text-[#2D7344] underline decoration-green-200 underline-offset-4">{roleData?.name || roleData?.nama}</span>
+              </h1>
             </div>
 
-            {/* SEARCH BAR */}
-            <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-end">
-              <div className="relative w-full md:w-72">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder="Cari nama hak akses..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all shadow-sm"
-                />
-              </div>
+            <div className="relative w-64 hidden md:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                type="text"
+                placeholder="Cari hak akses..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all shadow-sm"
+              />
             </div>
           </div>
 
-          {/* GRID PERMISSIONS */}
-          {Object.keys(groupedPermissions).length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
-              <Search className="mx-auto text-gray-300 mb-4" size={48} />
-              <p className="text-gray-500 font-medium">
-                Tidak ada hak akses yang sesuai dengan pencarian Anda.
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {Object.entries(groupedPermissions).map(([moduleName, perms]) => {
-                const moduleIds = perms.map((p) => p.id);
-                const isAllSelected = moduleIds.every((id) =>
-                  selectedPerms.includes(id),
-                );
-                const isSomeSelected =
-                  moduleIds.some((id) => selectedPerms.includes(id)) &&
-                  !isAllSelected;
+          {/* KANBAN BOARD */}
+          <div className="flex-1 flex items-start gap-4 md:gap-6 overflow-hidden min-h-0 pb-20">
 
-                return (
-                  <div
-                    key={moduleName}
-                    className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm hover:border-[#2D7344]/30 transition-colors"
-                  >
-                    {/* Module Header */}
-                    <div className="px-5 py-4 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
-                      <h3 className="font-bold text-gray-800 tracking-tight">
-                        {moduleName}
-                      </h3>
-                      <button
-                        type="button"
-                        onClick={() => handleToggleModule(perms)}
-                        className={`text-xs font-bold px-3 py-1.5 rounded-md flex items-center gap-1.5 transition-all ${
-                          isAllSelected
-                            ? "bg-[#2D7344]/10 text-[#2D7344] hover:bg-red-50 hover:text-red-600"
-                            : "bg-gray-200 text-gray-600 hover:bg-[#2D7344]/10 hover:text-[#2D7344]"
-                        }`}
-                      >
-                        {isAllSelected ? (
-                          <>
-                            <CheckSquare size={14} /> Batalkan Semua
-                          </>
-                        ) : isSomeSelected ? (
-                          <>
-                            <Square size={14} className="fill-gray-300" /> Pilih
-                            Semua Sisa
-                          </>
-                        ) : (
-                          <>
-                            <Square size={14} /> Pilih Semua
-                          </>
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Permissions List */}
-                    <div className="p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {perms.map((perm) => {
-                        const isChecked = selectedPerms.includes(perm.id);
-                        // Ambil kata setelah titik dua untuk mempercantik (misal user:create -> Create)
-                        const actionName = perm.name.split(":")[1] || perm.name;
-
-                        return (
-                          <label
-                            key={perm.id}
-                            className={`flex items-start gap-3 p-3 rounded-xl cursor-pointer border transition-all duration-200 ${
-                              isChecked
-                                ? "bg-[#EAFBF0]/50 border-[#2D7344]/30 shadow-sm"
-                                : "bg-white border-transparent hover:bg-gray-50"
-                            }`}
-                          >
-                            <div className="mt-0.5 relative flex items-center justify-center">
-                              <input
-                                type="checkbox"
-                                checked={isChecked}
-                                onChange={() => handleToggleSingle(perm.id)}
-                                className="peer appearance-none w-5 h-5 border-2 border-gray-300 rounded-md checked:bg-[#2D7344] checked:border-[#2D7344] transition-all cursor-pointer"
-                              />
-                              <CheckSquare
-                                size={14}
-                                strokeWidth={3}
-                                className="text-white absolute pointer-events-none opacity-0 peer-checked:opacity-100 transition-opacity"
-                              />
-                            </div>
-                            <div className="flex flex-col">
-                              <span
-                                className={`text-sm font-bold capitalize ${isChecked ? "text-[#2D7344]" : "text-gray-700"}`}
-                              >
-                                {actionName}
-                              </span>
-                              <span className="text-[10px] text-gray-400 font-mono tracking-tighter mt-0.5">
-                                {perm.name}
-                              </span>
-                            </div>
-                          </label>
-                        );
-                      })}
-                    </div>
+            {/* COLUMN 1: UNASSIGNED */}
+            <div
+              className={`flex-1 flex flex-col max-h-full min-h-[300px] bg-slate-50 border rounded-2xl overflow-hidden transition-all duration-300 ${
+                isDraggingOverUnassigned ? "border-[#2D7344] bg-[#EAFBF0] shadow-[0_0_20px_rgba(45,115,68,0.15)] ring-4 ring-[#2D7344]/10" : "border-gray-200"
+              }`}
+              onDragOver={(e) => handleDragOver(e, "unassigned")}
+              onDragLeave={() => handleDragLeave("unassigned")}
+              onDrop={(e) => handleDrop(e, "unassigned")}
+            >
+              <div className="p-3 border-b border-gray-200 bg-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center text-slate-500">
+                    <ShieldAlert size={16} />
                   </div>
-                );
-              })}
+                  <div>
+                    <h2 className="font-extrabold text-slate-800">Tersedia</h2>
+                    <p className="text-[10px] text-slate-500 font-medium">Belum diberikan ke role ini</p>
+                  </div>
+                </div>
+                <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-sm font-black border border-slate-200">
+                  {unassigned.length}
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto min-h-0 p-3 custom-scrollbar relative">
+                {Object.keys(groupedUnassigned).length === 0 ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                    <Check size={48} className="mb-4 opacity-50" />
+                    <p className="font-semibold text-sm">Semua akses telah diberikan</p>
+                  </div>
+                ) : (
+                  Object.entries(groupedUnassigned).map(([mod, perms]) => renderModuleGroup(mod, perms, "unassigned"))
+                )}
+              </div>
             </div>
-          )}
+
+            {/* COLUMN 2: ASSIGNED */}
+            <div
+              className={`flex-1 flex flex-col max-h-full min-h-[300px] bg-slate-50 border rounded-2xl overflow-hidden transition-all duration-300 ${
+                isDraggingOverAssigned ? "border-[#2D7344] bg-[#EAFBF0] shadow-[0_0_20px_rgba(45,115,68,0.15)] ring-4 ring-[#2D7344]/10" : "border-gray-200"
+              }`}
+              onDragOver={(e) => handleDragOver(e, "assigned")}
+              onDragLeave={() => handleDragLeave("assigned")}
+              onDrop={(e) => handleDrop(e, "assigned")}
+            >
+              <div className="p-3 border-b border-[#2D7344]/20 bg-gradient-to-r from-[#2D7344] to-[#1E5230] text-white flex items-center justify-between shrink-0">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white backdrop-blur-sm border border-white/20">
+                    <ShieldCheck size={16} />
+                  </div>
+                  <div>
+                    <h2 className="font-extrabold text-white tracking-wide">Diberikan</h2>
+                    <p className="text-[10px] text-green-100 font-medium">Akses yang dimiliki role</p>
+                  </div>
+                </div>
+                <span className="bg-white/20 backdrop-blur-sm text-white px-3 py-1 rounded-lg text-sm font-black border border-white/30 shadow-inner">
+                  {assigned.length}
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto min-h-0 p-3 custom-scrollbar relative">
+                {Object.keys(groupedAssigned).length === 0 ? (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-gray-400">
+                    <div className="w-16 h-16 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-4">
+                      <Plus size={24} className="text-gray-300" />
+                    </div>
+                    <p className="font-semibold text-sm">Belum ada hak akses</p>
+                    <p className="text-xs text-gray-400 mt-1">Tarik card ke area ini</p>
+                  </div>
+                ) : (
+                  Object.entries(groupedAssigned).map(([mod, perms]) => renderModuleGroup(mod, perms, "assigned"))
+                )}
+              </div>
+            </div>
+
+          </div>
         </div>
 
-        {/* STICKY FOOTER ACTION BAR */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-200 px-6 py-4 flex items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.03)]">
-          <div className="hidden sm:block">
+        {/* STICKY FOOTER */}
+        <div className="absolute bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-gray-200 px-6 py-4 flex flex-col sm:flex-row items-center justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.05)] z-20">
+          <div className="hidden sm:flex items-center gap-4">
             {isChanged ? (
-              <span className="text-sm font-bold text-amber-600 bg-amber-50 px-3 py-1.5 rounded-lg border border-amber-200">
-                ⚠️ Ada perubahan yang belum disimpan
+              <span className="text-sm font-bold text-amber-600 bg-amber-50 px-4 py-2 rounded-xl border border-amber-200 flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                Ada perubahan yang belum disimpan
               </span>
             ) : (
-              <span className="text-sm font-semibold text-gray-400">
-                Tidak ada perubahan
+              <span className="text-sm font-semibold text-gray-400 flex items-center gap-2 px-2">
+                <Check size={16} /> Tidak ada perubahan
               </span>
             )}
           </div>
@@ -366,7 +447,7 @@ const AssignPermission = () => {
             <button
               onClick={handleSubmit}
               disabled={!isChanged || savePermissionsMutation.isPending}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold text-white bg-[#2D7344] hover:bg-[#1E5230] rounded-xl transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-8 py-2.5 text-sm font-bold text-white bg-[#2D7344] hover:bg-[#1E5230] hover:shadow-[0_8px_20px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0 rounded-xl transition-all shadow-md disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none"
             >
               {savePermissionsMutation.isPending ? (
                 <>
@@ -374,7 +455,7 @@ const AssignPermission = () => {
                 </>
               ) : (
                 <>
-                  <Save size={18} /> Simpan Hak Akses
+                  <Save size={18} /> Simpan Perubahan
                 </>
               )}
             </button>

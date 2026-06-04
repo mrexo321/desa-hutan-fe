@@ -1,12 +1,15 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
+import { useSelector } from "react-redux";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SessionExpiredScreen from "./components/SessionExpiredScreen";
 
 // Import halaman Landing & Auth
 import Homepage from "./pages/landing/Homepage";
 import AboutUs from "./pages/landing/AboutUs";
 import Infografis from "./pages/landing/Infografis";
 import Login from "./pages/Auth/Login";
+import Unauthorized from "./pages/Error/Unauthorized";
 
 // Import halaman Dashboard & Fitur
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -43,7 +46,10 @@ import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import DesaPSN from "./pages/DesaPSN/DesaPSN";
 
 const App = () => {
+  const isSessionExpired = useSelector((state) => state.user?.isSessionExpired);
+
   return (
+    <>
     <Routes>
       {/* ======================================================= */}
       {/* ROUTE PUBLIK (Bebas diakses tanpa login)                  */}
@@ -53,6 +59,7 @@ const App = () => {
       <Route path="/login" element={<Login />} />
       <Route path="/infografis" element={<Infografis />} />
       <Route path="/about-us" element={<AboutUs />} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* ======================================================= */}
       {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
@@ -205,6 +212,9 @@ const App = () => {
             ]}
           >
             <SiteSettings />
+          </ProtectedRoute>
+        }
+      />
 
       <Route
         path="/dashboard/manajemen-role/create"
@@ -248,6 +258,10 @@ const App = () => {
         }
       />
     </Routes>
+
+    {/* Session Expired Overlay — tampil secara global di atas semua halaman */}
+    <SessionExpiredScreen isVisible={isSessionExpired} />
+    </>
   );
 };
 

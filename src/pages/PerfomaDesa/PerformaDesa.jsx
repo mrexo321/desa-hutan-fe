@@ -139,7 +139,7 @@ export default function PerformaDesa() {
           <div className="flex flex-wrap items-center gap-3">
             <button
               onClick={handleDownloadTemplate}
-              disabled={isDownloading || !selectedFormula}
+              disabled={isDownloading || !selectedFormulaId}
               className="flex items-center gap-2 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isDownloading ? (
@@ -149,6 +149,8 @@ export default function PerformaDesa() {
               )}
               {isDownloading ? "Mengunduh..." : "Download Template"}
             </button>
+          </div>
+        </div>
 
         {/* TABEL AREA */}
         <div className="flex-1 bg-white rounded-xl flex flex-col border border-gray-100 shadow-sm overflow-hidden">
@@ -178,7 +180,6 @@ export default function PerformaDesa() {
               </button>
             </div>
           </div>
-        </div>
 
           {/* TABLE */}
           <div className="overflow-x-auto w-full flex-1">
@@ -258,6 +259,7 @@ export default function PerformaDesa() {
             </div>
           )}
         </div>
+      </div>
 
       {/* ── UPLOAD MODAL ── */}
       {isUploadModalOpen && (

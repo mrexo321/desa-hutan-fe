@@ -177,7 +177,7 @@ const Dashboard = () => {
   });
 
   // --- MASTER WILAYAH UNTUK DROPDOWN FILTER ---
-  const { data: listProvinsi = [], isLoading: isProvinsiDropdownLoading } = useQuery({
+  const { data: listProvinsi = [] } = useQuery({
     queryKey: ["masterProvinsi"],
     queryFn: () => masterWilayahService.getAllProvinsi(),
   });
@@ -921,7 +921,6 @@ const Dashboard = () => {
           </div>
         )}
         </div>
-      )}
 
       {/* =========================================
           KONTEN DASHBOARD BAWAH (Tidak di-render saat Fullscreen)
@@ -1913,6 +1912,7 @@ const Dashboard = () => {
           </div>
         )}
       </div>
+    )}
 
       {/* =========================================
           GLOBAL CSS OVERRIDE

@@ -17,15 +17,6 @@ import {
   CheckCircle,
 } from "lucide-react";
 
-// Helper formatting dipindah keluar dari komponen agar tidak di-recreate setiap kali render
-const formatJenisInteraksi = (jenis) => {
-  if (!jenis) return "-";
-  return jenis
-    .split("_")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
-
 const DetailDesa = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -337,4 +328,4 @@ const DetailDesa = () => {
   );
 };
 
-export default DesaDetail;
+export default DetailDesa;

@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { useSelector } from "react-redux";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SessionExpiredScreen from "./components/SessionExpiredScreen";
+import ChatWidget from "./components/ChatWidget";
 
 // Import halaman Landing & Auth
 import Homepage from "./pages/landing/Homepage";
@@ -38,6 +39,7 @@ import TahunIndikatorPerhitungan from "./pages/Indikator/TahunIndikatorPerhitung
 import FormTahunIndicator from "./pages/Indikator/FormTahunIndicator";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import DesaPSN from "./pages/DesaPSN/DesaPSN";
+import AiAsisten from "./pages/AiAsisten/AiAsisten";
 
 const App = () => {
   const isSessionExpired = useSelector((state) => state.user?.isSessionExpired);
@@ -82,6 +84,14 @@ const App = () => {
         element={
           <ProtectedRoute>
             <DesaPSN />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/ai-asisten"
+        element={
+          <ProtectedRoute>
+            <AiAsisten />
           </ProtectedRoute>
         }
       />
@@ -203,6 +213,9 @@ const App = () => {
 
     {/* Session Expired Overlay — tampil secara global di atas semua halaman */}
     <SessionExpiredScreen isVisible={isSessionExpired} />
+
+    {/* Floating AI Chatbot Widget — tampil di semua halaman */}
+    <ChatWidget />
     </>
   );
 };

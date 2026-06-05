@@ -11,7 +11,9 @@ import {
   ShieldCheck,
   MapPinned,
   Database,
+  BrainCircuit,
 } from "lucide-react";
+
 
 export const homeMenus = [
   {
@@ -44,6 +46,12 @@ export const homeMenus = [
     name: "Desa PSN",
     path: "/dashboard/desa-psn",
     icon: Layers,
+    permission: "",
+  },
+  {
+    name: "AI Asisten",
+    path: "/dashboard/ai-asisten",
+    icon: BrainCircuit,
     permission: "",
   },
 ];

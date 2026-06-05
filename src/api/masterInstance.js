@@ -1,6 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
-import { clearUserData, setToken } from "../store/userSlice";
+import { setToken, triggerSessionExpired } from "../store/userSlice";
 import environment from "../config/environment";
 import { reduxStore } from "../store/store";
 
@@ -9,21 +9,20 @@ const masterInstance = axios.create({
   timeout: 60000,
 });
 
-const forceLogout = () => {
-  reduxStore.dispatch(clearUserData());
-  toast.error("Sesi Anda telah berakhir. Silakan login kembali.");
-  setTimeout(() => {
-    window.location.href = "/login";
-  }, 1500);
+// ============================================================
+// Dispatch session expired action → UI menampilkan overlay
+// profesional, bukan redirect kasar
+// ============================================================
+const handleSessionExpired = () => {
+  reduxStore.dispatch(triggerSessionExpired());
 };
 
-// ==========================================
+// ============================================================
 // VARIABEL UNTUK ANTREAN MULTIPLE REQUEST
-// ==========================================
+// ============================================================
 let isRefreshing = false;
 let failedQueue = [];
 
-// Fungsi untuk menjalankan ulang antrean request setelah token baru didapat
 const processQueue = (error, token = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -63,13 +62,12 @@ masterInstance.interceptors.response.use(
     // A. LOGIKA AUTO REFRESH TOKEN (DENGAN ANTREAN)
     // ========================================================
     if (status === 401 && !originalRequest._retry) {
-      // Jika SEDANG proses refresh token, masukkan request ini ke dalam antrean (Queue)
+      // Jika SEDANG proses refresh token, masukkan ke antrean
       if (isRefreshing) {
         return new Promise(function (resolve, reject) {
           failedQueue.push({ resolve, reject });
         })
           .then((token) => {
-            // Setelah token didapat, ubah header dan jalankan ulang
             originalRequest.headers.Authorization = `Bearer ${token}`;
             return masterInstance(originalRequest);
           })
@@ -78,7 +76,7 @@ masterInstance.interceptors.response.use(
           });
       }
 
-      // Jika BELUM ada proses refresh, tandai sebagai request pertama
+      // Tandai sebagai request pertama yang mencoba refresh
       originalRequest._retry = true;
       isRefreshing = true;
 
@@ -88,10 +86,10 @@ masterInstance.interceptors.response.use(
 
         if (!currentRefreshToken) {
           processQueue(new Error("No refresh token"), null);
+          handleSessionExpired();
           return Promise.reject(error);
         }
 
-        // ini buat refresh token , gausah di utak atik awas aja
         const res = await axios.post(
           `${environment.AUTH_URL}/auth/refresh-token`,
           { refreshToken: currentRefreshToken },
@@ -99,22 +97,21 @@ masterInstance.interceptors.response.use(
 
         const newToken = res.data.data.accessToken;
 
-        // taro di reduxx
+        // Simpan token baru ke Redux
         reduxStore.dispatch(setToken({ accessToken: newToken }));
 
-        // jalanin queue , antriannya biar ga numpuk
+        // Jalankan semua request yang antre
         processQueue(null, newToken);
 
-        // re-hit endpoint awal
+        // Re-hit endpoint awal dengan token baru
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return masterInstance(originalRequest);
       } catch (refreshError) {
-        // Jika gagal refresh (misal refresh token mati), tolak semua antrean & logout
+        // Refresh token mati → tampilkan session expired screen
         processQueue(refreshError, null);
-        forceLogout();
+        handleSessionExpired();
         return Promise.reject(refreshError);
       } finally {
-        // Pastikan status dikembalikan ke false setelah selesai (berhasil/gagal)
         isRefreshing = false;
       }
     }
@@ -132,13 +129,11 @@ masterInstance.interceptors.response.use(
       const isFatal = fatalErrorMessages.some((str) => message.includes(str));
 
       if (isFatal && status !== 401) {
-        forceLogout();
+        handleSessionExpired();
       } else if (status === 403) {
         toast.error(message || "Anda tidak memiliki akses untuk tindakan ini!");
       } else if (status === 500) {
         toast.error("Terjadi kesalahan internal pada server (500).");
-      } else if (status !== 401) {
-        console.error("API Error:", message || "Terjadi kesalahan pada server");
       }
     } else if (error.request) {
       toast.error(

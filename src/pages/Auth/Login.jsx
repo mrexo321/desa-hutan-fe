@@ -41,11 +41,8 @@ const Login = () => {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: (res) => {
-      // PERBAIKAN: Tangkap data API secara fleksibel
       const data = res?.data || res;
-      
-      console.log("Login Response Data:", data);
-      
+
       dispatch(
         setUserData({
           userId: data?.user?.id || null,
@@ -60,7 +57,6 @@ const Login = () => {
       toast.success("Login berhasil! Selamat datang.");
     },
     onError: (error) => {
-      console.error("Gagal login:", error);
       toast.error(
         error?.response?.data?.message || "Username atau password salah.",
       );

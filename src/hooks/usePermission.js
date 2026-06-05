@@ -1,14 +1,14 @@
 import { useCallback } from "react";
+import { useSelector } from "react-redux";
 
 export const usePermission = () => {
-  const authDataString = localStorage.getItem("user");
-  const authData = authDataString ? JSON.parse(authDataString) : null;
-
-  // PERBAIKAN DI SINI: Langsung akses authData.permissions dan authData.roles
-  // (Tetap menggunakan fallback .user untuk berjaga-jaga jika format API terkadang berbeda)
-  const userPermissions =
-    authData?.permissions || authData?.user?.permissions || [];
-  const userRoles = authData?.roles || authData?.user?.roles || [];
+  // Baca data permission dari Redux state (sumber of truth)
+  const userPermissions = useSelector(
+    (state) => state.user?.permissions || []
+  );
+  const userRoles = useSelector(
+    (state) => state.user?.roles || []
+  );
 
   const isSuperadmin = userRoles.includes("superadmin");
 

@@ -11,7 +11,9 @@ import {
   ShieldCheck,
   MapPinned,
   Database,
+  BrainCircuit,
 } from "lucide-react";
+
 
 export const homeMenus = [
   {
@@ -34,11 +36,23 @@ export const homeMenus = [
     icon: LineChart,
     permission: "performa_desa_hutan:read",
   },
+  // {
+  //   name: "Potensi Desa",
+  //   path: "/dashboard/potensi-desa",
+  //   icon: Sprout,
+  //   permission: "analisis_spasial:read", // Memakai ini karena erat kaitannya dengan potensi spasial
+  // },
   {
-    name: "Potensi Desa",
-    path: "/dashboard/potensi-desa",
-    icon: Sprout,
-    permission: "analisis_spasial:read", // Memakai ini karena erat kaitannya dengan potensi spasial
+    name: "Desa PSN",
+    path: "/dashboard/desa-psn",
+    icon: Layers,
+    permission: "",
+  },
+  {
+    name: "AI Asisten",
+    path: "/dashboard/ai-asisten",
+    icon: BrainCircuit,
+    permission: "",
   },
 ];
 

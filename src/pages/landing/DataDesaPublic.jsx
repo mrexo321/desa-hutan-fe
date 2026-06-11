@@ -1,20 +1,33 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Database, Mail, Calendar, MapPin, Loader2, CheckCircle2 } from "lucide-react";
+import { Database, Mail, Calendar, MapPin, Globe, Loader2, CheckCircle2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import HomeLayout from "../../components/HomeLayout";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { requestDataService } from "../../services/master/requestDataService";
 
+const WILAYAH_LEVELS = [
+  { value: "nasional", label: "Nasional" },
+  { value: "provinsi", label: "Provinsi" },
+  { value: "kabupaten", label: "Kabupaten" },
+  { value: "kecamatan", label: "Kecamatan" },
+];
+
 export default function DataDesaPublic() {
   const [email, setEmail] = useState("");
   const [selectedTahunId, setSelectedTahunId] = useState("");
+  const [selectedWilayahLevel, setSelectedWilayahLevel] = useState("");
   const [selectedProvinsiId, setSelectedProvinsiId] = useState("");
   const [selectedKabupatenId, setSelectedKabupatenId] = useState("");
   const [selectedKecamatanId, setSelectedKecamatanId] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Derived flags for which sub-fields to show
+  const showProvinsi = ["provinsi", "kabupaten", "kecamatan"].includes(selectedWilayahLevel);
+  const showKabupaten = ["kabupaten", "kecamatan"].includes(selectedWilayahLevel);
+  const showKecamatan = selectedWilayahLevel === "kecamatan";
 
   // ── Fetch Years via useQuery ──
   const { data: yearsRes, isLoading: isLoadingYears } = useQuery({
@@ -44,7 +57,7 @@ export default function DataDesaPublic() {
         return [];
       }
     },
-    enabled: !!selectedTahunId,
+    enabled: !!selectedTahunId && showProvinsi,
     retry: 1,
   });
   const provinces = Array.isArray(provincesRes) ? provincesRes : [];
@@ -61,7 +74,7 @@ export default function DataDesaPublic() {
         return [];
       }
     },
-    enabled: !!selectedProvinsiId,
+    enabled: !!selectedProvinsiId && showKabupaten,
     retry: 1,
   });
   const kabupatens = Array.isArray(kabupatensRes) ? kabupatensRes : [];
@@ -78,20 +91,29 @@ export default function DataDesaPublic() {
         return [];
       }
     },
-    enabled: !!selectedKabupatenId,
+    enabled: !!selectedKabupatenId && showKecamatan,
     retry: 1,
   });
   const kecamatans = Array.isArray(kecamatansRes) ? kecamatansRes : [];
 
-  // Reset downstream selections when selections change
+  // Reset downstream when tahun changes
   useEffect(() => {
     if (!selectedTahunId) {
+      setSelectedWilayahLevel("");
       setSelectedProvinsiId("");
       setSelectedKabupatenId("");
       setSelectedKecamatanId("");
     }
   }, [selectedTahunId]);
 
+  // Reset downstream when wilayah level changes
+  useEffect(() => {
+    setSelectedProvinsiId("");
+    setSelectedKabupatenId("");
+    setSelectedKecamatanId("");
+  }, [selectedWilayahLevel]);
+
+  // Reset downstream when provinsi changes
   useEffect(() => {
     if (!selectedProvinsiId) {
       setSelectedKabupatenId("");
@@ -99,6 +121,7 @@ export default function DataDesaPublic() {
     }
   }, [selectedProvinsiId]);
 
+  // Reset kecamatan when kabupaten changes
   useEffect(() => {
     if (!selectedKabupatenId) {
       setSelectedKecamatanId("");
@@ -108,7 +131,14 @@ export default function DataDesaPublic() {
   // Submit request
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedTahunId || !selectedProvinsiId || !selectedKabupatenId || !selectedKecamatanId || !email) {
+
+    // Validate based on wilayah level
+    const missingBasic = !selectedTahunId || !selectedWilayahLevel || !email;
+    const missingProvinsi = showProvinsi && !selectedProvinsiId;
+    const missingKabupaten = showKabupaten && !selectedKabupatenId;
+    const missingKecamatan = showKecamatan && !selectedKecamatanId;
+
+    if (missingBasic || missingProvinsi || missingKabupaten || missingKecamatan) {
       toast.warning("Harap lengkapi semua field formulir!");
       return;
     }
@@ -122,7 +152,7 @@ export default function DataDesaPublic() {
 
     setIsSubmitting(true);
 
-    // Get names for storage fallback
+    // Get names for payload
     const selectedTahunObj = years.find((y) => String(y.id) === String(selectedTahunId));
     const selectedProvObj = provinces.find((p) => String(p.id) === String(selectedProvinsiId));
     const selectedKabObj = kabupatens.find((k) => String(k.id) === String(selectedKabupatenId));
@@ -132,12 +162,19 @@ export default function DataDesaPublic() {
       email,
       tahun_id: selectedTahunId,
       tahun: selectedTahunObj?.tahun || selectedTahunId,
-      provinsi_id: selectedProvinsiId,
-      provinsi_nama: selectedProvObj?.name || selectedProvObj?.nama || selectedProvObj?.provinsi || "",
-      kabupaten_id: selectedKabupatenId,
-      kabupaten_nama: selectedKabObj?.name || selectedKabObj?.nama || selectedKabObj?.kabupaten || "",
-      kecamatan_id: selectedKecamatanId,
-      kecamatan_nama: selectedKecObj?.name || selectedKecObj?.nama || selectedKecObj?.kecamatan || "",
+      wilayah_level: selectedWilayahLevel,
+      ...(showProvinsi && {
+        provinsi_id: selectedProvinsiId,
+        provinsi_nama: selectedProvObj?.name || selectedProvObj?.nama || selectedProvObj?.provinsi || "",
+      }),
+      ...(showKabupaten && {
+        kabupaten_id: selectedKabupatenId,
+        kabupaten_nama: selectedKabObj?.name || selectedKabObj?.nama || selectedKabObj?.kabupaten || "",
+      }),
+      ...(showKecamatan && {
+        kecamatan_id: selectedKecamatanId,
+        kecamatan_nama: selectedKecObj?.name || selectedKecObj?.nama || selectedKecObj?.kecamatan || "",
+      }),
     };
 
     try {
@@ -148,6 +185,7 @@ export default function DataDesaPublic() {
         });
         // Clear fields
         setSelectedTahunId("");
+        setSelectedWilayahLevel("");
         setSelectedProvinsiId("");
         setSelectedKabupatenId("");
         setSelectedKecamatanId("");
@@ -227,113 +265,164 @@ export default function DataDesaPublic() {
                   </div>
                 </div>
 
-                {/* FILTER 2: PROVINSI */}
+                {/* FILTER 2: WILAYAH LEVEL */}
                 <div className="space-y-2">
                   <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest flex items-center gap-1">
-                    <MapPin size={14} className="text-[#0B8457]" />
-                    Provinsi
+                    <Globe size={14} className="text-[#0B8457]" />
+                    Wilayah
                   </label>
                   <div className="relative">
                     <select
-                      id="select-provinsi"
-                      value={selectedProvinsiId}
-                      onChange={(e) => setSelectedProvinsiId(e.target.value)}
-                      disabled={!selectedTahunId || isLoadingProvinces}
-                      className="w-full px-4 py-3 bg-gray-50 disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer"
+                      id="select-wilayah"
+                      value={selectedWilayahLevel}
+                      onChange={(e) => setSelectedWilayahLevel(e.target.value)}
+                      disabled={!selectedTahunId}
+                      className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed"
                       required
                     >
                       <option value="">
-                        {isLoadingProvinces
-                          ? "Memuat Provinsi..."
-                          : !selectedTahunId
-                          ? "Pilih Tahun terlebih dahulu"
-                          : "-- Pilih Provinsi --"}
+                        {!selectedTahunId ? "Pilih Tahun terlebih dahulu" : "-- Pilih Wilayah --"}
                       </option>
-                      {provinces && Array.isArray(provinces) && provinces.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name || p.nama || p.provinsi}
+                      {WILAYAH_LEVELS.map((w) => (
+                        <option key={w.value} value={w.value}>
+                          {w.label}
                         </option>
                       ))}
                     </select>
-                    {isLoadingProvinces && (
-                      <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400">
-                        <Loader2 size={16} className="animate-spin" />
-                      </div>
-                    )}
                   </div>
+
+                  {/* Badge info berdasarkan pilihan wilayah */}
+                  {selectedWilayahLevel === "nasional" && (
+                    <p className="text-[11px] text-green-700 bg-green-50 border border-green-100 rounded-lg px-3 py-2 font-medium mt-1">
+                      ✅ Data <strong>Nasional</strong> mencakup seluruh wilayah Indonesia.
+                    </p>
+                  )}
+                  {selectedWilayahLevel === "provinsi" && (
+                    <p className="text-[11px] text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 font-medium mt-1">
+                      📍 Data akan difilter berdasarkan <strong>Provinsi</strong> yang dipilih.
+                    </p>
+                  )}
+                  {selectedWilayahLevel === "kabupaten" && (
+                    <p className="text-[11px] text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 font-medium mt-1">
+                      📍 Data akan difilter berdasarkan <strong>Kabupaten</strong> yang dipilih.
+                    </p>
+                  )}
+                  {selectedWilayahLevel === "kecamatan" && (
+                    <p className="text-[11px] text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 font-medium mt-1">
+                      📍 Data akan difilter berdasarkan <strong>Kecamatan</strong> yang dipilih.
+                    </p>
+                  )}
                 </div>
 
-                {/* FILTER 3: KABUPATEN */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest flex items-center gap-1">
-                    <MapPin size={14} className="text-[#0B8457]" />
-                    Kabupaten
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="select-kabupaten"
-                      value={selectedKabupatenId}
-                      onChange={(e) => setSelectedKabupatenId(e.target.value)}
-                      disabled={!selectedProvinsiId || isLoadingKabupatens}
-                      className="w-full px-4 py-3 bg-gray-50 disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer"
-                      required
-                    >
-                      <option value="">
-                        {isLoadingKabupatens
-                          ? "Memuat Kabupaten..."
-                          : !selectedProvinsiId
-                          ? "Pilih Provinsi terlebih dahulu"
-                          : "-- Pilih Kabupaten --"}
-                      </option>
-                      {kabupatens && Array.isArray(kabupatens) && kabupatens.map((k) => (
-                        <option key={k.id} value={k.id}>
-                          {k.name || k.nama || k.kabupaten}
+                {/* FILTER 3: PROVINSI — tampil jika level adalah provinsi / kabupaten / kecamatan */}
+                {showProvinsi && (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest flex items-center gap-1">
+                      <MapPin size={14} className="text-[#0B8457]" />
+                      Provinsi
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="select-provinsi"
+                        value={selectedProvinsiId}
+                        onChange={(e) => setSelectedProvinsiId(e.target.value)}
+                        disabled={isLoadingProvinces}
+                        className="w-full px-4 py-3 bg-gray-50 disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer"
+                        required
+                      >
+                        <option value="">
+                          {isLoadingProvinces ? "Memuat Provinsi..." : "-- Pilih Provinsi --"}
                         </option>
-                      ))}
-                    </select>
-                    {isLoadingKabupatens && (
-                      <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400">
-                        <Loader2 size={16} className="animate-spin" />
-                      </div>
-                    )}
+                        {provinces && Array.isArray(provinces) && provinces.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name || p.nama || p.provinsi}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingProvinces && (
+                        <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400">
+                          <Loader2 size={16} className="animate-spin" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
 
-                {/* FILTER 4: KECAMATAN */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest flex items-center gap-1">
-                    <MapPin size={14} className="text-[#0B8457]" />
-                    Kecamatan
-                  </label>
-                  <div className="relative">
-                    <select
-                      id="select-kecamatan"
-                      value={selectedKecamatanId}
-                      onChange={(e) => setSelectedKecamatanId(e.target.value)}
-                      disabled={!selectedKabupatenId || isLoadingKecamatans}
-                      className="w-full px-4 py-3 bg-gray-50 disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer"
-                      required
-                    >
-                      <option value="">
-                        {isLoadingKecamatans
-                          ? "Memuat Kecamatan..."
-                          : !selectedKabupatenId
-                          ? "Pilih Kabupaten terlebih dahulu"
-                          : "-- Pilih Kecamatan --"}
-                      </option>
-                      {kecamatans && Array.isArray(kecamatans) && kecamatans.map((kc) => (
-                        <option key={kc.id} value={kc.id}>
-                          {kc.name || kc.nama || kc.kecamatan}
+                {/* FILTER 4: KABUPATEN — tampil jika level adalah kabupaten / kecamatan */}
+                {showKabupaten && (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest flex items-center gap-1">
+                      <MapPin size={14} className="text-[#0B8457]" />
+                      Kabupaten
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="select-kabupaten"
+                        value={selectedKabupatenId}
+                        onChange={(e) => setSelectedKabupatenId(e.target.value)}
+                        disabled={!selectedProvinsiId || isLoadingKabupatens}
+                        className="w-full px-4 py-3 bg-gray-50 disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer"
+                        required
+                      >
+                        <option value="">
+                          {isLoadingKabupatens
+                            ? "Memuat Kabupaten..."
+                            : !selectedProvinsiId
+                            ? "Pilih Provinsi terlebih dahulu"
+                            : "-- Pilih Kabupaten --"}
                         </option>
-                      ))}
-                    </select>
-                    {isLoadingKecamatans && (
-                      <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400">
-                        <Loader2 size={16} className="animate-spin" />
-                      </div>
-                    )}
+                        {kabupatens && Array.isArray(kabupatens) && kabupatens.map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {k.name || k.nama || k.kabupaten}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingKabupatens && (
+                        <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400">
+                          <Loader2 size={16} className="animate-spin" />
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* FILTER 5: KECAMATAN — tampil hanya jika level adalah kecamatan */}
+                {showKecamatan && (
+                  <div className="space-y-2">
+                    <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest flex items-center gap-1">
+                      <MapPin size={14} className="text-[#0B8457]" />
+                      Kecamatan
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="select-kecamatan"
+                        value={selectedKecamatanId}
+                        onChange={(e) => setSelectedKecamatanId(e.target.value)}
+                        disabled={!selectedKabupatenId || isLoadingKecamatans}
+                        className="w-full px-4 py-3 bg-gray-50 disabled:bg-gray-100 disabled:opacity-75 disabled:cursor-not-allowed border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer"
+                        required
+                      >
+                        <option value="">
+                          {isLoadingKecamatans
+                            ? "Memuat Kecamatan..."
+                            : !selectedKabupatenId
+                            ? "Pilih Kabupaten terlebih dahulu"
+                            : "-- Pilih Kecamatan --"}
+                        </option>
+                        {kecamatans && Array.isArray(kecamatans) && kecamatans.map((kc) => (
+                          <option key={kc.id} value={kc.id}>
+                            {kc.name || kc.nama || kc.kecamatan}
+                          </option>
+                        ))}
+                      </select>
+                      {isLoadingKecamatans && (
+                        <div className="absolute right-8 top-1/2 -translate-y-1/2 text-gray-400">
+                          <Loader2 size={16} className="animate-spin" />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* EMAIL INPUT */}
                 <div className="space-y-2">

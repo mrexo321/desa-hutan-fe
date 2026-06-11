@@ -12,6 +12,7 @@ import {
   MapPinned,
   Database,
   BrainCircuit,
+  FileSpreadsheet,
 } from "lucide-react";
 
 
@@ -52,6 +53,12 @@ export const homeMenus = [
     name: "AI Asisten",
     path: "/dashboard/ai-asisten",
     icon: BrainCircuit,
+    permission: "",
+  },
+  {
+    name: "Permintaan Data",
+    path: "/dashboard/permintaan-data",
+    icon: FileSpreadsheet,
     permission: "",
   },
 ];

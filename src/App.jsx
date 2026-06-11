@@ -46,6 +46,9 @@ import AssignPermission from "./pages/ManajemenRole/AssignPermission";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import DesaPSN from "./pages/DesaPSN/DesaPSN";
 import AiAsisten from "./pages/AiAsisten/AiAsisten";
+import Profile from "./pages/dashboard/Profile";
+import DataDesaPublic from "./pages/landing/DataDesaPublic";
+import PermintaanData from "./pages/dashboard/PermintaanData";
 
 const App = () => {
   const isSessionExpired = useSelector((state) => state.user?.isSessionExpired);
@@ -62,6 +65,7 @@ const App = () => {
         <Route path="/infografis" element={<Infografis />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/data-desa" element={<DataDesaPublic />} />
 
         {/* ======================================================= */}
         {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
@@ -75,8 +79,47 @@ const App = () => {
           }
         />
         <Route
+          path="/dashboard/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/permintaan-data"
+          element={
+            <ProtectedRoute>
+              <PermintaanData />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/provinsi/:provinceName"
           element={<ProvinceDetail />}
+        />
+        <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
+        <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
+        <Route
+          path="/dashboard/performa-desa/edit"
+          element={<EditPerformaDesa />}
+        />
+        <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+        <Route
+          path="/dashboard/desa-psn"
+          element={
+            <ProtectedRoute>
+              <DesaPSN />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/ai-asisten"
+          element={
+            <ProtectedRoute>
+              <AiAsisten />
+            </ProtectedRoute>
+          }
         />
 
         <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />

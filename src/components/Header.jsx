@@ -50,7 +50,7 @@ const searchItems = [
   {
     id: "p1",
     title: "Profil Saya",
-    path: "/profile",
+    path: "/dashboard/profile",
     icon: <UserIcon size={18} />,
     category: "Akun Saya",
   },
@@ -303,7 +303,7 @@ const Header = React.memo(function Header() {
               </div>
               <div className="px-3 space-y-1">
                 <button
-                  onClick={() => handleNavigate("/profile")}
+                  onClick={() => handleNavigate("/dashboard/profile")}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-gray-600 hover:text-[#2D7344] hover:bg-green-50/80 rounded-xl transition-all duration-200"
                 >
                   <UserIcon

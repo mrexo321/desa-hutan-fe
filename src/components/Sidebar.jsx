@@ -20,6 +20,7 @@ import {
   LogOut,
   Settings2,
   BrainCircuit,
+  FileSpreadsheet,
 } from "lucide-react";
 
 export default function Sidebar({ activeMenu }) {
@@ -67,6 +68,11 @@ export default function Sidebar({ activeMenu }) {
       path: "/dashboard/ai-asisten",
       icon: <BrainCircuit {...iconProps} />,
       isNew: true,
+    },
+    {
+      name: "Permintaan Data",
+      path: "/dashboard/permintaan-data",
+      icon: <FileSpreadsheet {...iconProps} />,
     },
   ];
 

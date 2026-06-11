@@ -18,10 +18,30 @@ export const performaDesaService = {
    * Menampilkan data performa desa hutan.
    * Response: { items: [...], pagination: { total, perPage, currentPage, totalPage } }
    */
-  async getIndexPerformaDesaHutan({ page = 1, size = 10, tahun } = {}) {
+  async getIndexPerformaDesaHutan({ page = 1, size = 10, formulaId, tahun, provinsi, indexDesaHutanId, fungsiKawasanId } = {}) {
+    const params = {
+      page,
+      size,
+    };
+
+    if (formulaId) params.formulaId = formulaId;
+    if (tahun) params.tahun = tahun;
+    if (provinsi) params.provinsi = provinsi;
+    if (indexDesaHutanId) params.indexDesaHutanId = indexDesaHutanId;
+    if (fungsiKawasanId && (Array.isArray(fungsiKawasanId) ? fungsiKawasanId.length > 0 : true)) {
+      params.fungsiKawasanId = fungsiKawasanId;
+    }
+
+    console.log("DEBUG getIndexPerformaDesaHutan params sent to backend:", params);
+
     const response = await masterInstance.get("/performa-desa-hutan/index", {
-      params: { page, size, tahun },
+      params,
+      paramsSerializer: {
+        indexes: null, // serializes array as fungsiKawasanId=1&fungsiKawasanId=2 instead of fungsiKawasanId[]=1
+      }
     });
+
+    console.log("DEBUG getIndexPerformaDesaHutan response received:", response.data);
     return response.data;
   },
 

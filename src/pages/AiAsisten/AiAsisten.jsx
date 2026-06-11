@@ -14,6 +14,7 @@ import {
   checkChatbotHealth,
   uploadDocument,
   resetChatbotId,
+  clearChatbotDocuments,
 } from "../../services/chatbotService";
 
 // ─────────────────────────────────────────
@@ -524,33 +525,12 @@ export default function AiAsisten() {
       try {
         await uploadDocument(chatbotId, file);
         setDocs(prev => prev.map(d => d.id === docId ? { ...d, status: "success" } : d));
-        toast.success(`✅ "${file.name}" siap dianalisis!`);
-        
-        // Auto-trigger document analysis/summary
-        setMessages(prev => [...prev, {
-          id: `u_auto_${docId}`,
-          role: "user",
-          text: `Tolong buatkan ringkasan lengkap dan analisis dari dokumen "${file.name}" yang baru diunggah.`,
-          timestamp: new Date(),
-        }]);
-        
-        setIsLoading(true);
-        const pageCtx = `Halaman AI Asisten | Dokumen aktif: "${file.name}"`;
-        const prompt = `Tolong buatkan ringkasan eksekutif, analisis poin-poin penting, dan rekomendasi strategis dari dokumen "${file.name}" yang baru saya unggah ini.`;
-        
-        const result = await sendMessage(chatbotId, prompt, [], pageCtx);
-        setMessages(prev => [...prev, {
-          id: `b_auto_${Date.now()}`,
-          role: "bot",
-          text: result.answer,
-          timestamp: new Date(),
-        }]);
+        toast.success(`✅ "${file.name}" berhasil diupload! Silakan ketik pertanyaan Anda tentang dokumen ini.`);
       } catch (err) {
         setDocs(prev => prev.map(d => d.id === docId ? { ...d, status: "error" } : d));
         toast.error(`Gagal upload "${file.name}": ${err.message}`);
       } finally {
         setIsUploading(false);
-        setIsLoading(false);
       }
     }
   }, [chatbotId]);
@@ -604,15 +584,23 @@ export default function AiAsisten() {
     for (let i = 0; i < filtered.length - 1; i++) {
       if (filtered[i].role === "user" && filtered[i + 1]?.role === "bot") {
         history.push([filtered[i].text, filtered[i + 1].text]);
-        i++; // skip bot msg
+        i++;
       }
     }
 
+    // Dokumen aktif — backend akan filter retrieval hanya dari file ini
     const activeDoc = docs.find(d => d.id === activeDocId);
-    const pageCtx = `Halaman AI Asisten | Dokumen aktif: "${activeDoc?.name || "tidak ada"}"`;
+    const successDocs = docs.filter(d => d.status === "success");
+    const docNames = successDocs.map(d => d.name).join(", ") || "tidak ada";
+    const pageCtx = activeDoc
+      ? `Halaman AI Asisten | Dokumen yang sedang ditanyakan: "${activeDoc.name}" | Semua dokumen tersedia: ${docNames}. PENTING: Jawab HANYA berdasarkan isi dokumen "${activeDoc.name}".`
+      : `Halaman AI Asisten | Dokumen tersedia: ${docNames}`;
+
+    // Kirim nama file aktif ke backend untuk filter PGVector
+    const activeDocName = activeDoc?.name || null;
 
     try {
-      const result = await sendMessage(chatbotId, text, history, pageCtx);
+      const result = await sendMessage(chatbotId, text, history, pageCtx, activeDocName);
       setMessages(prev => [...prev, {
         id: `b_${Date.now()}`,
         role: "bot",
@@ -635,13 +623,32 @@ export default function AiAsisten() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); }
   }, [handleSend]);
 
-  const handleReset = useCallback(() => {
+  const handleReset = useCallback(async () => {
+    // 1. Hapus semua vector dokumen dari database (BENAR-BENAR bersih)
+    if (chatbotId) {
+      try {
+        await clearChatbotDocuments(chatbotId);
+      } catch (err) {
+        console.warn("Gagal hapus dokumen lama dari DB:", err.message);
+        // Tetap lanjut reset meskipun gagal hapus
+      }
+    }
+
+    // 2. Reset ID dan state
     resetChatbotId();
     setDocs([]);
-    setMessages([{ id: "welcome", role: "bot", text: "Asisten direset. Upload dokumen baru untuk memulai.", timestamp: new Date() }]);
-    toast.success("Asisten AI direset.");
-    getOrCreateChatbotId().then(setChatbotId).catch(console.error);
-  }, []);
+    setActiveDocId(null);
+    setMessages([{ id: "welcome", role: "bot", text: "Asisten direset. ✅ Semua dokumen lama telah dihapus. Upload dokumen baru untuk memulai.", timestamp: new Date() }]);
+    toast.success("Asisten AI direset. Semua dokumen lama dihapus.");
+
+    // 3. Buat chatbot baru
+    try {
+      const newId = await getOrCreateChatbotId();
+      setChatbotId(newId);
+    } catch (err) {
+      console.error("Gagal buat chatbot baru:", err);
+    }
+  }, [chatbotId]);
 
   const activeDoc = docs.find(d => d.id === activeDocId);
   const hasSuccessDocs = docs.some(d => d.status === "success");
@@ -827,6 +834,24 @@ export default function AiAsisten() {
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-5 py-5 custom-scrollbar">
+              {/* Hint: multiple docs uploaded but no active doc selected */}
+              {docs.filter(d => d.status === "success").length > 1 && !activeDocId && (
+                <div className="mb-4 flex items-start gap-2.5 px-4 py-3 bg-amber-50 border border-amber-200 rounded-2xl text-xs text-amber-700">
+                  <span className="text-base leading-none mt-0.5">💡</span>
+                  <span>
+                    Anda memiliki <strong>{docs.filter(d => d.status === "success").length} dokumen</strong> yang sudah diupload.
+                    Klik salah satu dokumen di panel kiri untuk menjadikannya <strong>dokumen aktif</strong>,
+                    sehingga AI menjawab berdasarkan dokumen tersebut secara spesifik.
+                  </span>
+                </div>
+              )}
+              {/* Active doc badge */}
+              {activeDocId && activeDoc && (
+                <div className="mb-4 flex items-center gap-2 px-3 py-2 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-700">
+                  <CheckCircle2 size={13} className="flex-shrink-0 text-emerald-500" />
+                  <span>AI akan menjawab berdasarkan dokumen: <strong>{activeDoc.name}</strong></span>
+                </div>
+              )}
               {messages.map(msg => (
                 <MessageBubble
                   key={msg.id}

@@ -123,6 +123,13 @@ export const indikatorService = {
     return response.data;
   },
 
+  getAllYearIndicatorPublic: async () => {
+    const response = await masterInstance.get(
+      "/public/tahun-indikator-perhitungan",
+    );
+    return response.data;
+  },
+
   // GET Tahun by ID (untuk kebutuhan Edit Form)
   getYearIndicatorById: async (id) => {
     const response = await masterInstance.get(

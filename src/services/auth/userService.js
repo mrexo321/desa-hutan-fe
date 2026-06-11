@@ -39,6 +39,12 @@ export const userService = {
     });
     return response.data;
   },
+
+  async changePassword(payload) {
+    const response = await authInstance.post("/profile/change-password", payload);
+    return response.data;
+  },
 };
 
 export default userService;
+

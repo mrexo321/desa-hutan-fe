@@ -211,6 +211,16 @@ const ChatWidget = () => {
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const [pulseActive, setPulseActive] = useState(true);
   const [currentSuggestions, setCurrentSuggestions] = useState([]);
+  const [showTooltip, setShowTooltip] = useState(true);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Auto-dismiss tooltip after 8 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTooltip(false);
+    }, 8000);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Sembunyikan floating widget di halaman AI Asisten
   const isHidden = pathname === "/dashboard/ai-asisten";
@@ -372,19 +382,20 @@ const ChatWidget = () => {
       {/* ── FLOATING BUTTON ── */}
       <div style={{
         position: "fixed",
-        bottom: "28px",
-        right: "28px",
+        bottom: "24px",
+        right: "24px",
         zIndex: 9999,
         display: "flex",
-        flexDirection: "column",
-        alignItems: "flex-end",
-        gap: "10px",
+        alignItems: "center",
+        justifyContent: "flex-end",
       }}>
-        {/* Tooltip */}
+        {/* Tooltip (Menggunakan absolute positioning agar tidak mengubah layout tombol utama saat hover) */}
         {!isOpen && (
           <div
             onClick={() => setIsOpen(true)}
             style={{
+              position: "absolute",
+              right: "70px", // 58px lebar tombol + 12px jarak
               background: "rgba(11,36,26,0.95)",
               backdropFilter: "blur(12px)",
               border: "1px solid rgba(0,196,124,0.3)",
@@ -395,8 +406,12 @@ const ChatWidget = () => {
               fontWeight: "500",
               whiteSpace: "nowrap",
               boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-              animation: "chatbot-slide-up 0.4s ease",
               cursor: "pointer",
+              transition: "opacity 0.25s ease, transform 0.25s ease, visibility 0.25s",
+              opacity: showTooltip || isHovered ? 1 : 0,
+              transform: showTooltip || isHovered ? "translateX(0)" : "translateX(8px)",
+              visibility: showTooltip || isHovered ? "visible" : "hidden",
+              pointerEvents: showTooltip || isHovered ? "auto" : "none",
             }}
           >
             💬 Tanya Asisten Desa Hutan
@@ -442,8 +457,14 @@ const ChatWidget = () => {
                 : "0 8px 32px rgba(0,196,124,0.4)",
               transition: "all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1)",
             }}
-            onMouseEnter={(e) => { e.currentTarget.style.transform = "scale(1.1)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.transform = "scale(1)"; }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "scale(1.1)";
+              setIsHovered(true);
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+              setIsHovered(false);
+            }}
           >
             {isOpen ? (
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round">

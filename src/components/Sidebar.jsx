@@ -19,6 +19,7 @@ import {
   Leaf,
   LogOut,
   Settings2,
+  BrainCircuit,
 } from "lucide-react";
 
 export default function Sidebar({ activeMenu }) {
@@ -60,6 +61,12 @@ export default function Sidebar({ activeMenu }) {
       name: "Desa PSN",
       path: "/dashboard/desa-psn",
       icon: <Layers {...iconProps} />,
+    },
+    {
+      name: "AI Asisten",
+      path: "/dashboard/ai-asisten",
+      icon: <BrainCircuit {...iconProps} />,
+      isNew: true,
     },
   ];
 
@@ -123,10 +130,11 @@ export default function Sidebar({ activeMenu }) {
 
       {/* --- OVERLAY MOBILE --- */}
       <div
-        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpenMobile
+        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
+          isOpenMobile
             ? "opacity-100 pointer-events-auto"
             : "opacity-0 pointer-events-none"
-          }`}
+        }`}
         onClick={() => setIsOpenMobile(false)}
       />
 
@@ -211,9 +219,15 @@ export default function Sidebar({ activeMenu }) {
                       </div>
                       {!isCollapsed && (
                         <span
-                          className={`ml-4 text-[15px] tracking-wide ${isActive ? "font-bold" : "font-medium"}`}
+                          className={`ml-4 text-[15px] tracking-wide flex-1 ${isActive ? "font-bold" : "font-medium"}`}
                         >
                           {item.name}
+                        </span>
+                      )}
+                      {/* Badge NEW untuk AI Asisten */}
+                      {item.isNew && !isCollapsed && (
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${isActive ? "bg-white/20 text-white" : "bg-[#00C47C]/20 text-[#00C47C]"}`}>
+                          NEW
                         </span>
                       )}
                     </Link>

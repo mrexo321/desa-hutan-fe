@@ -1,12 +1,16 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
+import { useSelector } from "react-redux";
 import ProtectedRoute from "./components/ProtectedRoute";
+import SessionExpiredScreen from "./components/SessionExpiredScreen";
+import ChatWidget from "./components/ChatWidget";
 
 // Import halaman Landing & Auth
 import Homepage from "./pages/landing/Homepage";
 import AboutUs from "./pages/landing/AboutUs";
 import Infografis from "./pages/landing/Infografis";
 import Login from "./pages/Auth/Login";
+import Unauthorized from "./pages/Error/Unauthorized";
 
 // Import halaman Dashboard & Fitur
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -41,214 +45,195 @@ import DetailRole from "./pages/ManajemenRole/DetailRole";
 import AssignPermission from "./pages/ManajemenRole/AssignPermission";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import DesaPSN from "./pages/DesaPSN/DesaPSN";
+import AiAsisten from "./pages/AiAsisten/AiAsisten";
 
 const App = () => {
+  const isSessionExpired = useSelector((state) => state.user?.isSessionExpired);
+
   return (
-    <Routes>
-      {/* ======================================================= */}
-      {/* ROUTE PUBLIK (Bebas diakses tanpa login)                  */}
-      {/* ======================================================= */}
-      <Route path="/" element={<Homepage />} />
-      <Route path="/map" element={<MapPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/infografis" element={<Infografis />} />
-      <Route path="/about-us" element={<AboutUs />} />
+    <>
+      <Routes>
+        {/* ======================================================= */}
+        {/* ROUTE PUBLIK (Bebas diakses tanpa login)                  */}
+        {/* ======================================================= */}
+        <Route path="/" element={<Homepage />} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/infografis" element={<Infografis />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* ======================================================= */}
-      {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
-      {/* ======================================================= */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/provinsi/:provinceName"
-        element={<ProvinceDetail />}
-      />
+        {/* ======================================================= */}
+        {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
+        {/* ======================================================= */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/provinsi/:provinceName"
+          element={<ProvinceDetail />}
+        />
 
-      <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
-      <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
-      <Route
-        path="/dashboard/performa-desa/detail/:id"
-        element={<PerformaDesaDetail />}
-      />
-      <Route
-        path="/dashboard/performa-desa/tambah"
-        element={<TambahPerformaDesa />}
-      />
-      <Route
-        path="/dashboard/performa-desa/edit/:id"
-        element={<EditPerformaDesa />}
-      />
-      <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
-      <Route
-        path="/dashboard/desa-psn"
-        element={
-          <ProtectedRoute>
-            <DesaPSN />
-          </ProtectedRoute>
-        }
-      />
+        <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
+        <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
+        <Route
+          path="/dashboard/performa-desa/detail/:id"
+          element={<PerformaDesaDetail />}
+        />
+        <Route
+          path="/dashboard/performa-desa/tambah"
+          element={<TambahPerformaDesa />}
+        />
+        <Route
+          path="/dashboard/performa-desa/edit/:id"
+          element={<EditPerformaDesa />}
+        />
+        <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+        <Route
+          path="/dashboard/desa-psn"
+          element={
+            <ProtectedRoute>
+              <DesaPSN />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/ai-asisten"
+          element={
+            <ProtectedRoute>
+              <AiAsisten />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Indikator */}
-      <Route path="/dashboard/indikator" element={<Indikator />} />
-      <Route
-        path="/dashboard/indikator/utama/:id"
-        element={<DetailMainIndikator />}
-      />
-      <Route
-        path="/dashboard/indikator/utama/create"
-        element={<FormMainIndikator />}
-      />
-      <Route
-        path="/dashboard/indikator/utama/edit/:id"
-        element={<FormMainIndikator />}
-      />
-      <Route path="/dashboard/desa-detail/:desaId" element={<DetailDesa />} />
-      <Route
-        path="/dashboard/indikator-perhitungan"
-        element={<IndikatorPerhitungan />}
-      />
-      <Route
-        path="/dashboard/tahun-indikator-perhitungan"
-        element={<TahunIndikatorPerhitungan />}
-      />
-      <Route
-        path="/dashboard/tahun-indikator-perhitungan/tambah"
-        element={<FormTahunIndicator />}
-      />
-      <Route
-        path="/dashboard/indikator-perhitungan/:id"
-        element={<DetailFormulaIndicator />}
-      />
-      <Route
-        path="/dashboard/indikator-perhitungan/tambah"
-        element={<FormFormulaIndicator />}
-      />
-      <Route
-        path="/dashboard/indikator-perhitungan/edit/:id"
-        element={<FormFormulaIndicator />}
-      />
+        {/* Indikator */}
+        <Route path="/dashboard/indikator" element={<Indikator />} />
+        <Route
+          path="/dashboard/indikator/utama/:id"
+          element={<DetailMainIndikator />}
+        />
+        <Route
+          path="/dashboard/indikator/utama/create"
+          element={<FormMainIndikator />}
+        />
+        <Route
+          path="/dashboard/indikator/utama/edit/:id"
+          element={<FormMainIndikator />}
+        />
+        <Route path="/dashboard/desa-detail/:desaId" element={<DetailDesa />} />
+        <Route
+          path="/dashboard/indikator-perhitungan"
+          element={<IndikatorPerhitungan />}
+        />
+        <Route
+          path="/dashboard/tahun-indikator-perhitungan"
+          element={<TahunIndikatorPerhitungan />}
+        />
+        <Route
+          path="/dashboard/tahun-indikator-perhitungan/tambah"
+          element={<FormTahunIndicator />}
+        />
+        <Route
+          path="/dashboard/indikator-perhitungan/:id"
+          element={<DetailFormulaIndicator />}
+        />
+        <Route
+          path="/dashboard/indikator-perhitungan/tambah"
+          element={<FormFormulaIndicator />}
+        />
+        <Route
+          path="/dashboard/indikator-perhitungan/edit/:id"
+          element={<FormFormulaIndicator />}
+        />
 
-      {/* Klasifikasi & Wilayah Dasar */}
-      <Route path="/dashboard/klasifikasi" element={<Klasifikasi />} />
-      <Route path="/dashboard/wilayah" element={<Wilayah />} />
-      <Route path="/dashboard/master-wilayah" element={<MasterWilayah />} />
-      <Route path="/dashboard/master-potensi" element={<MasterPotensi />} />
+        {/* Klasifikasi & Wilayah Dasar */}
+        <Route path="/dashboard/klasifikasi" element={<Klasifikasi />} />
+        <Route path="/dashboard/wilayah" element={<Wilayah />} />
+        <Route path="/dashboard/master-wilayah" element={<MasterWilayah />} />
+        <Route path="/dashboard/master-potensi" element={<MasterPotensi />} />
 
-      {/* ======================================================= */}
-      {/* 2. ROUTE SENSITIF (Dilindungi Middleware + Cek Array Izin)*/}
-      {/* ======================================================= */}
+        {/* ======================================================= */}
+        {/* 2. ROUTE SENSITIF (Dilindungi Middleware + Cek Array Izin)*/}
+        {/* ======================================================= */}
 
-      <Route
-        path="/dashboard/manajemen-user"
-        element={
-          <ProtectedRoute
-            allowedPermissions={[
-              "user:read",
-              "user:create",
-              "user:update",
-              "user:delete",
-              "user_role:assign",
-            ]}
-          >
-            <ManajemenUser />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/dashboard/manajemen-user"
+          element={
+            <ProtectedRoute
+              allowedPermissions={[
+                "user:read",
+                "user:create",
+                "user:update",
+                "user:delete",
+                "user_role:assign",
+              ]}
+            >
+              <ManajemenUser />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/dashboard/manajemen-role"
-        element={
-          <ProtectedRoute
-            allowedPermissions={[
-              "role:read",
-              "role:create",
-              "role:update",
-              "role:delete",
-              "role_permission:assign",
-            ]}
-          >
-            <ManajemenRoles />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/dashboard/manajemen-role"
+          element={
+            <ProtectedRoute
+              allowedPermissions={[
+                "role:read",
+                "role:create",
+                "role:update",
+                "role:delete",
+                "role_permission:assign",
+              ]}
+            >
+              <ManajemenRoles />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* --- MANAJEMEN ROLE --- */}
-      <Route
-        path="/dashboard/manajemen-role"
-        element={
-          <ProtectedRoute
-            allowedPermissions={[
-              "role:read",
-              "role:create",
-              "role:update",
-              "role:delete",
-              "role_permission:assign",
-            ]}
-          >
-            <ManajemenRoles />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/site-settings"
-        element={
-          <ProtectedRoute
-            allowedPermissions={[
-              "site:read",
-              "site:update",
-            ]}
-          >
-            <SiteSettings />
+        {/* --- MANAJEMEN ROLE --- */}
+        <Route
+          path="/dashboard/manajemen-role"
+          element={
+            <ProtectedRoute
+              allowedPermissions={[
+                "role:read",
+                "role:create",
+                "role:update",
+                "role:delete",
+                "role_permission:assign",
+              ]}
+            >
+              <ManajemenRoles />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/site-settings"
+          element={
+            <ProtectedRoute
+              allowedPermissions={[
+                "site:read",
+                "site:update",
+              ]}
+            >
+              <SiteSettings />
+            </ProtectedRoute>
+          }
+        />
+      </Routes>
 
-            <Route
-              path="/dashboard/manajemen-role/create"
-              element={
-                <ProtectedRoute allowedPermissions={["role:create"]}>
-                  <CreateRole />
-                </ProtectedRoute>
-              }
-            />
+      {/* Session Expired Overlay — tampil secara global di atas semua halaman */}
+      <SessionExpiredScreen isVisible={isSessionExpired} />
 
-            <Route
-              path="/dashboard/manajemen-role/edit/:id"
-              element={
-                <ProtectedRoute
-                  allowedPermissions={["role:update", "role_permission:assign"]}
-                >
-                  <EditRole />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/dashboard/manajemen-role/detail/:id"
-              element={
-                <ProtectedRoute allowedPermissions={["role:read"]}>
-                  <DetailRole />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/dashboard/manajemen-role/assign/:id"
-              element={
-                <ProtectedRoute
-                  allowedPermissions={[
-                    "role_permission:assign",
-                    "role_permission:unassign",
-                  ]}
-                >
-                  <AssignPermission />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
+      {/* Floating AI Chatbot Widget — tampil di semua halaman */}
+      <ChatWidget />
+    </>
   );
 };
 
-      export default App;
+export default App;

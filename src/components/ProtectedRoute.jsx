@@ -1,33 +1,38 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { usePermission } from "../hooks/usePermission"; // Pastikan path ini benar!
-import { toast } from "sonner"; // Opsional, untuk memunculkan notifikasi merah
+import { useSelector } from "react-redux";
+import { usePermission } from "../hooks/usePermission";
+import { toast } from "sonner";
 
-// Parameter 'allowedPermissions' ini adalah ARRAY yang dimaksud temanmu
 const ProtectedRoute = ({ children, allowedPermissions }) => {
   const { canAny } = usePermission();
+  const isSessionExpired = useSelector((state) => state.user?.isSessionExpired);
 
-  // 1. CEK LOGIN DASAR: Apakah user sudah login?
-  const authDataString = localStorage.getItem("user");
-  if (!authDataString) {
-    // Kalau belum login, tendang ke halaman login
+  // 1. Jika session expired (token gagal di-refresh) → cukup return null,
+  //    SessionExpiredScreen sudah mounted secara global di App.jsx
+  if (isSessionExpired) {
+    return null;
+  }
+
+  // 2. CEK LOGIN: Apakah ada profil user di localStorage?
+  const profileString = localStorage.getItem("user_profile");
+  if (!profileString) {
     return <Navigate to="/login" replace />;
   }
 
-  // 2. CEK HAK AKSES KHUSUS (Jika parameternya diisi)
+  // 3. CEK HAK AKSES KHUSUS (Jika parameternya diisi)
   if (allowedPermissions && allowedPermissions.length > 0) {
     const isAllowed = canAny(allowedPermissions);
 
     if (!isAllowed) {
-      // Kalau user login tapi TIDAK punya akses ke halaman ini, tendang ke Dashboard awal
       toast.error(
         "Akses Ditolak: Anda tidak memiliki izin untuk membuka halaman ini.",
       );
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/unauthorized" replace />;
     }
   }
 
-  // 3. JIKA LOLOS SEMUA CEGATAN, SILAKAN MASUK KE HALAMAN
+  // 4. JIKA LOLOS SEMUA CEGATAN, SILAKAN MASUK KE HALAMAN
   return children;
 };
 

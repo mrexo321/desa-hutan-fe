@@ -40,6 +40,9 @@ import FormTahunIndicator from "./pages/Indikator/FormTahunIndicator";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import DesaPSN from "./pages/DesaPSN/DesaPSN";
 import AiAsisten from "./pages/AiAsisten/AiAsisten";
+import Profile from "./pages/dashboard/Profile";
+import DataDesaPublic from "./pages/landing/DataDesaPublic";
+import PermintaanData from "./pages/dashboard/PermintaanData";
 
 const App = () => {
   const isSessionExpired = useSelector((state) => state.user?.isSessionExpired);
@@ -56,6 +59,7 @@ const App = () => {
       <Route path="/infografis" element={<Infografis />} />
       <Route path="/about-us" element={<AboutUs />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
+      <Route path="/data-desa" element={<DataDesaPublic />} />
 
       {/* ======================================================= */}
       {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
@@ -65,6 +69,22 @@ const App = () => {
         element={
           <ProtectedRoute>
             <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/permintaan-data"
+        element={
+          <ProtectedRoute>
+            <PermintaanData />
           </ProtectedRoute>
         }
       />

@@ -4,8 +4,8 @@ export const klasifikasiService = {
   // ==========================================
   // KLASIFIKASI HUTAN
   // ==========================================
-  async getAllClassificationForest() {
-    const response = await masterInstance.get("/master-klasifikasi-hutan");
+  async getAllClassificationForest(params = {}) {
+    const response = await masterInstance.get("/master-klasifikasi-hutan", { params });
     return response.data;
   },
   async getForestClassificationById(id) {

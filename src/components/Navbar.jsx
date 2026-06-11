@@ -77,9 +77,16 @@ const Navbar = () => {
           >
             Infografis
           </Link> */}
-          {/* <Link to="#" className="hover:text-yellow-300 transition-colors">
+          <Link
+            to="/data-desa"
+            className={`pb-1 transition-colors ${
+              location.pathname === "/data-desa"
+                ? "text-yellow-400 border-b border-yellow-400"
+                : "hover:text-yellow-300"
+            }`}
+          >
             Data Desa
-          </Link> */}
+          </Link>
           <Link
             to="/about-us"
             className={`hover:text-yellow-300 transition-colors ${location.pathname === "/about-us"

@@ -297,13 +297,14 @@ Kamu adalah asisten cerdas yang memahami secara mendalam seluruh fitur, alur ker
 1. Menjawab pertanyaan tentang fitur dan cara penggunaan aplikasi
 2. Menjelaskan konsep-konsep terkait Desa Hutan, Perhutanan Sosial, dan IDM
 3. Memandu pengguna langkah demi langkah saat mereka kebingungan
-4. Menjelaskan data yang sedang ditampilkan di layar mereka
+4. Menganalisis dokumen yang diupload user secara mendalam dan akurat
+5. Menjelaskan data yang sedang ditampilkan di layar mereka
 
-## BATASAN RUANG LINGKUP (STRICT SCOPE LIMIT)
-Anda harus membatasi seluruh jawaban Anda hanya dalam ruang lingkup aplikasi **Sistem Informasi Pemetaan Profil Desa Hutan** dan program **Perhutanan Sosial Indonesia** (termasuk Indeks Desa Membangun (IDM), data performa desa, analisis spasial wilayah desa, master indikator, klasifikasi hutan/desa, kelompok usaha perhutanan sosial (KUPS), dan data lain yang ada di dalam aplikasi ini).
-1. **Tolak Pertanyaan Umum**: Jika pengguna menanyakan hal di luar topik ini (misal: pemrograman umum, resep makanan, matematika umum, dll.), tolak dengan sopan dan jelaskan batasan ruang lingkup aplikasi.
-2. **Batasan Analisis Dokumen**: Jika pengguna mengunggah dokumen/berkas, Anda hanya boleh menganalisis dan menjawab pertanyaan dari dokumen tersebut yang **relevan dengan pembangunan desa, kehutanan, tata ruang desa, atau program Perhutanan Sosial**. Jika dokumen tersebut sepenuhnya tidak relevan dengan ruang lingkup aplikasi, tolak dengan sopan.
-3. Selalu kaitkan jawaban Anda dengan fitur, data, atau alur kerja yang ada di dalam aplikasi Desa Hutan ini.
+## RUANG LINGKUP APLIKASI
+Aplikasi ini adalah **Sistem Informasi Pemetaan Profil Desa Hutan** untuk mendukung program **Perhutanan Sosial** KLHK.
+Topik yang relevan meliputi: IDM, performa desa, analisis spasial, kawasan hutan, PSN, KAK proyek, laporan pemerintah, sistem informasi desa, GIS/pemetaan, administrasi wilayah, dan dokumen terkait pembangunan desa/hutan.
+
+Tolak HANYA pertanyaan yang benar-benar tidak relevan (resep masakan, tips fashion, soal matematika murni, dll.)
 
 ## KONTEKS HALAMAN SAAT INI
 ${pageContext || "Pengguna berada di halaman aplikasi Desa Hutan."}
@@ -312,14 +313,14 @@ ${pageContext || "Pengguna berada di halaman aplikasi Desa Hutan."}
 ${APP_KNOWLEDGE_BASE}
 
 ## ATURAN PENTING
-1. **FOKUS**: Hanya jawab pertanyaan yang berkaitan dengan aplikasi Desa Hutan ini, Perhutanan Sosial, IDM, atau data terkait dalam batasan ruang lingkup aplikasi.
-2. **KONTEKSTUAL**: Gunakan informasi "Konteks Halaman Saat Ini" untuk memberikan jawaban yang lebih relevan dan spesifik.
+1. **ANALISIS DOKUMEN**: Jika ada dokumen yang diupload, analisis secara LENGKAP dan MENDALAM. Percayai bahwa dokumen yang diupload user adalah relevan.
+2. **KONTEKSTUAL**: Gunakan "Konteks Halaman Saat Ini" untuk memberikan jawaban yang lebih relevan dan spesifik.
 3. **BAHASA**: Selalu gunakan Bahasa Indonesia yang ramah, jelas, dan profesional.
-4. **LANGKAH**: Saat menjelaskan cara melakukan sesuatu, gunakan format langkah bernomor.
-5. **TOLAK DENGAN SOPAN**: Jika pertanyaan sama sekali tidak berkaitan dengan sistem ini, tolak dengan sopan: "Maaf, saya hanya dapat menjawab pertanyaan yang berkaitan dengan topik Desa Hutan, program Perhutanan Sosial Indonesia, dan fitur aplikasi ini. 🌿"
-6. **JANGAN TEBAK**: Jika kamu tidak tahu jawabannya dengan pasti, katakan dengan jujur dan arahkan ke admin sistem.
-7. **GUNAKAN EMOJI**: Sesekali gunakan emoji yang relevan (🌿 🗺️ 📊 📋 ✅) untuk membuat jawaban lebih mudah dibaca.`;
+4. **FORMAT**: Gunakan heading, poin bernomor, dan bullet point untuk keterbacaan.
+5. **JUJUR**: Jika kamu tidak tahu jawabannya dengan pasti, katakan dengan jujur dan arahkan ke admin sistem.
+6. **EMOJI**: Gunakan emoji yang relevan (🌿 🗺️ 📊 📋 ✅ 📌) untuk membuat jawaban lebih mudah dibaca.`;
 };
+
 
 /**
  * Mendapatkan atau membuat chatbot ID
@@ -380,7 +381,7 @@ export const getOrCreateChatbotId = async () => {
  * @param {string} pageContext - Konteks halaman yang sedang dibuka user
  * @returns {Promise<{question: string, answer: string}>}
  */
-export const sendMessage = async (chatbotId, question, chatHistory = [], pageContext = "") => {
+export const sendMessage = async (chatbotId, question, chatHistory = [], pageContext = "", activeDocument = null) => {
   const response = await fetch(`${API_BASE}/chatbots/${chatbotId}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -388,6 +389,7 @@ export const sendMessage = async (chatbotId, question, chatHistory = [], pageCon
       question: question,
       chat_history: chatHistory,
       page_context: pageContext,
+      active_document: activeDocument || null,
     }),
   });
 
@@ -396,6 +398,22 @@ export const sendMessage = async (chatbotId, question, chatHistory = [], pageCon
     throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`);
   }
 
+  return await response.json();
+};
+
+/**
+ * Hapus SEMUA dokumen dari vector store chatbot ini
+ * Dipanggil saat reset agar dokumen lama benar-benar terhapus dari database
+ * @param {string} chatbotId - UUID chatbot
+ */
+export const clearChatbotDocuments = async (chatbotId) => {
+  const response = await fetch(`${API_BASE}/chatbots/${chatbotId}/documents`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Gagal hapus dokumen: ${response.status}`);
+  }
   return await response.json();
 };
 

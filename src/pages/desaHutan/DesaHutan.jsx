@@ -1,43 +1,238 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { ChevronDown, RotateCcw, Search, X } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import SyncButton from "../../components/SyncButton";
+import DataTable from "../../components/DataTable";
+import Pagination from "../../components/Pagination";
 import { performaDesaService } from "../../services/master/performaDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
+import { masterWilayahService } from "../../services/master/masterWilayahService";
+import { klasifikasiService } from "../../services/master/klasifikasiService";
+
+const getArrayData = (res) => {
+  if (!res) return [];
+  if (Array.isArray(res)) return res;
+  if (Array.isArray(res.data)) return res.data;
+  if (Array.isArray(res.data?.items)) return res.data.items;
+  if (Array.isArray(res.items)) return res.items;
+  return [];
+};
+
+// ── KOMPONEN CUSTOM: SEARCHABLE DROPDOWN (Premium UI & UX) ──
+const SearchableDropdown = ({
+  label,
+  value,
+  onChange,
+  options = [],
+  placeholder = "Pilih opsi",
+  required = false,
+  emptyMessage = "Tidak ada hasil ditemukan",
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Reset search input when dropdown is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setSearch("");
+    }
+  }, [isOpen]);
+
+  const selectedOption = useMemo(() => {
+    return options.find((opt) => String(opt.value) === String(value));
+  }, [options, value]);
+
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return options;
+    const query = search.toLowerCase();
+    return options.filter((opt) => opt.label.toLowerCase().includes(query));
+  }, [options, search]);
+
+  return (
+    <div ref={dropdownRef} className="relative w-full flex flex-col">
+      {/* CSS Scrollbar Kustom Lokal */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(45, 115, 68, 0.15);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(45, 115, 68, 0.3);
+        }
+      `}</style>
+
+      {/* Label */}
+      <label className="text-[10px] text-[#2D7344] font-extrabold uppercase tracking-wider mb-1 block select-none">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+
+      {/* Trigger Button */}
+      <div
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${
+          isOpen ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm" : "border-gray-200 shadow-sm"
+        }`}
+      >
+        <span className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}>
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown
+          size={14}
+          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
+            isOpen ? "transform rotate-180 text-[#2D7344]" : ""
+          }`}
+        />
+      </div>
+
+      {/* Dropdown Panel */}
+      {isOpen && (
+        <div className="absolute z-[100] top-[60px] left-0 w-full bg-white border border-gray-150 rounded-2xl shadow-xl p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
+          {/* Search Box */}
+          <div className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-xl mb-2 focus-within:border-[#2D7344]/40 focus-within:ring-2 focus-within:ring-[#2D7344]/10 transition-all bg-slate-50/50 flex-shrink-0">
+            <Search size={14} className="text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Cari ${label.toLowerCase()}...`}
+              className="w-full bg-transparent text-xs font-bold text-gray-700 focus:outline-none placeholder-gray-400"
+              autoFocus
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Options List */}
+          <div className="overflow-y-auto overflow-x-hidden flex-1 space-y-0.5 custom-scrollbar pr-1 max-h-[190px]">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-4 text-center text-xs font-bold text-gray-400 italic">
+                {emptyMessage}
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isActive = String(opt.value) === String(value);
+                return (
+                  <button
+                    key={opt.key || opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${
+                      isActive
+                        ? "bg-green-50 text-[#2D7344] font-extrabold"
+                        : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
+                    }`}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#2D7344] flex-shrink-0 ml-2" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function DesaHutan() {
-  const [selectedTahun, setSelectedTahun] = useState("2025");
-  const [page, setPage] = useState(1);
-  const pageSize = 10;
+  const [selectedFormulaId, setSelectedFormulaId] = useState("");
+  const [selectedTahun, setSelectedTahun] = useState("");
+  const [selectedProvinsi, setSelectedProvinsi] = useState("");
+  const [selectedIndexDesaHutanId, setSelectedIndexDesaHutanId] = useState("");
+  const [selectedFungsiKawasanIds, setSelectedFungsiKawasanIds] = useState([]);
 
-  // ── FETCH TAHUN LIST ──
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+
+  // ── FETCH FORMULA LIST (Wajib) ──
+  const { data: formulaRes } = useQuery({
+    queryKey: ["formula-list"],
+    queryFn: () => indikatorService.getAllFormula(),
+  });
+  const formulaList = useMemo(() => getArrayData(formulaRes), [formulaRes]);
+
+  // ── FETCH TAHUN LIST (Wajib) ──
   const { data: tahunRes } = useQuery({
     queryKey: ["tahun-list"],
     queryFn: indikatorService.getAllYearIndicator,
   });
-  const tahunList = tahunRes?.data || tahunRes || [];
+  const tahunList = useMemo(() => getArrayData(tahunRes), [tahunRes]);
 
-  // Effect to select 2025 or the first available year
-  useEffect(() => {
-    if (tahunList.length > 0) {
-      const has2025 = tahunList.some((t) => String(t.tahun) === "2025");
-      if (has2025) {
-        setSelectedTahun("2025");
-      } else {
-        setSelectedTahun(String(tahunList[0].tahun));
-      }
-    }
-  }, [tahunList]);
+  // ── FETCH PROVINSI LIST (Opsional) ──
+  const { data: provinsiList = [] } = useQuery({
+    queryKey: ["provinsi-list"],
+    queryFn: () => masterWilayahService.getAllProvinsi(),
+  });
+
+  // ── FETCH INDEKS DESA HUTAN LIST (Opsional) ──
+  const { data: indexDesaRes } = useQuery({
+    queryKey: ["klasifikasi-desa-list"],
+    queryFn: () => klasifikasiService.getAllClassificationDesa({ page: 1, perPage: 100 }),
+  });
+  const indexDesaList = useMemo(() => getArrayData(indexDesaRes), [indexDesaRes]);
+
+  // ── FETCH FUNGSI KAWASAN LIST (Opsional) ──
+  const { data: fungsiKawasanRes } = useQuery({
+    queryKey: ["klasifikasi-hutan-list"],
+    queryFn: () => klasifikasiService.getAllClassificationForest({ page: 1, perPage: 100 }),
+  });
+  const fungsiKawasanList = useMemo(() => getArrayData(fungsiKawasanRes), [fungsiKawasanRes]);
 
   // ── FETCH PERFORMA DESA HUTAN LIST ──
   const { data: performaRes, isLoading, isError } = useQuery({
-    queryKey: ["performa-desa-hutan-list", page, pageSize, selectedTahun],
+    queryKey: [
+      "performa-desa-hutan-list",
+      page,
+      pageSize,
+      selectedFormulaId,
+      selectedTahun,
+      selectedProvinsi,
+      selectedIndexDesaHutanId,
+      selectedFungsiKawasanIds,
+    ],
     queryFn: () =>
       performaDesaService.getIndexPerformaDesaHutan({
         page,
         size: pageSize,
+        formulaId: selectedFormulaId,
         tahun: selectedTahun,
+        provinsi: selectedProvinsi || undefined,
+        indexDesaHutanId: selectedIndexDesaHutanId || undefined,
+        fungsiKawasanId: selectedFungsiKawasanIds.length > 0 ? selectedFungsiKawasanIds : undefined,
       }),
+    enabled: !!selectedFormulaId && !!selectedTahun,
     keepPreviousData: true,
   });
 
@@ -46,25 +241,96 @@ export default function DesaHutan() {
   const total = pagination?.total || 0;
   const totalPages = pagination?.totalPage || 1;
 
-  // Handlers for pagination
-  const handlePrevPage = () => {
-    if (page > 1) setPage((prev) => prev - 1);
+  // ── OPTIONS FORMATTER UNTUK DROPDOWN ──
+  const formulaOptions = useMemo(() => {
+    return formulaList.map((f) => ({
+      value: f.id,
+      label: f.nama || f.name || "-",
+    }));
+  }, [formulaList]);
+
+  const tahunOptions = useMemo(() => {
+    return tahunList.map((t) => ({
+      value: t.tahun,
+      label: String(t.tahun),
+    }));
+  }, [tahunList]);
+
+  const provinsiOptions = useMemo(() => {
+    return provinsiList.map((prov) => {
+      const name = prov.name || prov.nama || prov.provinsi || "-";
+      return {
+        value: name,
+        label: name,
+        key: prov.id,
+      };
+    });
+  }, [provinsiList]);
+
+  const indexDesaOptions = useMemo(() => {
+    return indexDesaList.map((idx) => ({
+      value: idx.id,
+      label: idx.nama || "-",
+    }));
+  }, [indexDesaList]);
+
+  // Add precise rowNumber
+  const tableData = useMemo(() => {
+    return items.map((item, index) => ({
+      ...item,
+      rowNumber: (page - 1) * pageSize + index + 1,
+    }));
+  }, [items, page, pageSize]);
+
+  // Columns definition for DataTable
+  const columns = useMemo(
+    () => [
+      {
+        header: "No",
+        className: "text-center w-16",
+        render: (row) => <div className="text-center text-slate-500">{row.rowNumber}</div>,
+      },
+      {
+        header: "KODE",
+        render: (row) => <span>{row.kode || "-"}</span>,
+      },
+      {
+        header: "Nama Desa",
+        render: (row) => <span className="font-semibold text-gray-800">{row.namaDesa || "-"}</span>,
+      },
+      {
+        header: "Fungsi Kawasan",
+        render: (row) => {
+          if (Array.isArray(row.fungsiKawasan)) {
+            const names = row.fungsiKawasan.map((fk) => (typeof fk === "object" ? fk.nama : fk));
+            return <span>{names.join(", ") || "-"}</span>;
+          }
+          return <span>{row.fungsiKawasan || "-"}</span>;
+        },
+      },
+      {
+        header: "Indeks Desa Hutan",
+        render: (row) => <span>{row.indeksDesaHutan || "-"}</span>,
+      },
+      {
+        header: "Luas Desa (Ha)",
+        render: (row) => (
+          <span>{row.luasDesaHa ? Number(row.luasDesaHa).toLocaleString("id-ID") : "-"}</span>
+        ),
+      },
+    ],
+    []
+  );
+
+  const handleResetFilters = () => {
+    setSelectedProvinsi("");
+    setSelectedIndexDesaHutanId("");
+    setSelectedFungsiKawasanIds([]);
+    setPage(1);
   };
-
-  const handleNextPage = () => {
-    if (page < totalPages) setPage((prev) => prev + 1);
-  };
-
-  const startRow = total > 0 ? (page - 1) * pageSize + 1 : 0;
-  const endRow = Math.min(page * pageSize, total);
-
-  // Handlers for action buttons
-  const handleView = (row) => alert(`Membuka detail untuk: ${row.namaDesa || row.nama || "-"}`);
-  const handleEdit = (row) => alert(`Mengedit data: ${row.namaDesa || row.nama || "-"}`);
 
   return (
     <DashboardLayout activeMenu="Desa Hutan">
-      {/* Wrapper Kartu Putih Besar (Mengikuti Figma) */}
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col min-h-[calc(100vh-120px)]">
 
         {/* JUDUL HALAMAN & GARIS */}
@@ -79,163 +345,153 @@ export default function DesaHutan() {
           <div className="w-full h-[2px] bg-[#2D7344]"></div>
         </div>
 
-        {/* FILTER BAR */}
-        <div className="flex flex-wrap gap-4 mb-8">
-          {/* Tahun Filter */}
-          <div className="flex-1 min-w-[220px] max-w-[300px] bg-white rounded-lg border border-gray-200 shadow-sm flex items-center px-4 py-2.5 transition-shadow hover:shadow-md">
-            <span className="text-xs text-[#2D7344] font-bold whitespace-nowrap mr-3">
-              Tahun
-            </span>
-            <select
-              value={selectedTahun}
-              onChange={(e) => {
-                setSelectedTahun(e.target.value);
-                setPage(1);
-              }}
-              className="flex-1 w-full bg-transparent text-gray-500 text-xs focus:outline-none appearance-none cursor-pointer"
-            >
-              {tahunList.length === 0 ? (
-                <option value="2025">2025</option>
-              ) : (
-                tahunList.map((t) => (
-                  <option key={t.id || t.tahun} value={t.tahun}>
-                    {t.tahun}
-                  </option>
-                ))
-              )}
-            </select>
-            {/* Custom Arrow */}
-            <div className="pointer-events-none text-gray-500 ml-2">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M7 10l5 5 5-5z" />
-              </svg>
-            </div>
+        {/* FILTER BAR (Menggunakan z-index agar dropdown tidak terpotong konten di bawahnya) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-30">
+
+          {/* Formula Filter (Wajib, Searchable) */}
+          <SearchableDropdown
+            label="Formula"
+            value={selectedFormulaId}
+            onChange={(val) => {
+              setSelectedFormulaId(val);
+              setPage(1);
+            }}
+            options={formulaOptions}
+            placeholder="Pilih Formula"
+            required={true}
+          />
+
+          {/* Tahun Filter (Wajib, Searchable) */}
+          <SearchableDropdown
+            label="Tahun"
+            value={selectedTahun}
+            onChange={(val) => {
+              setSelectedTahun(val);
+              setPage(1);
+            }}
+            options={tahunOptions}
+            placeholder="Pilih Tahun"
+            required={true}
+          />
+
+          {/* Provinsi Filter (Opsional, Searchable) */}
+          <SearchableDropdown
+            label="Provinsi"
+            value={selectedProvinsi}
+            onChange={(val) => {
+              setSelectedProvinsi(val);
+              setPage(1);
+            }}
+            options={provinsiOptions}
+            placeholder="Semua Provinsi"
+          />
+
+          {/* Indeks Desa Hutan Filter (Opsional, Searchable) */}
+          <SearchableDropdown
+            label="Indeks Desa Hutan"
+            value={selectedIndexDesaHutanId}
+            onChange={(val) => {
+              setSelectedIndexDesaHutanId(val);
+              setPage(1);
+            }}
+            options={indexDesaOptions}
+            placeholder="Semua Indeks"
+          />
+
+        </div>
+
+        {/* FUNGSI KAWASAN INLINE CHECKBOXES */}
+        <div className="mb-6 bg-slate-50/50 border border-slate-100 rounded-2xl p-5 shadow-sm animate-in fade-in duration-300">
+          <span className="text-[10px] text-[#2D7344] font-extrabold uppercase tracking-wider block mb-3">
+            Fungsi Kawasan (Opsional)
+          </span>
+          <div className="flex flex-wrap gap-3">
+            {fungsiKawasanList.length === 0 ? (
+              <span className="text-gray-400 text-xs italic">Memuat daftar fungsi kawasan...</span>
+            ) : (
+              fungsiKawasanList.map((fk) => {
+                const isChecked = selectedFungsiKawasanIds.includes(fk.id);
+                return (
+                  <label
+                    key={fk.id}
+                    className={`flex items-center gap-2 px-4 py-2 border rounded-xl cursor-pointer text-xs font-bold select-none transition-all duration-200 ${
+                      isChecked
+                        ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.02]"
+                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isChecked}
+                      onChange={() => {
+                        if (isChecked) {
+                          setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
+                        } else {
+                          setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
+                        }
+                        setPage(1);
+                      }}
+                      className="rounded border-gray-300 text-[#2D7344] focus:ring-[#2D7344]/30 cursor-pointer"
+                    />
+                    <span>{fk.nama || fk.name}</span>
+                  </label>
+                );
+              })
+            )}
           </div>
         </div>
 
+        {/* RESET ACTION BAR */}
+        {(selectedProvinsi || selectedIndexDesaHutanId || selectedFungsiKawasanIds.length > 0) && (
+          <div className="flex justify-end gap-3 mb-6 animate-in fade-in duration-200">
+            <button
+              onClick={handleResetFilters}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-350 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all cursor-pointer"
+            >
+              <RotateCcw size={14} />
+              Reset Filter Opsional
+            </button>
+          </div>
+        )}
+
         {/* AREA TABEL */}
         <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col border border-gray-100 shadow-sm">
-          <div className="p-5 border-b border-gray-100">
-            <h3 className="text-sm font-bold text-gray-800">Tabel Data Desa Tahun {selectedTahun}</h3>
+          <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+            <h3 className="text-sm font-bold text-gray-800">
+              Tabel Data Desa Tahun {selectedTahun || "-"}
+            </h3>
+            {selectedFormulaId && (
+              <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
+                Formula: {formulaList.find((f) => String(f.id) === String(selectedFormulaId))?.nama || "-"}
+              </span>
+            )}
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse min-w-[800px]">
-              <thead>
-                <tr className="bg-[#2D7344] text-white text-xs font-bold tracking-wide">
-                  <th className="py-4 px-6 whitespace-nowrap">KODE</th>
-                  <th className="py-4 px-6 whitespace-nowrap">Nama Desa</th>
-                  <th className="py-4 px-6 whitespace-nowrap">Fungsi Kawasan</th>
-                  <th className="py-4 px-6 whitespace-nowrap">Indeks Desa Hutan</th>
-                  <th className="py-4 px-6 whitespace-nowrap">Luas Desa (Ha)</th>
-                  {/* <th className="py-4 px-6 text-center whitespace-nowrap">Aksi</th> */}
-                </tr>
-              </thead>
-              <tbody className="text-xs text-gray-600 font-medium">
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-400">
-                      <div className="flex items-center justify-center gap-2">
-                        <svg className="animate-spin h-5 w-5 text-[#2D7344]" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Memuat data Desa Hutan...</span>
-                      </div>
-                    </td>
-                  </tr>
-                ) : isError ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-red-500 font-semibold">
-                      Gagal memuat data dari server.
-                    </td>
-                  </tr>
-                ) : items.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-10 text-gray-400">
-                      Tidak ada data Desa Hutan untuk tahun {selectedTahun}.
-                    </td>
-                  </tr>
-                ) : (
-                  items.map((row) => (
-                    <tr
-                      key={row.id}
-                      className="border-b border-gray-100 even:bg-[#E8EEF2] hover:bg-green-50 transition-colors"
-                    >
-                      <td className="py-4 px-6">{row.kode || "-"}</td>
-                      <td className="py-4 px-6 font-semibold text-gray-800">{row.namaDesa || "-"}</td>
-                      <td className="py-4 px-6">
-                        {Array.isArray(row.fungsiKawasan)
-                          ? row.fungsiKawasan
-                            .filter((val) => val !== "Areal Penggunaan Lain" && val !== "Area Penggunaan Lain")
-                            .join(", ") || "-"
-                          : (row.fungsiKawasan === "Areal Penggunaan Lain" || row.fungsiKawasan === "Area Penggunaan Lain"
-                            ? "-"
-                            : (row.fungsiKawasan || "-"))}
-                      </td>
-                      <td className="py-4 px-6">{row.indeksDesaHutan || "-"}</td>
-                      <td className="py-4 px-6">{row.luasDesaHa ? Number(row.luasDesaHa).toLocaleString("id-ID") : "-"}</td>
-                      {/* <td className="py-4 px-6 flex justify-center gap-4"> */}
+          <DataTable
+            columns={columns}
+            data={tableData}
+            isLoading={isLoading}
+            isError={isError}
+            emptyMessage={
+              !selectedFormulaId || !selectedTahun
+                ? "Silakan pilih Formula dan Tahun terlebih dahulu untuk menampilkan data"
+                : "Data Desa Hutan tidak ditemukan"
+            }
+          />
 
-                      {/* Tombol Lihat (Eye) */}
-                      {/* <button 
-                          type="button"
-                          onClick={() => handleView(row)}
-                          className="text-[#3A8353] hover:text-[#1d4d2b] transition-transform hover:scale-125 cursor-pointer outline-none"
-                          title="Lihat Detail"
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                            <circle cx="12" cy="12" r="3"></circle>
-                          </svg>
-                        </button> */}
-
-                      {/* Tombol Edit (Pencil) */}
-                      {/* <button 
-                          type="button"
-                          onClick={() => handleEdit(row)}
-                          className="text-[#3A8353] hover:text-[#1d4d2b] transition-transform hover:scale-125 cursor-pointer outline-none"
-                          title="Edit Data"
-                        >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-                          </svg>
-                        </button> */}
-                      {/* 
-                      </td> */}
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* PAGINATION */}
-          <div className="mt-auto flex justify-end items-center gap-4 p-5 text-xs text-gray-500 bg-white">
-            <span>
-              {total > 0 ? `Rows ${startRow}-${endRow} of first ${total}` : "No data"}
-            </span>
-            <div className="flex gap-2">
-              <button
-                onClick={handlePrevPage}
-                disabled={page === 1 || isLoading}
-                className={`transition-colors p-1 ${page === 1 || isLoading ? "text-gray-300 cursor-not-allowed" : "text-gray-800 hover:text-[#2D7344] cursor-pointer"}`}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6 1.41-1.41z" />
-                </svg>
-              </button>
-              <button
-                onClick={handleNextPage}
-                disabled={page >= totalPages || isLoading}
-                className={`transition-colors p-1 ${page >= totalPages || isLoading ? "text-gray-300 cursor-not-allowed" : "text-gray-800 hover:text-[#2D7344] cursor-pointer"}`}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z" />
-                </svg>
-              </button>
-            </div>
-          </div>
+          {!isLoading && !isError && tableData.length > 0 && (
+            <Pagination
+              currentPage={page}
+              totalPage={totalPages}
+              perPage={pageSize}
+              total={total}
+              onPageChange={setPage}
+              onSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
+            />
+          )}
         </div>
 
       </div>

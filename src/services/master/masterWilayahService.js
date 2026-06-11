@@ -28,6 +28,16 @@ export const masterWilayahService = {
     return response.data;
   },
 
+  async getAllProvinsiPublic(page = null, size = null, search = "") {
+    const params = {};
+    if (page) params.page = page;
+    if (size) params.size = size;
+    if (search) params.search = search;
+
+    const response = await masterInstance.get("/public/provinsi", { params });
+    return response.data.data;
+  },
+
   // --- KABUPATEN ---
   async getAllKabupaten(page = null, size = null, search = "", provinsiId = null) {
     const params = {};
@@ -37,6 +47,17 @@ export const masterWilayahService = {
     if (provinsiId) params.provinsiId = provinsiId; // Assuming there might be a filter
 
     const response = await masterInstance.get("/master-kabupaten", { params });
+    return response.data.data;
+  },
+
+  async getAllKabupatenPublic(page = null, size = null, search = "", provinsiId = null) {
+    const params = {};
+    if (page) params.page = page;
+    if (size) params.size = size;
+    if (search) params.search = search;
+    if (provinsiId) params.provinsiId = provinsiId; // Assuming there might be a filter
+
+    const response = await masterInstance.get("/public/kabupaten", { params });
     return response.data.data;
   },
   async getKabupatenById(id) {
@@ -65,6 +86,17 @@ export const masterWilayahService = {
     if (kabupatenId) params.kabupatenId = kabupatenId;
 
     const response = await masterInstance.get("/master-kecamatan", { params });
+    return response.data.data;
+  },
+
+  async getAllKecamatanPublic(page = null, size = null, search = "", kabupatenId = null) {
+    const params = {};
+    if (page) params.page = page;
+    if (size) params.size = size;
+    if (search) params.search = search;
+    if (kabupatenId) params.kabupatenId = kabupatenId; // Assuming there might be a filter
+
+    const response = await masterInstance.get("/public/kecamatan", { params });
     return response.data.data;
   },
   async getKecamatanById(id) {

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable";
+import Pagination from "../../components/Pagination";
 import {
   Plus,
   Search,
@@ -25,6 +26,10 @@ const Klasifikasi = () => {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("hutan");
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
 
   // ==========================================
   // STATE MODALS & FORMS
@@ -59,24 +64,34 @@ const Klasifikasi = () => {
     isLoading: isLoadingHutan,
     isError: isErrorHutan,
   } = useQuery({
-    queryKey: ["klasifikasi-hutan"],
-    queryFn: klasifikasiService.getAllClassificationForest,
+    queryKey: ["klasifikasi-hutan", currentPage, perPage],
+    queryFn: () => klasifikasiService.getAllClassificationForest({ page: currentPage, perPage }),
     enabled: activeTab === "hutan",
   });
 
-  const dataHutan = responseHutan?.data || responseHutan || [];
+  const dataHutan = useMemo(() => {
+    if (!responseHutan) return [];
+    return Array.isArray(responseHutan)
+      ? responseHutan
+      : (responseHutan?.data?.items || responseHutan?.data || responseHutan?.items || []);
+  }, [responseHutan]);
 
   const {
     data: responseDesa,
     isLoading: isLoadingDesa,
     isError: isErrorDesa,
   } = useQuery({
-    queryKey: ["klasifikasi-desa"],
-    queryFn: klasifikasiService.getAllClassificationDesa,
+    queryKey: ["klasifikasi-desa", currentPage, perPage],
+    queryFn: () => klasifikasiService.getAllClassificationDesa({ page: currentPage, perPage }),
     enabled: activeTab === "desa",
   });
 
-  const dataDesa = responseDesa?.data || responseDesa || [];
+  const dataDesa = useMemo(() => {
+    if (!responseDesa) return [];
+    return Array.isArray(responseDesa)
+      ? responseDesa
+      : (responseDesa?.data?.items || responseDesa?.data || responseDesa?.items || []);
+  }, [responseDesa]);
 
   const { data: responsePreviewHutan, isFetching: isFetchingPreviewHutan } = useQuery({
     queryKey: ["klasifikasi-hutan-detail", previewId],
@@ -201,7 +216,7 @@ const Klasifikasi = () => {
 
   // Handler Add
   const handleAddClick = () => {
-    setAddForm({ nama: "", warna: "#2D7344" });
+    setAddForm({ kode: "", nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100 });
     setIsAddModalOpen(true);
   };
 
@@ -209,7 +224,14 @@ const Klasifikasi = () => {
     e.preventDefault();
     if (!addForm.nama || !addForm.warna) return toast.warning("Nama dan Warna wajib diisi!");
     if (activeTab === "desa") {
-      createDesaMutation.mutate({ nama: addForm.nama, warna: addForm.warna, nilaiMin: Number(addForm.nilaiMin), nilaiMax: Number(addForm.nilaiMax) });
+      createDesaMutation.mutate({
+        nama: addForm.nama,
+        warna: addForm.warna,
+        nilaiMin: Number(addForm.nilaiMin),
+        nilaiMax: Number(addForm.nilaiMax),
+        nilai_min: Number(addForm.nilaiMin),
+        nilai_max: Number(addForm.nilaiMax),
+      });
     } else {
       createMutation.mutate({ nama: addForm.nama, warna: addForm.warna });
     }
@@ -217,11 +239,13 @@ const Klasifikasi = () => {
 
   // Handler Edit
   const handleEditClick = (row) => {
+    const minVal = row.nilai_min ?? row.nilaiMin ?? 0;
+    const maxVal = row.nilai_max ?? row.nilaiMax ?? 100;
     setEditForm({
       id: row.id, kode: row.kode || "", nama: row.nama, warna: row.warna,
-      nilaiMin: row.nilaiMin ?? 0, nilaiMax: row.nilaiMax ?? 100,
+      nilaiMin: minVal, nilaiMax: maxVal,
       originalNama: row.nama, originalWarna: row.warna, originalKode: row.kode || "",
-      originalNilaiMin: row.nilaiMin ?? 0, originalNilaiMax: row.nilaiMax ?? 100,
+      originalNilaiMin: minVal, originalNilaiMax: maxVal,
     });
     setIsEditModalOpen(true);
   };
@@ -230,7 +254,17 @@ const Klasifikasi = () => {
     e.preventDefault();
     if (!editForm.nama || !editForm.warna) return toast.warning("Nama dan Warna wajib diisi!");
     if (activeTab === "desa") {
-      updateDesaMutation.mutate({ id: editForm.id, payload: { nama: editForm.nama, warna: editForm.warna, nilaiMin: Number(editForm.nilaiMin), nilaiMax: Number(editForm.nilaiMax) } });
+      updateDesaMutation.mutate({
+        id: editForm.id,
+        payload: {
+          nama: editForm.nama,
+          warna: editForm.warna,
+          nilaiMin: Number(editForm.nilaiMin),
+          nilaiMax: Number(editForm.nilaiMax),
+          nilai_min: Number(editForm.nilaiMin),
+          nilai_max: Number(editForm.nilaiMax),
+        }
+      });
     } else {
       if (editForm.nama === editForm.originalNama && editForm.warna === editForm.originalWarna) {
         toast.info("Tidak ada perubahan data."); setIsEditModalOpen(false); return;
@@ -296,8 +330,8 @@ const Klasifikasi = () => {
         ),
       },
       ...(activeTab === "desa" ? [
-        { header: "Nilai Min", accessor: "nilaiMin", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilaiMin ?? "-"}</span> },
-        { header: "Nilai Max", accessor: "nilaiMax", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilaiMax ?? "-"}</span> },
+        { header: "Nilai Min", accessor: "nilaiMin", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilai_min ?? row.nilaiMin ?? "-"}</span> },
+        { header: "Nilai Max", accessor: "nilaiMax", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilai_max ?? row.nilaiMax ?? "-"}</span> },
       ] : []),
       {
         header: "Aksi",
@@ -332,6 +366,14 @@ const Klasifikasi = () => {
     [activeTab],
   );
 
+  const paginationMeta = useMemo(() => {
+    const resp = activeTab === "hutan" ? responseHutan : responseDesa;
+    return resp?.data?.pagination || resp?.pagination || null;
+  }, [activeTab, responseHutan, responseDesa]);
+
+  console.log("nilai min", editForm.nilaiMin);
+  console.log("nilai max", editForm.nilaiMax);
+
   return (
     <DashboardLayout activeMenu="Klasifikasi">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
@@ -354,6 +396,7 @@ const Klasifikasi = () => {
                 onClick={() => {
                   setActiveTab(tab);
                   setSearchQuery("");
+                  setCurrentPage(1);
                 }}
                 className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${activeTab === tab
                   ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
@@ -387,7 +430,10 @@ const Klasifikasi = () => {
                   <input
                     type="text"
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     placeholder={`Cari ${activeTab}...`}
                     className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344]"
                   />
@@ -410,6 +456,15 @@ const Klasifikasi = () => {
               isError={activeTab === "hutan" ? isErrorHutan : isErrorDesa}
               searchQuery={searchQuery}
               emptyMessage={`Belum ada data klasifikasi ${activeTab} yang ditambahkan`}
+            />
+
+            <Pagination
+              currentPage={currentPage}
+              totalPage={paginationMeta?.totalPage || 1}
+              perPage={perPage}
+              total={paginationMeta?.total || displayData.length}
+              onPageChange={(page) => setCurrentPage(page)}
+              onSizeChange={(size) => setPerPage(size)}
             />
           </div>
         </div>

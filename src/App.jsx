@@ -13,6 +13,8 @@ import Dashboard from "./pages/dashboard/Dashboard";
 import DesaHutan from "./pages/desaHutan/DesaHutan";
 import PerformaDesa from "./pages/PerfomaDesa/PerformaDesa";
 import EditPerformaDesa from "./pages/PerfomaDesa/EditPerformaDesa";
+import TambahPerformaDesa from "./pages/PerfomaDesa/TambahPerformaDesa";
+import PerformaDesaDetail from "./pages/PerfomaDesa/PerformaDesaDetail";
 import PotensiDesa from "./pages/PotensiDesa/PotensiDesa";
 import MapPage from "./MapPage";
 import Indikator from "./pages/Indikator/Indikator";
@@ -28,11 +30,15 @@ import MasterPotensi from "./pages/MasterPotensi/MasterPotensi";
 import ProvinceDetail from "./pages/dashboard/ProvinceDetail";
 import DetailMainIndikator from "./pages/Indikator/DetailMainIndikator";
 import FormMainIndikator from "./pages/Indikator/FormMainIndicator";
-import DesaDetail from "./pages/dashboard/DetailDesa";
+import DetailDesa from "./pages/dashboard/DetailDesa";
 import DetailFormulaIndicator from "./pages/Indikator/DetailFormulaIndicator";
 import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
 import TahunIndikatorPerhitungan from "./pages/Indikator/TahunIndikatorPerhitungan";
 import FormTahunIndicator from "./pages/Indikator/FormTahunIndicator";
+import CreateRole from "./pages/ManajemenRole/CreateRole";
+import EditRole from "./pages/ManajemenRole/EditRole";
+import DetailRole from "./pages/ManajemenRole/DetailRole";
+import AssignPermission from "./pages/ManajemenRole/AssignPermission";
 import SiteSettings from "./pages/SiteSettings/SiteSettings";
 import DesaPSN from "./pages/DesaPSN/DesaPSN";
 
@@ -63,10 +69,19 @@ const App = () => {
         path="/dashboard/provinsi/:provinceName"
         element={<ProvinceDetail />}
       />
+
       <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
       <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
       <Route
-        path="/dashboard/performa-desa/edit"
+        path="/dashboard/performa-desa/detail/:id"
+        element={<PerformaDesaDetail />}
+      />
+      <Route
+        path="/dashboard/performa-desa/tambah"
+        element={<TambahPerformaDesa />}
+      />
+      <Route
+        path="/dashboard/performa-desa/edit/:id"
         element={<EditPerformaDesa />}
       />
       <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
@@ -93,7 +108,7 @@ const App = () => {
         path="/dashboard/indikator/utama/edit/:id"
         element={<FormMainIndikator />}
       />
-      <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
+      <Route path="/dashboard/desa-detail/:desaId" element={<DetailDesa />} />
       <Route
         path="/dashboard/indikator-perhitungan"
         element={<IndikatorPerhitungan />}
@@ -163,6 +178,7 @@ const App = () => {
         }
       />
 
+      {/* --- MANAJEMEN ROLE --- */}
       <Route
         path="/dashboard/manajemen-role"
         element={
@@ -189,11 +205,50 @@ const App = () => {
             ]}
           >
             <SiteSettings />
-          </ProtectedRoute>
-        }
-      />
-    </Routes>
+
+            <Route
+              path="/dashboard/manajemen-role/create"
+              element={
+                <ProtectedRoute allowedPermissions={["role:create"]}>
+                  <CreateRole />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard/manajemen-role/edit/:id"
+              element={
+                <ProtectedRoute
+                  allowedPermissions={["role:update", "role_permission:assign"]}
+                >
+                  <EditRole />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard/manajemen-role/detail/:id"
+              element={
+                <ProtectedRoute allowedPermissions={["role:read"]}>
+                  <DetailRole />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard/manajemen-role/assign/:id"
+              element={
+                <ProtectedRoute
+                  allowedPermissions={[
+                    "role_permission:assign",
+                    "role_permission:unassign",
+                  ]}
+                >
+                  <AssignPermission />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
   );
 };
 
-export default App;
+      export default App;

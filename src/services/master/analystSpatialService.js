@@ -41,4 +41,10 @@ export const analystSpatialService = {
     });
     return response.data.data;
   },
+
+  async getDesaDetail(id) {
+    const response = await masterInstance.get(`/analisis-spasial/rekap/desa/${id}`);
+    return response.data.data;
+  },
 };
+

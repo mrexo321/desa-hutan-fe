@@ -143,8 +143,8 @@ const ProvinceDetail = () => {
                       <th className="py-4 px-4">Kode Wilayah</th>
                       <th className="py-4 px-4">Kecamatan</th>
                       <th className="py-4 px-4">Kabupaten</th>
-                      <th className="py-4 px-4 text-right">Luas (Ha)</th>
-                      <th className="py-4 px-4 text-center">Klasifikasi</th>
+                      <th className="py-4 px-4 text-right">Luas Desa (Ha)</th>
+                      {/* <th className="py-4 px-4 text-center">Klasifikasi</th> */}
                       <th className="py-4 px-6 text-center w-24">Aksi</th>
                     </tr>
                   </thead>
@@ -176,9 +176,9 @@ const ProvinceDetail = () => {
                           <td className="py-4 px-4 text-gray-500">{desa.kecamatan || "-"}</td>
                           <td className="py-4 px-4 text-gray-500">{desa.kabupaten || "-"}</td>
                           <td className="py-4 px-4 text-right text-gray-700 font-semibold">
-                            {desa.luas_desa_ha?.toLocaleString() || "0"}
+                            {desa.luasDesaHa?.toLocaleString() || "0"}
                           </td>
-                          <td className="py-4 px-4 text-center">
+                          {/* <td className="py-4 px-4 text-center">
                             <span
                               className={`text-[10px] font-bold px-2.5 py-1 rounded-full border capitalize ${isMayoritas
                                 ? "bg-emerald-50 text-emerald-600 border-emerald-200"
@@ -187,7 +187,7 @@ const ProvinceDetail = () => {
                             >
                               {desa.ringkasanInteraksi?.klasifikasi || "Minoritas"}
                             </span>
-                          </td>
+                          </td> */}
                           <td className="py-4 px-6 text-center">
                             <button
                               onClick={() => handleViewDetail(desa)}

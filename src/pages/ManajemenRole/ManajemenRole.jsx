@@ -3,6 +3,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { roleService } from "../../services/auth/roleService";
 import { permissionService } from "../../services/auth/permissionService";
 import { rolePermissionService } from "../../services/auth/rolePermissionService";
+import { usePermission } from "../../hooks/usePermission";
 import {
   Plus,
   Search,
@@ -21,8 +22,161 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+const getDirectPermissionId = (permission) => {
+  if (typeof permission === "string" || typeof permission === "number") {
+    return String(permission);
+  }
+
+  if (!permission || typeof permission !== "object") return "";
+
+  const id =
+    permission.permissionId ??
+    permission.permission_id ??
+    permission.permissionID ??
+    permission.PermissionId ??
+    permission.permission?.id ??
+    permission.permission?.permissionId ??
+    permission.permission?.permission_id ??
+    permission.Permission?.id ??
+    permission.Permission?.permissionId ??
+    permission.id;
+
+  return id !== undefined && id !== null ? String(id) : "";
+};
+
+const getDirectPermissionName = (permission) => {
+  if (typeof permission === "string" || typeof permission === "number") {
+    return String(permission);
+  }
+
+  if (!permission || typeof permission !== "object") return "";
+
+  return String(
+    permission.name ??
+      permission.nama ??
+      permission.code ??
+      permission.kode ??
+      permission.permissionName ??
+      permission.permission_name ??
+      permission.PermissionName ??
+      permission.permission?.name ??
+      permission.permission?.nama ??
+      permission.permission?.code ??
+      permission.permission?.kode ??
+      permission.Permission?.name ??
+      permission.Permission?.nama ??
+      permission.Permission?.code ??
+      permission.Permission?.kode ??
+      "",
+  );
+};
+
+const getPermissionName = (permission, allPermissions = []) => {
+  const directName = getDirectPermissionName(permission);
+  if (directName) return directName;
+
+  const permissionId = getDirectPermissionId(permission);
+  const matchedPermission = allPermissions.find(
+    (item) => getDirectPermissionId(item) === permissionId,
+  );
+
+  return getDirectPermissionName(matchedPermission) || permissionId;
+};
+
+const getPermissionId = (permission, allPermissions = []) => {
+  const directId = getDirectPermissionId(permission);
+  if (directId) return directId;
+
+  const permissionName = getDirectPermissionName(permission);
+  const matchedPermission = allPermissions.find(
+    (item) => getDirectPermissionName(item) === permissionName,
+  );
+  const matchedId = getDirectPermissionId(matchedPermission);
+
+  return matchedId || permissionName;
+};
+
+const uniqueValues = (values) => [...new Set(values.filter(Boolean))];
+
+const getRoleId = (role) =>
+  String(
+    role?.roleId ??
+      role?.role_id ??
+      role?.roleID ??
+      role?.RoleId ??
+      role?.role?.id ??
+      role?.role?.roleId ??
+      role?.role?.role_id ??
+      role?.Role?.id ??
+      role?.id ??
+      "",
+  );
+
+const getRelationRoleId = (relation) =>
+  String(
+    relation?.roleId ??
+      relation?.role_id ??
+      relation?.roleID ??
+      relation?.RoleId ??
+      relation?.role?.id ??
+      relation?.role?.roleId ??
+      relation?.role?.role_id ??
+      relation?.Role?.id ??
+      relation?.Role?.roleId ??
+      "",
+  );
+
+const extractPermissions = (value) => {
+  const source = Array.isArray(value) ? value : value ? [value] : [];
+
+  return source.flatMap((item) => {
+    if (!item || typeof item !== "object") return item ? [item] : [];
+    if (Array.isArray(item.permissions)) return item.permissions;
+    if (Array.isArray(item.role_permissions)) return item.role_permissions;
+    if (Array.isArray(item.rolePermissions)) return item.rolePermissions;
+    if (item.permission) return [item.permission];
+    if (item.Permission) return [item.Permission];
+    if (
+      item.permissionId ||
+      item.permission_id ||
+      item.permissionID ||
+      item.PermissionId
+    ) {
+      return [
+        {
+          id:
+            item.permissionId ??
+            item.permission_id ??
+            item.permissionID ??
+            item.PermissionId,
+          name:
+            item.permissionName ??
+            item.permission_name ??
+            item.PermissionName ??
+            item.name,
+        },
+      ];
+    }
+    return [item];
+  });
+};
+
+const mergePermissions = (permissionGroups, allPermissions = []) => {
+  const permissionMap = new Map();
+
+  permissionGroups
+    .flatMap(extractPermissions)
+    .forEach((permission) => {
+      const permissionId = getPermissionId(permission, allPermissions);
+      if (permissionId) permissionMap.set(permissionId, permission);
+    });
+
+  return Array.from(permissionMap.values());
+};
+
 const ManajemenRole = () => {
   const queryClient = useQueryClient();
+  const { can, canAny } = usePermission();
 
   // =========================================================
   // 1. STATE UNTUK MODAL & CHECKBOX
@@ -30,7 +184,9 @@ const ManajemenRole = () => {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState(null);
-  const [checkedPermissions, setCheckedPermissions] = useState([]); 
+  const [checkedPermissions, setCheckedPermissions] = useState([]);
+  const [initialPermissions, setInitialPermissions] = useState([]);
+  const [isPreparingPermissions, setIsPreparingPermissions] = useState(false);
 
   // =========================================================
   // 2. FETCH DATA MENGGUNAKAN REACT QUERY
@@ -47,17 +203,35 @@ const ManajemenRole = () => {
     queryFn: permissionService.getPermissions,
   });
 
+  const { data: rolePermissionRelations = [] } = useQuery({
+    queryKey: ["role-permissions"],
+    queryFn: rolePermissionService.getRolePermission,
+    enabled: canAny(["role:read", "role_permission:read", "role_permission:assign"]),
+  });
+
   // =========================================================
   // 3. MUTASI (MENYIMPAN DATA)
   // =========================================================
   const updatePermissionsMutation = useMutation({
-    mutationFn: async (payload) => {
-      // Menggunakan fungsi assignPermissionToRoleBulk dari rolePermissionService
-      return await rolePermissionService.assignPermissionToRoleBulk(payload); 
+    mutationFn: async ({ assignPayload, unassignPayload }) => {
+      const requests = [];
+
+      if (assignPayload.length > 0) {
+        requests.push(rolePermissionService.assignPermissionToRoleBulk(assignPayload));
+      }
+
+      if (unassignPayload.length > 0) {
+        requests.push(
+          rolePermissionService.unassignPermissionFromRoleBulk(unassignPayload),
+        );
+      }
+
+      return Promise.all(requests);
     },
     onSuccess: () => {
       toast.success("Berhasil memperbarui hak akses role!");
       queryClient.invalidateQueries({ queryKey: ["roles"] }); // Refresh tabel
+      queryClient.invalidateQueries({ queryKey: ["role-permissions"] });
       closeModal();
     },
     onError: (err) => {
@@ -70,20 +244,104 @@ const ManajemenRole = () => {
   // =========================================================
   // 4. FUNGSI HANDLER TOMBOL AKSI
   // =========================================================
-  const handleViewClick = (roleData) => {
-    setSelectedRole(roleData);
-    setIsViewModalOpen(true);
+  const getPermissionsForRole = (roleData, relationData = rolePermissionRelations) => {
+    const roleId = getRoleId(roleData);
+    const relationPermissions = relationData
+      .filter((relation) => getRelationRoleId(relation) === roleId)
+      .flatMap(extractPermissions);
+
+    return mergePermissions(
+      [roleData?.permissions || [], relationPermissions],
+      allPermissions || [],
+    );
   };
 
-  const handleEditClick = (roleData) => {
-    setSelectedRole(roleData);
-    
-    const currentPerms = Array.isArray(roleData.permissions) 
-      ? roleData.permissions.map(p => typeof p === 'object' ? p.name : p) 
-      : [];
-      
-    setCheckedPermissions(currentPerms);
+  const fetchRoleWithPermissions = async (roleData) => {
+    const [roleDetailResult, rolePermissionListResult] = await Promise.allSettled([
+      roleService.getRoleById(roleData.id),
+      queryClient.fetchQuery({
+        queryKey: ["role-permissions"],
+        queryFn: rolePermissionService.getRolePermission,
+      }),
+    ]);
+
+    const roleDetail =
+      roleDetailResult.status === "fulfilled" && roleDetailResult.value
+        ? roleDetailResult.value
+        : roleData;
+    const latestRolePermissionRelations =
+      rolePermissionListResult.status === "fulfilled"
+        ? rolePermissionListResult.value
+        : rolePermissionRelations;
+    const roleWithDetail = { ...roleData, ...roleDetail };
+    const relationPermissions = getPermissionsForRole(
+      roleWithDetail,
+      latestRolePermissionRelations,
+    );
+    const mergedPermissions = mergePermissions(
+      [
+        roleData?.permissions || [],
+        roleDetail?.permissions || [],
+        relationPermissions,
+      ],
+      allPermissions || [],
+    );
+
+    return {
+      ...roleWithDetail,
+      permissions: mergedPermissions,
+    };
+  };
+
+  const handleViewClick = async (roleData) => {
+    setSelectedRole({
+      ...roleData,
+      permissions: getPermissionsForRole(roleData),
+    });
+    setIsViewModalOpen(true);
+    setIsPreparingPermissions(true);
+
+    try {
+      const freshRole = await fetchRoleWithPermissions(roleData);
+      setSelectedRole(freshRole);
+    } catch {
+      // Detail tetap memakai data tabel kalau endpoint detail sedang gagal.
+    } finally {
+      setIsPreparingPermissions(false);
+    }
+  };
+
+  const handleEditClick = async (roleData) => {
+    const roleWithTablePermissions = {
+      ...roleData,
+      permissions: getPermissionsForRole(roleData),
+    };
+
+    setSelectedRole(roleWithTablePermissions);
+    setIsPreparingPermissions(true);
     setIsEditModalOpen(true);
+
+    const applyPermissions = (permissions) => {
+      const currentPerms = uniqueValues(
+        permissions.map((permission) =>
+          getPermissionId(permission, allPermissions || []),
+        ),
+      );
+      setCheckedPermissions(currentPerms);
+      setInitialPermissions(currentPerms);
+    };
+
+    applyPermissions(roleWithTablePermissions.permissions || []);
+
+    try {
+      const freshRole = await fetchRoleWithPermissions(roleData);
+      setSelectedRole(freshRole);
+      applyPermissions(freshRole.permissions || []);
+    } catch {
+      toast.error("Gagal mengambil hak akses role terbaru.");
+    } finally {
+      setIsPreparingPermissions(false);
+    }
   };
 
   const closeModal = () => {
@@ -92,33 +350,45 @@ const ManajemenRole = () => {
     setTimeout(() => {
       setSelectedRole(null);
       setCheckedPermissions([]);
+      setInitialPermissions([]);
+      setIsPreparingPermissions(false);
     }, 200);
   };
 
-  const handleCheckboxChange = (permName) => {
-    setCheckedPermissions((prev) => 
-      prev.includes(permName)
-        ? prev.filter((p) => p !== permName) 
-        : [...prev, permName] 
+  const handleCheckboxChange = (permissionId) => {
+    setCheckedPermissions((prev) =>
+      prev.includes(permissionId)
+        ? prev.filter((id) => id !== permissionId)
+        : [...prev, permissionId],
     );
   };
 
   const handleSavePermissions = () => {
     if (!selectedRole) return;
 
-    // 1. Dapatkan Array ID Permission yang diceklis
-    const selectedPermissionIds = allPermissions
-      ?.filter((perm) => checkedPermissions.includes(perm.name))
-      .map((perm) => perm.id) || [];
+    const addedPermissionIds = checkedPermissions.filter(
+      (id) => !initialPermissions.includes(id),
+    );
+    const removedPermissionIds = initialPermissions.filter(
+      (id) => !checkedPermissions.includes(id),
+    );
 
-    // 2. UBAH PAYLOAD MENJADI BENTUK ARRAY OF OBJECTS (Menggunakan camelCase)
-    const payload = selectedPermissionIds.map((permId) => ({
-      roleId: selectedRole.id,       
-      permissionId: permId           
+    if (addedPermissionIds.length === 0 && removedPermissionIds.length === 0) {
+      toast.info("Tidak ada perubahan hak akses.");
+      return;
+    }
+
+    const assignPayload = addedPermissionIds.map((permissionId) => ({
+      roleId: selectedRole.id,
+      permissionId,
     }));
 
-    // 3. Tembak API
-    updatePermissionsMutation.mutate(payload);
+    const unassignPayload = removedPermissionIds.map((permissionId) => ({
+      roleId: selectedRole.id,
+      permissionId,
+    }));
+
+    updatePermissionsMutation.mutate({ assignPayload, unassignPayload });
   };
 
   return (
@@ -165,9 +435,11 @@ const ManajemenRole = () => {
                 <button className="hidden sm:flex items-center justify-center p-2.5 text-gray-500 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
                   <Filter size={18} />
                 </button>
-                <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm">
-                  <Plus size={18} strokeWidth={2.5} /> Tambah Role
-                </button>
+                {can("role:create") && (
+                  <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm">
+                    <Plus size={18} strokeWidth={2.5} /> Tambah Role
+                  </button>
+                )}
               </div>
             </div>
 
@@ -207,7 +479,7 @@ const ManajemenRole = () => {
                     roles?.map((row, index) => {
                       const roleName = row.name || row.nama || "Tanpa Nama";
                       const isSuperadmin = roleName.toLowerCase().includes("superadmin");
-                      const permissions = Array.isArray(row.permissions) ? row.permissions : [];
+                      const permissions = getPermissionsForRole(row);
 
                       return (
                         <tr key={row.id || index} className="border-b border-gray-50/80 hover:bg-[#F9FBFA] transition-colors group align-top">
@@ -235,17 +507,25 @@ const ManajemenRole = () => {
                             )}
                           </td>
                           <td className="py-5 px-6">
-                            <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => handleViewClick(row)} className="p-1.5 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-md transition-all" title="Lihat Detail">
-                                <Eye size={16} strokeWidth={2} />
-                              </button>
-                              <button onClick={() => handleEditClick(row)} className="p-1.5 text-gray-400 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-md transition-all" title="Edit">
-                                <Edit2 size={16} strokeWidth={2} />
-                              </button>
-                              <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Hapus">
-                                <Trash2 size={16} strokeWidth={2} />
-                              </button>
-                            </div>
+                            {canAny(["role:read", "role_permission:assign", "role:delete"]) && (
+                              <div className="flex items-center justify-center gap-2 opacity-80 group-hover:opacity-100 transition-opacity">
+                                {can("role:read") && (
+                                  <button onClick={() => handleViewClick(row)} className="p-1.5 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-md transition-all" title="Lihat Detail">
+                                    <Eye size={16} strokeWidth={2} />
+                                  </button>
+                                )}
+                                {can("role_permission:assign") && (
+                                  <button onClick={() => handleEditClick(row)} className="p-1.5 text-gray-400 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-md transition-all" title="Edit Hak Akses">
+                                    <Edit2 size={16} strokeWidth={2} />
+                                  </button>
+                                )}
+                                {can("role:delete") && (
+                                  <button className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all" title="Hapus">
+                                    <Trash2 size={16} strokeWidth={2} />
+                                  </button>
+                                )}
+                              </div>
+                            )}
                           </td>
                         </tr>
                       );
@@ -291,12 +571,16 @@ const ManajemenRole = () => {
             </div>
             
             <div className="p-6 overflow-y-auto custom-scrollbar">
-              {Array.isArray(selectedRole.permissions) && selectedRole.permissions.length > 0 ? (
+              {isPreparingPermissions ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="animate-spin text-[#2D7344]" size={32} />
+                </div>
+              ) : Array.isArray(selectedRole.permissions) && selectedRole.permissions.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {selectedRole.permissions.map((perm, idx) => (
                     <span key={idx} className="bg-[#EAFBF0] border border-green-200 text-[#2D7344] px-3 py-1.5 rounded-md text-xs font-mono tracking-tight font-semibold flex items-center gap-1.5">
                       <CheckSquare size={14} />
-                      {perm.name || perm}
+                      {getPermissionName(perm, allPermissions || [])}
                     </span>
                   ))}
                 </div>
@@ -339,17 +623,19 @@ const ManajemenRole = () => {
                 </span>
               </div>
 
-              {isLoadingPermissions ? (
+              {isLoadingPermissions || isPreparingPermissions ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="animate-spin text-[#2D7344]" size={32} />
                 </div>
               ) : (
                 <div className="space-y-2">
                   {allPermissions?.map((perm) => {
-                    const isChecked = checkedPermissions.includes(perm.name);
+                    const permissionId = getPermissionId(perm);
+                    const permissionName = getPermissionName(perm);
+                    const isChecked = checkedPermissions.includes(permissionId);
                     return (
                       <label 
-                        key={perm.id} 
+                        key={permissionId}
                         className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition-all ${
                           isChecked ? "bg-[#EAFBF0] border-[#2D7344]/30" : "bg-white border-gray-200 hover:border-[#2D7344]/50"
                         }`}
@@ -358,10 +644,10 @@ const ManajemenRole = () => {
                           type="checkbox" 
                           className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344]" 
                           checked={isChecked}
-                          onChange={() => handleCheckboxChange(perm.name)}
+                          onChange={() => handleCheckboxChange(permissionId)}
                         />
                         <span className={`text-sm ${isChecked ? "font-bold text-[#2D7344]" : "font-semibold text-gray-600"}`}>
-                          {perm.name}
+                          {permissionName}
                         </span>
                       </label>
                     );
@@ -380,7 +666,9 @@ const ManajemenRole = () => {
               </button>
               <button 
                 onClick={handleSavePermissions}
-                disabled={updatePermissionsMutation.isPending}
+                disabled={
+                  updatePermissionsMutation.isPending || isPreparingPermissions
+                }
                 className="flex items-center gap-2 px-5 py-2 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {updatePermissionsMutation.isPending ? (

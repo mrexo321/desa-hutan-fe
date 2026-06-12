@@ -1,16 +1,40 @@
 import authInstance from "../../api/authInstance";
+import { normalizeCollection, normalizeResource } from "../../utils/apiResponse";
+
+const normalizePermissionList = (value) => {
+  if (!value) return [];
+  if (Array.isArray(value)) return value;
+
+  const nestedList = normalizeCollection(value);
+  return nestedList.length > 0 ? nestedList : [value];
+};
+
+const normalizeRolePermissions = (role) => {
+  if (!role || typeof role !== "object") return role;
+
+  const permissions = normalizePermissionList(
+    role.permissions ??
+      role.permission ??
+      role.rolePermissions ??
+      role.role_permissions ??
+      role.role_permission,
+  );
+
+  return {
+    ...role,
+    permissions: permissions.map((item) => item.permission ?? item),
+  };
+};
 
 export const roleService = {
     async getRoles() {
         const response = await authInstance.get("/roles");
-        console.log(response);
-        
-        return response.data.data;
+        return normalizeCollection(response).map(normalizeRolePermissions);
     },
 
   async getRoleById(roleid) {
     const response = await authInstance.get(`/roles/${roleid}`);
-    return response.data.data;
+    return normalizeRolePermissions(normalizeResource(response));
   },
 
   async createRole(payload) {

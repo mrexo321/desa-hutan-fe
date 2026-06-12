@@ -1,14 +1,26 @@
 import authInstance from "../../api/authInstance";
+import { normalizeCollection, normalizeResource } from "../../utils/apiResponse";
 
 export const userRoleService = {
   async getUserRoles() {
     const response = await authInstance.get("/user-roles");
-    return response.data.data;
+    return normalizeCollection(response);
   },
 
   async getRoleById(roleid) {
-    const response = await authInstance.get(`/user-roles/${roleid}`);
-    return response.data.data;
+    try {
+    const response = await authInstance.get(`/user-roles/${roleid}`, {
+      skipGlobalErrorToast: true,
+    });
+    const collection = normalizeCollection(response);
+    if (collection.length > 0) return collection;
+
+    const resource = normalizeResource(response);
+    return Array.isArray(resource) ? resource : resource ? [resource] : [];
+    } catch (error) {
+      if (error?.response?.status === 404) return [];
+      throw error;
+    }
   },
 
   async assignRole(payload){

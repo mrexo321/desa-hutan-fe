@@ -11,6 +11,80 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
+const getUserId = (user) =>
+  String(user?.id ?? user?.userId ?? user?.user_id ?? user?.user?.id ?? "");
+
+const getRoleId = (role, roles = []) => {
+  if (role && typeof role === "object") {
+    const id =
+      role.roleId ??
+      role.role_id ??
+      role.roleID ??
+      role.RoleId ??
+      role.role?.id ??
+      role.role?.roleId ??
+      role.Role?.id ??
+      role.id;
+
+    if (id !== undefined && id !== null) return String(id);
+
+    const roleName =
+      role.name ??
+      role.nama ??
+      role.role?.name ??
+      role.role?.nama ??
+      role.Role?.name ??
+      role.Role?.nama;
+    const matchedRole = roles.find(
+      (item) => (item.name ?? item.nama) === roleName,
+    );
+    if (matchedRole?.id) return String(matchedRole.id);
+  }
+
+  if (typeof role === "string" || typeof role === "number") {
+    const roleValue = String(role);
+    const matchedRole = roles.find(
+      (item) =>
+        String(item.id) === roleValue ||
+        item.name === roleValue ||
+        item.nama === roleValue,
+    );
+    return matchedRole?.id ? String(matchedRole.id) : roleValue;
+  }
+
+  return "";
+};
+
+const getRelationUserId = (relation) =>
+  String(
+    relation?.userId ??
+      relation?.user_id ??
+      relation?.userID ??
+      relation?.UserId ??
+      relation?.user?.id ??
+      relation?.user?.userId ??
+      relation?.user?.user_id ??
+      relation?.User?.id ??
+      relation?.User?.userId ??
+      "",
+  );
+
+const getRelationRoleId = (relation, roles = []) =>
+  getRoleId(
+    relation?.role ??
+      relation?.roleId ??
+      relation?.role_id ??
+      relation?.roleID ??
+      relation?.RoleId ??
+      relation?.Role ??
+      relation?.roles?.[0] ??
+      relation?.roleName ??
+      relation?.role_name,
+    roles,
+  );
+
+const uniqueValues = (values) => [...new Set(values.filter(Boolean))];
+
 const ManajemenUser = () => {
   const queryClient = useQueryClient();
   const { can, canAny } = usePermission(); 
@@ -21,6 +95,8 @@ const ManajemenUser = () => {
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRoleId, setSelectedRoleId] = useState("");
+  const [initialRoleIds, setInitialRoleIds] = useState([]);
+  const [isPreparingRoles, setIsPreparingRoles] = useState(false);
 
   // =========================================================
   // 2. STATE UNTUK MODAL TAMBAH & EDIT USER
@@ -57,16 +133,31 @@ const ManajemenUser = () => {
     queryFn: roleService.getRoles, 
   });
 
+  const { data: userRoleRelations = [] } = useQuery({
+    queryKey: ["user-roles"],
+    queryFn: userRoleService.getUserRoles,
+    enabled: can("user_role:assign"),
+  });
+
   // =========================================================
   // 5. MUTASI: ASSIGN ROLE KE USER
   // =========================================================
   const assignRoleMutation = useMutation({
-    mutationFn: async (payload) => {
-      return await userRoleService.assignRole(payload);
+    mutationFn: async ({ assignPayload, unassignPayload }) => {
+      if (unassignPayload.length > 0) {
+        await userRoleService.unassignRoleBulk(unassignPayload);
+      }
+
+      if (assignPayload.length > 0) {
+        return userRoleService.assignRoleBulk(assignPayload);
+      }
+
+      return null;
     },
     onSuccess: () => {
       toast.success("Berhasil menetapkan Role ke User!");
       queryClient.invalidateQueries({ queryKey: ["users"] }); 
+      queryClient.invalidateQueries({ queryKey: ["user-roles"] });
       closeAssignRoleModal();
     },
     onError: (err) => {
@@ -79,10 +170,62 @@ const ManajemenUser = () => {
   // =========================================================
   // 6. HANDLER FUNGSI UNTUK ASSIGN ROLE
   // =========================================================
-  const openAssignRoleModal = (user) => {
+  const getRoleIdsForUser = (user, relations = userRoleRelations) => {
+    const userId = getUserId(user);
+    const rolesFromUser = [
+      user?.roleId,
+      user?.role_id,
+      user?.role,
+      ...(Array.isArray(user?.roles) ? user.roles : []),
+    ].map((role) => getRoleId(role, roles || []));
+    const rolesFromRelations = relations
+      .filter((relation) => getRelationUserId(relation) === userId)
+      .map((relation) => getRelationRoleId(relation, roles || []));
+
+    return uniqueValues([...rolesFromUser, ...rolesFromRelations]);
+  };
+
+  const applyCurrentRoles = (roleIds) => {
+    const nextRoleIds = uniqueValues(roleIds);
+    setInitialRoleIds(nextRoleIds);
+    setSelectedRoleId(nextRoleIds[0] || "");
+  };
+
+  const openAssignRoleModal = async (user) => {
     setSelectedUser(user);
-    setSelectedRoleId("");
+    applyCurrentRoles(getRoleIdsForUser(user));
     setIsRoleModalOpen(true);
+    setIsPreparingRoles(true);
+
+    try {
+      const [userDetailResult, userRoleListResult] =
+        await Promise.allSettled([
+          userService.getUserById(getUserId(user)),
+          queryClient.fetchQuery({
+            queryKey: ["user-roles"],
+            queryFn: userRoleService.getUserRoles,
+          }),
+        ]);
+      const userDetail =
+        userDetailResult.status === "fulfilled" && userDetailResult.value
+          ? userDetailResult.value
+          : user;
+      const latestUserRoleRelations =
+        userRoleListResult.status === "fulfilled"
+          ? userRoleListResult.value
+          : userRoleRelations;
+      const freshRoleIds = uniqueValues([
+        ...getRoleIdsForUser(user, latestUserRoleRelations),
+        ...getRoleIdsForUser(userDetail, latestUserRoleRelations),
+      ]);
+
+      setSelectedUser(userDetail);
+      applyCurrentRoles(freshRoleIds);
+    } catch {
+      toast.error("Gagal mengambil role user terbaru.");
+    } finally {
+      setIsPreparingRoles(false);
+    }
   };
 
   const closeAssignRoleModal = () => {
@@ -90,24 +233,62 @@ const ManajemenUser = () => {
     setTimeout(() => {
       setSelectedUser(null);
       setSelectedRoleId("");
+      setInitialRoleIds([]);
+      setIsPreparingRoles(false);
     }, 200);
   };
 
-  const handleSaveAssignRole = () => {
+  const handleSaveAssignRole = async () => {
     if (!selectedRoleId) {
       toast.error("Silakan pilih Role terlebih dahulu!");
       return;
     }
-    const payload = {
-      userId: selectedUser.id,
-      roleId: selectedRoleId
-    };
-    assignRoleMutation.mutate(payload);
+    const userId = getUserId(selectedUser);
 
-    console.log("CEK PAYLOAD SEBELUM DIKIRIM:", payload);
-    console.log("DATA USER LENGKAP:", selectedUser);
+    if (!userId) {
+      toast.error("User tidak valid. Silakan muat ulang halaman.");
+      return;
+    }
 
+    setIsPreparingRoles(true);
 
+    let latestRoleIds = initialRoleIds;
+    try {
+      const latestUserRoleRelations = await queryClient.fetchQuery({
+        queryKey: ["user-roles"],
+        queryFn: userRoleService.getUserRoles,
+      });
+      latestRoleIds = uniqueValues([
+        ...initialRoleIds,
+        ...getRoleIdsForUser(selectedUser, latestUserRoleRelations),
+      ]);
+      setInitialRoleIds(latestRoleIds);
+    } catch {
+      // Kalau refresh relasi gagal, tetap pakai data awal modal.
+    } finally {
+      setIsPreparingRoles(false);
+    }
+
+    const removedRoleIds = latestRoleIds.filter((id) => id !== selectedRoleId);
+    const assignPayload = latestRoleIds.includes(selectedRoleId)
+      ? []
+      : [
+          {
+            userId,
+            roleId: selectedRoleId,
+          },
+        ];
+    const unassignPayload = removedRoleIds.map((roleId) => ({
+      userId,
+      roleId,
+    }));
+
+    if (assignPayload.length === 0 && unassignPayload.length === 0) {
+      toast.info("Role user tidak berubah.");
+      return;
+    }
+
+    assignRoleMutation.mutate({ assignPayload, unassignPayload });
   };
 
   // =========================================================
@@ -332,7 +513,7 @@ const ManajemenUser = () => {
             
             <div className="p-6">
               <label className="block text-sm font-bold text-gray-700 mb-2">Pilih Role untuk User Ini</label>
-              {isLoadingRoles ? (
+              {isLoadingRoles || isPreparingRoles ? (
                 <div className="flex justify-center py-4 border rounded-lg bg-gray-50">
                   <Loader2 className="animate-spin text-blue-500" size={24} />
                 </div>
@@ -357,7 +538,7 @@ const ManajemenUser = () => {
               <button onClick={closeAssignRoleModal} disabled={assignRoleMutation.isPending} className="px-5 py-2 bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-bold transition-colors">
                 Batal
               </button>
-              <button onClick={handleSaveAssignRole} disabled={assignRoleMutation.isPending} className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
+              <button onClick={handleSaveAssignRole} disabled={assignRoleMutation.isPending || isPreparingRoles} className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-70 disabled:cursor-not-allowed">
                 {assignRoleMutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Menyimpan...</> : "Simpan Role"}
               </button>
             </div>

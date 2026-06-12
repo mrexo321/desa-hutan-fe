@@ -1,14 +1,15 @@
 import authInstance from "../../api/authInstance";
+import { normalizeCollection, normalizeResource } from "../../utils/apiResponse";
 
 export const permissionService = {
     async getPermissions() {
         const response = await authInstance.get("/permissions");
-        return response.data.data;
+        return normalizeCollection(response);
     },
 
     async getPermissionById(permissionid) {
         const response = await authInstance.get(`/permissions/${permissionid}`);
-        return response.data.data;
+        return normalizeResource(response);
     },
 
     async createPermission(payload) {

@@ -54,6 +54,7 @@ authInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
+    const skipGlobalErrorToast = originalRequest?.skipGlobalErrorToast;
     const message =
       error.response?.data?.message || error.response?.data?.error || "";
 
@@ -136,7 +137,7 @@ authInstance.interceptors.response.use(
       // Jangan cegat 401 di sini, biarkan blok A yang mengurusnya
       if ((isFatal || status === 403) && status !== 401) {
         forceLogout();
-      } else if (status !== 401) {
+      } else if (status !== 401 && !skipGlobalErrorToast) {
         toast.error(message || "Terjadi kesalahan pada server.");
       }
     }

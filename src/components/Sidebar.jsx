@@ -19,8 +19,10 @@ import {
   Leaf,
   LogOut,
 } from "lucide-react";
+import { usePermission } from "../hooks/usePermission";
 
 export default function Sidebar({ activeMenu }) {
+  const { canAny } = usePermission();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpenMobile, setIsOpenMobile] = useState(false);
 
@@ -32,21 +34,25 @@ export default function Sidebar({ activeMenu }) {
       name: "Dashboard",
       path: "/dashboard",
       icon: <LayoutDashboard {...iconProps} />,
+      permission: "",
     },
     {
       name: "Desa Hutan",
       path: "/dashboard/desa-hutan",
       icon: <Trees {...iconProps} />,
+      permission: "wilayah_desa:read",
     },
     {
       name: "Performa Desa",
       path: "/dashboard/performa-desa",
       icon: <LineChart {...iconProps} />,
+      permission: "performa_desa_hutan:read",
     },
     {
       name: "Potensi Desa",
       path: "/dashboard/potensi-desa",
       icon: <Sprout {...iconProps} />,
+      permission: "analisis_spasial:read",
     },
   ];
 
@@ -55,43 +61,75 @@ export default function Sidebar({ activeMenu }) {
       name: "Indikator",
       path: "/dashboard/indikator",
       icon: <Target {...iconProps} />,
+      permission: "master_indikator_utama:read",
     },
     {
       name: "Indikator Perhitungan",
       path: "/dashboard/indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
+      permission: "master_indikator_perhitungan:read",
     },
     {
       name: "Klasifikasi",
       path: "/dashboard/klasifikasi",
       icon: <Layers {...iconProps} />,
+      permission: ["master_klasifikasi_desa:read", "master_klasifikasi_hutan:read"],
     },
     {
       name: "Wilayah",
       path: "/dashboard/wilayah",
       icon: <Map {...iconProps} />,
+      permission: ["wilayah_hutan:read", "wilayah_desa:read"],
     },
     {
       name: "Manajemen User",
       path: "/dashboard/manajemen-user",
       icon: <Users {...iconProps} />,
+      permission: [
+        "user:read",
+        "user:create",
+        "user:update",
+        "user:delete",
+        "user_role:assign",
+      ],
     },
     {
       name: "Manajemen Role",
       path: "/dashboard/manajemen-role",
       icon: <ShieldCheck {...iconProps} />,
+      permission: [
+        "role:read",
+        "role:create",
+        "role:update",
+        "role:delete",
+        "role_permission:assign",
+      ],
     },
     {
       name: "Master Wilayah",
       path: "/dashboard/master-wilayah",
       icon: <MapPinned {...iconProps} />,
+      permission: "master_provinsi:read",
     },
     {
       name: "Master Potensi",
       path: "/dashboard/master-potensi",
       icon: <Database {...iconProps} />,
+      permission: "master_fungsi_kawasan_hutan:read",
     },
   ];
+
+  const hasMenuAccess = (permission) => {
+    if (!permission || permission.length === 0) return true;
+    return canAny(permission);
+  };
+
+  const visibleHomeMenus = homeMenus.filter((item) =>
+    hasMenuAccess(item.permission),
+  );
+  const visibleMetadataMenus = metadataMenus.filter((item) =>
+    hasMenuAccess(item.permission),
+  );
 
   return (
     <>
@@ -166,6 +204,7 @@ export default function Sidebar({ activeMenu }) {
         {/* --- DAFTAR MENU (Scrollable Area) --- */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar-dark space-y-8">
           {/* BAGIAN HOME */}
+          {visibleHomeMenus.length > 0 && (
           <div>
             <div
               className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
@@ -175,7 +214,7 @@ export default function Sidebar({ activeMenu }) {
               </p>
             </div>
             <ul className="space-y-2">
-              {homeMenus.map((item, idx) => {
+              {visibleHomeMenus.map((item, idx) => {
                 const isActive = activeMenu === item.name;
                 return (
                   <li key={idx}>
@@ -206,8 +245,10 @@ export default function Sidebar({ activeMenu }) {
               })}
             </ul>
           </div>
+          )}
 
           {/* BAGIAN METADATA */}
+          {visibleMetadataMenus.length > 0 && (
           <div>
             <div
               className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
@@ -217,7 +258,7 @@ export default function Sidebar({ activeMenu }) {
               </p>
             </div>
             <ul className="space-y-2">
-              {metadataMenus.map((item, idx) => {
+              {visibleMetadataMenus.map((item, idx) => {
                 const isActive = activeMenu === item.name;
                 return (
                   <li key={idx}>
@@ -248,6 +289,7 @@ export default function Sidebar({ activeMenu }) {
               })}
             </ul>
           </div>
+          )}
         </div>
 
         {/* --- FOOTER SIDEBAR (Tombol Keluar) --- */}

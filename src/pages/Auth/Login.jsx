@@ -40,18 +40,11 @@ const Login = () => {
 
   const loginMutation = useMutation({
     mutationFn: authService.login,
-    onSuccess: ({ data }) => {
-      // PERBAIKAN: Tangkap data API dengan format camelCase
-      dispatch(
-        setUserData({
-          userId: data?.user?.id || null,
-          username: data?.user?.username || null,
-          accessToken: data?.accessToken || null,
-          refreshToken: data?.refreshToken || null,
-          roles: data?.user?.roles || [],
-          permissions: data?.user?.permissions || [],
-        }),
-      );
+    onSuccess: (res) => {
+      const responseData = res?.data ?? res;
+      const data = responseData?.data ?? responseData;
+
+      dispatch(setUserData(data || {}));
 
       toast.success("Login berhasil! Selamat datang.");
     },

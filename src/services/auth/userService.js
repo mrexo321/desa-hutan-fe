@@ -1,14 +1,15 @@
 import authInstance from "../../api/authInstance";
+import { normalizeCollection, normalizeResource } from "../../utils/apiResponse";
 
 const userService = {
     async getUser() {
         const response = await authInstance.get("/users");
-        return response.data.data;
+        return normalizeCollection(response);
     },
 
     async getUserById(id) {
         const response = await authInstance.get(`/users/${id}`);
-        return response.data.data;
+        return normalizeResource(response);
     },
 
     async createUser(payload){

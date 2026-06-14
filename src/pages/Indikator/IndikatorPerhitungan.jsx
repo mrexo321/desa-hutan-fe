@@ -5,6 +5,7 @@ import DataTable from "../../components/DataTable"; // Sesuaikan path
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { indikatorService } from "../../services/master/indikatorService"; // Sesuaikan path
 import { toast } from "sonner"; // Import Sonner
+import { usePermission } from "../../hooks/usePermission";
 import {
   Plus,
   Search,
@@ -21,6 +22,7 @@ const IndikatorPerhitungan = () => {
   const [searchParams] = useSearchParams();
   const tahunIndikatorPerhitunganId = searchParams.get("tahunIndikatorPerhitunganId");
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [searchTerm, setSearchTerm] = useState("");
 
   // Fetch All Data (filtered by tahunIndikatorPerhitunganId if exists)
@@ -154,23 +156,27 @@ const IndikatorPerhitungan = () => {
           >
             <Eye size={16} strokeWidth={2.5} />
           </button>
-          <button
-            onClick={() =>
-              navigate(`/dashboard/indikator-perhitungan/edit/${row.id}`)
-            }
-            className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
-            title="Edit"
-          >
-            <Edit2 size={16} strokeWidth={2.5} />
-          </button>
-          <button
-            onClick={() => handleDeleteConfirmation(row)}
-            disabled={deleteMutation.isLoading}
-            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
-            title="Hapus"
-          >
-            <Trash2 size={16} strokeWidth={2.5} />
-          </button>
+          {can('master_indikator_perhitungan:update') && (
+            <button
+              onClick={() =>
+                navigate(`/dashboard/indikator-perhitungan/edit/${row.id}`)
+              }
+              className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-all"
+              title="Edit"
+            >
+              <Edit2 size={16} strokeWidth={2.5} />
+            </button>
+          )}
+          {can('master_indikator_perhitungan:delete') && (
+            <button
+              onClick={() => handleDeleteConfirmation(row)}
+              disabled={deleteMutation.isLoading}
+              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50"
+              title="Hapus"
+            >
+              <Trash2 size={16} strokeWidth={2.5} />
+            </button>
+          )}
         </div>
       ),
     },
@@ -224,21 +230,23 @@ const IndikatorPerhitungan = () => {
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all font-medium"
                   />
                 </div>
-                <button
-                  onClick={() =>
-                    navigate(
-                      `/dashboard/indikator-perhitungan/tambah${
-                        tahunIndikatorPerhitunganId
-                          ? `?tahunId=${tahunIndikatorPerhitunganId}`
-                          : ""
-                      }`
-                    )
-                  }
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
-                >
-                  <Plus size={18} strokeWidth={2.5} />
-                  Tambah Formula
-                </button>
+                {can('master_indikator_perhitungan:create') && (
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/dashboard/indikator-perhitungan/tambah${
+                          tahunIndikatorPerhitunganId
+                            ? `?tahunId=${tahunIndikatorPerhitunganId}`
+                            : ""
+                        }`
+                      )
+                    }
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
+                  >
+                    <Plus size={18} strokeWidth={2.5} />
+                    Tambah Formula
+                  </button>
+                )}
               </div>
             </div>
 

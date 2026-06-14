@@ -31,4 +31,9 @@ export const rolePermissionService ={
         return response.data;
     },
 
+    async unassignPermissionFromRoleBulk(payload){
+        const response = await authInstance.post(`/role-permissions/bulk-unassign`, payload)
+        return response.data;
+    },
+
 }

@@ -381,7 +381,7 @@ export const getOrCreateChatbotId = async () => {
  * @param {string} pageContext - Konteks halaman yang sedang dibuka user
  * @returns {Promise<{question: string, answer: string}>}
  */
-export const sendMessage = async (chatbotId, question, chatHistory = [], pageContext = "", activeDocument = null) => {
+export const sendMessageStream = async (chatbotId, question, chatHistory = [], pageContext = "", activeDocument = null, onToken) => {
   const response = await fetch(`${API_BASE}/chatbots/${chatbotId}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -398,7 +398,56 @@ export const sendMessage = async (chatbotId, question, chatHistory = [], pageCon
     throw new Error(errorData.detail || `Error ${response.status}: ${response.statusText}`);
   }
 
-  return await response.json();
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let fullAnswer = "";
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    buffer += decoder.decode(value, { stream: true });
+
+    // Parse SSE lines: "data: {...}\n\n"
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || ""; // Keep incomplete line in buffer
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || !trimmed.startsWith("data: ")) continue;
+
+      try {
+        const jsonStr = trimmed.slice(6); // Remove "data: " prefix
+        const data = JSON.parse(jsonStr);
+
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        if (data.done) {
+          return { question, answer: fullAnswer };
+        }
+        if (data.token) {
+          fullAnswer += data.token;
+          if (onToken) onToken(fullAnswer);
+        }
+      } catch (parseErr) {
+        if (parseErr.message && !parseErr.message.includes("JSON")) {
+          throw parseErr; // Re-throw non-JSON errors (like server errors)
+        }
+        // Skip malformed JSON lines
+      }
+    }
+  }
+
+  return { question, answer: fullAnswer };
+};
+
+/**
+ * Mengirim pesan ke chatbot dan mendapatkan jawaban penuh (non-stream)
+ */
+export const sendMessage = async (chatbotId, question, chatHistory = [], pageContext = "", activeDocument = null) => {
+  return sendMessageStream(chatbotId, question, chatHistory, pageContext, activeDocument);
 };
 
 /**
@@ -577,4 +626,22 @@ export const uploadDocument = async (chatbotId, file) => {
  */
 export const resetChatbotId = () => {
   localStorage.removeItem(CHATBOT_ID_STORAGE_KEY);
+};
+
+/**
+ * Mendapatkan daftar dokumen yang diupload untuk chatbot tertentu
+ * @param {string} chatbotId - UUID chatbot
+ * @returns {Promise<Array>}
+ */
+export const getChatbotDocuments = async (chatbotId) => {
+  const response = await fetch(`${API_BASE}/chatbots/${chatbotId}/documents`, {
+    method: "GET",
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || `Gagal mengambil dokumen: ${response.status}`);
+  }
+
+  return await response.json();
 };

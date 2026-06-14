@@ -46,6 +46,12 @@ const AssignPermission = () => {
     enabled: !!roleId,
   });
 
+  const { data: rolePermissionsData, isLoading: isLoadingRolePerms } = useQuery({
+    queryKey: ["role-permissions", roleId],
+    queryFn: () => rolePermissionService.getRolePermissionById(roleId),
+    enabled: !!roleId,
+  });
+
   const { data: allPermissions, isLoading: isLoadingPerms } = useQuery({
     queryKey: ["permissions"],
     queryFn: permissionService.getPermissions,
@@ -53,17 +59,18 @@ const AssignPermission = () => {
 
   // Sinkronisasi data awal
   useEffect(() => {
-    if (roleData && Array.isArray(roleData.permissions)) {
-      const currentIds = roleData.permissions.map((p) =>
-        typeof p === "object" ? p.id : p,
-      );
+    if (rolePermissionsData) {
+      const dataList = Array.isArray(rolePermissionsData)
+        ? rolePermissionsData
+        : rolePermissionsData?.data || [];
+      const currentIds = dataList.map((rp) => rp.permissionId || rp.permission?.id || rp.id);
       const t = setTimeout(() => {
         setSelectedPerms(currentIds);
         setInitialPerms(currentIds);
       }, 0);
       return () => clearTimeout(t);
     }
-  }, [roleData]);
+  }, [rolePermissionsData]);
 
   // =========================================================
   // LOGIC & GROUPING
@@ -301,7 +308,7 @@ const AssignPermission = () => {
     );
   };
 
-  if (isLoadingRole || isLoadingPerms) {
+  if (isLoadingRole || isLoadingRolePerms || isLoadingPerms) {
     return (
       <DashboardLayout activeMenu="Manajemen Role">
         <div className="flex h-full items-center justify-center">

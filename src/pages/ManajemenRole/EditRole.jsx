@@ -15,11 +15,19 @@ const EditRole = () => {
 
   const [roleName, setRoleName] = useState("");
   const [checkedPermissions, setCheckedPermissions] = useState([]);
+  const [initialPermIds, setInitialPermIds] = useState([]);
 
   // FETCH ROLE BY ID
   const { data: roleData, isLoading: isLoadingRole } = useQuery({
     queryKey: ["role", id],
     queryFn: () => roleService.getRoleById(id),
+    enabled: !!id,
+  });
+
+  // FETCH MAPPED PERMISSIONS FOR THE ROLE
+  const { data: rolePermissionsData, isLoading: isLoadingRolePerms } = useQuery({
+    queryKey: ["role-permissions", id],
+    queryFn: () => rolePermissionService.getRolePermissionById(id),
     enabled: !!id,
   });
 
@@ -33,35 +41,61 @@ const EditRole = () => {
   useEffect(() => {
     if (roleData) {
       setRoleName(roleData.name || roleData.nama || "");
-      if (Array.isArray(roleData.permissions)) {
-        setCheckedPermissions(roleData.permissions.map((p) => p.name || p));
-      }
     }
-  }, [roleData]);
+    if (rolePermissionsData) {
+      const dataList = Array.isArray(rolePermissionsData)
+        ? rolePermissionsData
+        : rolePermissionsData?.data || [];
+      
+      const currentNames = dataList.map((rp) => rp.permission?.name || rp.name || "");
+      const currentIds = dataList.map((rp) => rp.permissionId || rp.permission?.id || rp.id || "");
+
+      setCheckedPermissions(currentNames.filter(Boolean));
+      setInitialPermIds(currentIds.filter(Boolean));
+    }
+  }, [roleData, rolePermissionsData]);
 
   // MUTASI UPDATE
   const updateMutation = useMutation({
     mutationFn: async () => {
-      // 1. Update Nama Role (Jika endpoint update role terpisah dari assign permission)
+      // 1. Update Nama Role
       await roleService.updateRole(id, { name: roleName });
 
-      // 2. Assign Permissions
+      // 2. Calculate added and removed permissions
       const selectedIds =
         allPermissions
           ?.filter((perm) => checkedPermissions.includes(perm.name))
           .map((p) => p.id) || [];
 
-      const payload = selectedIds.map((permId) => ({
+      const addedIds = selectedIds.filter((permId) => !initialPermIds.includes(permId));
+      const removedIds = initialPermIds.filter((permId) => !selectedIds.includes(permId));
+
+      const assignPayload = addedIds.map((permId) => ({
+        roleId: id,
+        permissionId: permId,
+      }));
+      const unassignPayload = removedIds.map((permId) => ({
         roleId: id,
         permissionId: permId,
       }));
 
-      return await rolePermissionService.assignPermissionToRoleBulk(payload);
+      const promises = [];
+      if (assignPayload.length > 0) {
+        promises.push(rolePermissionService.assignPermissionToRoleBulk(assignPayload));
+      }
+      if (unassignPayload.length > 0) {
+        promises.push(rolePermissionService.unassignPermissionFromRoleBulk(unassignPayload));
+      }
+
+      if (promises.length > 0) {
+        await Promise.all(promises);
+      }
     },
     onSuccess: () => {
       toast.success("Role dan Hak Akses berhasil diperbarui!");
       queryClient.invalidateQueries({ queryKey: ["roles"] });
       queryClient.invalidateQueries({ queryKey: ["role", id] });
+      queryClient.invalidateQueries({ queryKey: ["role-permissions", id] });
       navigate("/dashboard/manajemen-role");
     },
     onError: (err) =>
@@ -81,7 +115,7 @@ const EditRole = () => {
     updateMutation.mutate();
   };
 
-  if (isLoadingRole || isLoadingPerms) {
+  if (isLoadingRole || isLoadingRolePerms || isLoadingPerms) {
     return (
       <DashboardLayout activeMenu="Manajemen Role">
         <div className="flex h-full items-center justify-center">

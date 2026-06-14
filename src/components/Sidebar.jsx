@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { usePermission } from "../hooks/usePermission";
 import {
   LayoutDashboard,
   Trees,
@@ -25,6 +26,7 @@ import {
 
 export default function Sidebar({ activeMenu }) {
   const navigate = useNavigate();
+  const { can, canAny } = usePermission();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpenMobile, setIsOpenMobile] = useState(false);
 
@@ -37,6 +39,10 @@ export default function Sidebar({ activeMenu }) {
   // Ukuran ikon disesuaikan agar proporsional
   const iconProps = { size: 20, strokeWidth: 2 };
 
+  // ── DEFINISI MENU DENGAN PERMISSION ──
+  // Menu tanpa `permission` akan selalu tampil selama user login.
+  // Menu dengan `permission` (string) dicek via `can()`.
+  // Menu dengan `permissions` (array) dicek via `canAny()`.
   const homeMenus = [
     {
       name: "Dashboard",
@@ -47,11 +53,13 @@ export default function Sidebar({ activeMenu }) {
       name: "Desa Hutan",
       path: "/dashboard/desa-hutan",
       icon: <Trees {...iconProps} />,
+      permission: "performa_desa_hutan:read",
     },
     {
       name: "Performa Desa",
       path: "/dashboard/performa-desa",
       icon: <LineChart {...iconProps} />,
+      permission: "performa_desa_hutan:read",
     },
     // {
     //   name: "Potensi Desa",
@@ -62,6 +70,7 @@ export default function Sidebar({ activeMenu }) {
       name: "Desa PSN",
       path: "/dashboard/desa-psn",
       icon: <Layers {...iconProps} />,
+      permission: "desa_psn:read",
     },
     {
       name: "AI Asisten",
@@ -81,48 +90,77 @@ export default function Sidebar({ activeMenu }) {
       name: "Indikator",
       path: "/dashboard/indikator",
       icon: <Target {...iconProps} />,
+      permissions: [
+        "master_indikator_utama:read",
+        "master_kategori_indikator:read",
+        "dimensi_desa:read",
+      ],
     },
     {
       name: "Tahun Indikator Perhitungan",
       path: "/dashboard/tahun-indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
+      permission: "master_tahun_indikator_perhitungan:read",
     },
     {
       name: "Klasifikasi",
       path: "/dashboard/klasifikasi",
       icon: <Layers {...iconProps} />,
+      permission: "master_klasifikasi_hutan:read",
     },
     {
       name: "Wilayah",
       path: "/dashboard/wilayah",
       icon: <Map {...iconProps} />,
+      permissions: ["wilayah_hutan:read", "wilayah_desa:read"],
     },
     {
       name: "Manajemen User",
       path: "/dashboard/manajemen-user",
       icon: <Users {...iconProps} />,
+      permission: "user:read",
     },
     {
       name: "Manajemen Role",
       path: "/dashboard/manajemen-role",
       icon: <ShieldCheck {...iconProps} />,
+      permission: "role:read",
     },
     {
       name: "Master Wilayah",
       path: "/dashboard/master-wilayah",
       icon: <MapPinned {...iconProps} />,
+      permission: "wilayah_desa:read",
     },
     {
       name: "Master Potensi",
       path: "/dashboard/master-potensi",
       icon: <Database {...iconProps} />,
+      permission: "performa_desa_hutan:read",
     },
     {
       name: "Site Settings",
       path: "/dashboard/site-settings",
       icon: <Settings2 {...iconProps} />,
+      permission: "site:read",
     },
   ];
+
+  // ── FILTER MENU BERDASARKAN PERMISSION ──
+  const filterMenuByPermission = (menus) => {
+    return menus.filter((item) => {
+      // Jika tidak ada requirement permission, selalu tampil
+      if (!item.permission && !item.permissions) return true;
+      // Cek single permission
+      if (item.permission) return can(item.permission);
+      // Cek multiple permissions (OR logic — minimal satu dimiliki)
+      if (item.permissions) return canAny(item.permissions);
+      return false;
+    });
+  };
+
+  const visibleHomeMenus = filterMenuByPermission(homeMenus);
+  const visibleMetadataMenus = filterMenuByPermission(metadataMenus);
 
   return (
     <>
@@ -197,92 +235,96 @@ export default function Sidebar({ activeMenu }) {
         {/* --- DAFTAR MENU (Scrollable Area) --- */}
         <div className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar-dark space-y-8">
           {/* BAGIAN HOME */}
-          <div>
-            <div
-              className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
-            >
-              <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
-                Menu Utama
-              </p>
-            </div>
-            <ul className="space-y-2">
-              {homeMenus.map((item, idx) => {
-                const isActive = activeMenu === item.name;
-                return (
-                  <li key={idx}>
-                    <Link
-                      to={item.path}
-                      title={isCollapsed ? item.name : ""}
-                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
-                          ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
-                        }`}
-                    >
-                      <div
-                        className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
+          {visibleHomeMenus.length > 0 && (
+            <div>
+              <div
+                className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
+              >
+                <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
+                  Menu Utama
+                </p>
+              </div>
+              <ul className="space-y-2">
+                {visibleHomeMenus.map((item, idx) => {
+                  const isActive = activeMenu === item.name;
+                  return (
+                    <li key={idx}>
+                      <Link
+                        to={item.path}
+                        title={isCollapsed ? item.name : ""}
+                        className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                            ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
+                            : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          }`}
                       >
-                        {item.icon}
-                      </div>
-                      {!isCollapsed && (
-                        <span
-                          className={`ml-4 text-[15px] tracking-wide flex-1 ${isActive ? "font-bold" : "font-medium"}`}
+                        <div
+                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
                         >
-                          {item.name}
-                        </span>
-                      )}
-                      {/* Badge NEW untuk AI Asisten */}
-                      {item.isNew && !isCollapsed && (
-                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${isActive ? "bg-white/20 text-white" : "bg-[#00C47C]/20 text-[#00C47C]"}`}>
-                          NEW
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+                          {item.icon}
+                        </div>
+                        {!isCollapsed && (
+                          <span
+                            className={`ml-4 text-[15px] tracking-wide flex-1 ${isActive ? "font-bold" : "font-medium"}`}
+                          >
+                            {item.name}
+                          </span>
+                        )}
+                        {/* Badge NEW untuk AI Asisten */}
+                        {item.isNew && !isCollapsed && (
+                          <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${isActive ? "bg-white/20 text-white" : "bg-[#00C47C]/20 text-[#00C47C]"}`}>
+                            NEW
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
 
           {/* BAGIAN METADATA */}
-          <div>
-            <div
-              className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
-            >
-              <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
-                Pengaturan Data
-              </p>
-            </div>
-            <ul className="space-y-2">
-              {metadataMenus.map((item, idx) => {
-                const isActive = activeMenu === item.name;
-                return (
-                  <li key={idx}>
-                    <Link
-                      to={item.path}
-                      title={isCollapsed ? item.name : ""}
-                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
-                          ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
-                        }`}
-                    >
-                      <div
-                        className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
+          {visibleMetadataMenus.length > 0 && (
+            <div>
+              <div
+                className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
+              >
+                <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
+                  Pengaturan Data
+                </p>
+              </div>
+              <ul className="space-y-2">
+                {visibleMetadataMenus.map((item, idx) => {
+                  const isActive = activeMenu === item.name;
+                  return (
+                    <li key={idx}>
+                      <Link
+                        to={item.path}
+                        title={isCollapsed ? item.name : ""}
+                        className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                            ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
+                            : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          }`}
                       >
-                        {item.icon}
-                      </div>
-                      {!isCollapsed && (
-                        <span
-                          className={`ml-4 text-[15px] tracking-wide ${isActive ? "font-bold" : "font-medium"}`}
+                        <div
+                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
                         >
-                          {item.name}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
+                          {item.icon}
+                        </div>
+                        {!isCollapsed && (
+                          <span
+                            className={`ml-4 text-[15px] tracking-wide ${isActive ? "font-bold" : "font-medium"}`}
+                          >
+                            {item.name}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
         </div>
 
         {/* --- FOOTER SIDEBAR (Tombol Keluar) --- */}

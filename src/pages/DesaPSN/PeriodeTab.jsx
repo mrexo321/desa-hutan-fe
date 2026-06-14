@@ -2,8 +2,10 @@ import React, { useState, useEffect } from "react";
 import { Plus, Edit2, Trash2, Eye, Calendar, Loader2, Search, Info } from "lucide-react";
 import { desaPsnService } from "../../services/master/desaPsnService";
 import { toast } from "sonner";
+import { usePermission } from "../../hooks/usePermission";
 
 export default function PeriodeTab({ onSelectPeriode }) {
+  const { can } = usePermission();
   const [periodes, setPeriodes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
@@ -108,12 +110,14 @@ export default function PeriodeTab({ onSelectPeriode }) {
             Kelola data periode tahun untuk penandaan Desa Prioritas Sasaran Nasional (PSN).
           </p>
         </div>
-        <button
-          onClick={openAddModal}
-          className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all transform hover:-translate-y-0.5"
-        >
-          <Plus size={18} strokeWidth={2.5} /> Tambah Periode
-        </button>
+        {can('desa_psn:create') && (
+          <button
+            onClick={openAddModal}
+            className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all transform hover:-translate-y-0.5"
+          >
+            <Plus size={18} strokeWidth={2.5} /> Tambah Periode
+          </button>
+        )}
       </div>
 
       {/* Filter / Search Bar */}
@@ -156,20 +160,24 @@ export default function PeriodeTab({ onSelectPeriode }) {
                       <Calendar size={22} strokeWidth={2.2} />
                     </div>
                     <div className="flex gap-1">
-                      <button
-                        onClick={() => openEditModal(item)}
-                        className="p-2 text-slate-400 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition-colors cursor-pointer"
-                        title="Edit"
-                      >
-                        <Edit2 size={15} strokeWidth={2.5} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id, item.tahun)}
-                        className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
-                        title="Hapus"
-                      >
-                        <Trash2 size={15} strokeWidth={2.5} />
-                      </button>
+                      {can('desa_psn:update') && (
+                        <button
+                          onClick={() => openEditModal(item)}
+                          className="p-2 text-slate-400 hover:bg-amber-50 hover:text-amber-600 rounded-lg transition-colors cursor-pointer"
+                          title="Edit"
+                        >
+                          <Edit2 size={15} strokeWidth={2.5} />
+                        </button>
+                      )}
+                      {can('desa_psn:delete') && (
+                        <button
+                          onClick={() => handleDelete(item.id, item.tahun)}
+                          className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                          title="Hapus"
+                        >
+                          <Trash2 size={15} strokeWidth={2.5} />
+                        </button>
+                      )}
                     </div>
                   </div>
 

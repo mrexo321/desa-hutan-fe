@@ -10,11 +10,12 @@ import { toast } from "sonner";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
   getOrCreateChatbotId,
-  sendMessage,
+  sendMessageStream,
   checkChatbotHealth,
   uploadDocument,
   resetChatbotId,
   clearChatbotDocuments,
+  getChatbotDocuments,
 } from "../../services/chatbotService";
 
 // ─────────────────────────────────────────
@@ -470,6 +471,24 @@ export default function AiAsisten() {
         const id = await getOrCreateChatbotId();
         if (cancelled) return;
         setChatbotId(id);
+
+        // Load documents from backend
+        try {
+          const backendDocs = await getChatbotDocuments(id);
+          if (!cancelled) {
+            const formattedDocs = backendDocs.map(d => ({
+              id: d.id,
+              name: d.filename,
+              size: null,
+              uploadedAt: new Date().toISOString(),
+              status: "success"
+            }));
+            setDocs(formattedDocs);
+          }
+        } catch (err) {
+          console.error("Gagal mengambil dokumen dari backend:", err);
+        }
+
         setMessages([{
           id: "welcome",
           role: "bot",
@@ -599,21 +618,41 @@ export default function AiAsisten() {
     // Kirim nama file aktif ke backend untuk filter PGVector
     const activeDocName = activeDoc?.name || null;
 
+    // Buat placeholder message untuk streaming
+    const botMsgId = `b_${Date.now()}`;
+    setMessages(prev => [...prev, {
+      id: botMsgId,
+      role: "bot",
+      text: "",
+      timestamp: new Date(),
+      isStreaming: true,
+    }]);
+
     try {
-      const result = await sendMessage(chatbotId, text, history, pageCtx, activeDocName);
-      setMessages(prev => [...prev, {
-        id: `b_${Date.now()}`,
-        role: "bot",
-        text: result.answer,
-        timestamp: new Date(),
-      }]);
+      await sendMessageStream(
+        chatbotId, text, history, pageCtx, activeDocName,
+        // onToken callback — update message text in real-time
+        (partialAnswer) => {
+          setMessages(prev => prev.map(m =>
+            m.id === botMsgId ? { ...m, text: partialAnswer } : m
+          ));
+        }
+      );
+      // Mark streaming complete
+      setMessages(prev => prev.map(m =>
+        m.id === botMsgId ? { ...m, isStreaming: false } : m
+      ));
     } catch (err) {
-      setMessages(prev => [...prev, {
-        id: `e_${Date.now()}`,
-        role: "error",
-        text: err.message || "Gagal terhubung ke server.",
-        timestamp: new Date(),
-      }]);
+      // Remove empty streaming message and add error
+      setMessages(prev => [
+        ...prev.filter(m => m.id !== botMsgId || m.text),
+        {
+          id: `e_${Date.now()}`,
+          role: "error",
+          text: err.message || "Gagal terhubung ke server.",
+          timestamp: new Date(),
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }

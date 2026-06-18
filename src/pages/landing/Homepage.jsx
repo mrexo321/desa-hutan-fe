@@ -3,6 +3,7 @@ import HomeLayout from "../../components/HomeLayout";
 import { useQuery } from "@tanstack/react-query";
 import { siteSettingService } from "../../services/auth/siteSettingService";
 import { Compass, BarChart2, Table2, Loader2 } from "lucide-react";
+import defaultHeroBg from '../../../public/HeroBackground.png';
 
 // ─────────────────────────────────────────
 // HELPER: Render teks dengan satu kata/frasa di-bold
@@ -118,7 +119,7 @@ const Homepage = () => {
   // Fallback background jika belum ada gambar di DB
   const heroBg = hero.hero_background_image
     ? `url('${hero.hero_background_image}')`
-    : `url('/HeroBackground.png')`;
+    : `url(${defaultHeroBg})`;
 
   return (
     <HomeLayout transparent={true}>

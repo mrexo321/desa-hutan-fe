@@ -5,8 +5,10 @@ import DashboardLayout from "../../components/DashboardLayout";
 import { indikatorService } from "../../services/master/indikatorService";
 import { performaDesaService } from "../../services/master/performaDesaService";
 import { Download, Upload, Loader2, X, FileUp } from "lucide-react";
+import { usePermission } from "../../hooks/usePermission";
 
 export default function PerformaDesa() {
+  const { can } = usePermission();
   const [selectedFormulaId, setSelectedFormulaId] = useState("");
   const [selectedTahunId, setSelectedTahunId] = useState("");
   const [page, setPage] = useState(1);
@@ -157,13 +159,15 @@ export default function PerformaDesa() {
                 {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                 Download Template
               </button>
-              <button
-                onClick={() => setIsUploadModalOpen(true)}
-                className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1d4d2b] text-white px-4 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm"
-              >
-                <Upload size={14} />
-                Upload Excel
-              </button>
+              {can('performa_desa_hutan:import') && (
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1d4d2b] text-white px-4 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm"
+                >
+                  <Upload size={14} />
+                  Upload Excel
+                </button>
+              )}
             </div>
           </div>
 

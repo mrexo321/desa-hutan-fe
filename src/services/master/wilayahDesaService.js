@@ -50,4 +50,14 @@ export const wilayahDesaService = {
     });
     return response.data;
   },
+
+  async searchMapPublic(query, limit = 5) {
+    const response = await masterInstance.get("/public/search-map", {
+      params: {
+        q: query,
+        limit: limit,
+      },
+    });
+    return response.data;
+  },
 };

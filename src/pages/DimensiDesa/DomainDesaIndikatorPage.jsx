@@ -17,8 +17,10 @@ import {
 import { toast } from "sonner";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
+import { usePermission } from "../../hooks/usePermission";
 
 export default function DomainDesaIndikatorPage() {
+  const { can } = usePermission();
   // State Halaman
   const [selectedTahun, setSelectedTahun] = useState(null); // Menyimpan objek tahun terpilih
 
@@ -227,12 +229,14 @@ export default function DomainDesaIndikatorPage() {
                 </p>
               </div>
             </div>
-            <button
-              onClick={() => setModalTahunOpen(true)}
-              className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all transform hover:-translate-y-0.5"
-            >
-              <Plus size={18} strokeWidth={2.5} /> Daftarkan Tahun
-            </button>
+            {can('dimensi_desa:create') && (
+              <button
+                onClick={() => setModalTahunOpen(true)}
+                className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all transform hover:-translate-y-0.5"
+              >
+                <Plus size={18} strokeWidth={2.5} /> Daftarkan Tahun
+              </button>
+            )}
           </div>
 
           {/* List Grid */}
@@ -321,24 +325,26 @@ export default function DomainDesaIndikatorPage() {
               >
                 <Download size={14} strokeWidth={2.5} /> Template Excel
               </button>
-              <label className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-xl text-xs font-bold cursor-pointer shadow-sm transition-all w-1/2 md:w-auto">
-                {uploadingExcel ? (
-                  <>
-                    <Loader2 className="animate-spin" size={14} /> Memproses...
-                  </>
-                ) : (
-                  <>
-                    <Upload size={14} strokeWidth={2.5} /> Unggah Excel
-                  </>
-                )}
-                <input
-                  type="file"
-                  accept=".xlsx, .xls"
-                  onChange={handleUploadExcel}
-                  className="hidden"
-                  disabled={uploadingExcel}
-                />
-              </label>
+              {can('dimensi_desa:import') && (
+                <label className="flex items-center justify-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-xl text-xs font-bold cursor-pointer shadow-sm transition-all w-1/2 md:w-auto">
+                  {uploadingExcel ? (
+                    <>
+                      <Loader2 className="animate-spin" size={14} /> Memproses...
+                    </>
+                  ) : (
+                    <>
+                      <Upload size={14} strokeWidth={2.5} /> Unggah Excel
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={handleUploadExcel}
+                    className="hidden"
+                    disabled={uploadingExcel}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
@@ -370,15 +376,17 @@ export default function DomainDesaIndikatorPage() {
                           {item.nama}
                         </h4>
                       </div>
-                      <button
-                        onClick={() =>
-                          handleRemoveIndikator(item.kategoriIndikatorId, item.nama)
-                        }
-                        className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
-                        title="Hapus dari tahun ini"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {can('dimensi_desa:delete') && (
+                        <button
+                          onClick={() =>
+                            handleRemoveIndikator(item.kategoriIndikatorId, item.nama)
+                          }
+                          className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
+                          title="Hapus dari tahun ini"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   ))}
 
@@ -393,67 +401,68 @@ export default function DomainDesaIndikatorPage() {
               )}
             </div>
 
-            {/* Kolom Kanan: Tambah Kategori Indikator Baru */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
-              <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3.5 mb-4 flex items-center gap-2">
-                <Plus size={16} className="text-[#2D7344]" />
-                Tambah Indikator
-              </h3>
-              <p className="text-xs text-slate-450 leading-relaxed mb-5 font-semibold">
-                Pilih kategori indikator dari daftar master untuk dimasukkan sebagai struktur data di tahun {selectedTahun.tahun}.
-              </p>
+            {/* Kolom Kanan: Tambah Kategori Indikator Baru — hanya tampil jika punya izin create */}
+            {can('dimensi_desa:create') && (
+              <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm h-fit">
+                <h3 className="text-sm font-bold text-slate-800 border-b border-slate-100 pb-3.5 mb-4 flex items-center gap-2">
+                  <Plus size={16} className="text-[#2D7344]" />
+                  Tambah Indikator
+                </h3>
+                <p className="text-xs text-slate-450 leading-relaxed mb-5 font-semibold">
+                  Pilih kategori indikator dari daftar master untuk dimasukkan sebagai struktur data di tahun {selectedTahun.tahun}.
+                </p>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-600 mb-2 uppercase tracking-wide">
-                    Pilih Kategori Indikator
-                  </label>
-                  <select
-                    value={selectedKategoriId}
-                    onChange={(e) => setSelectedKategoriId(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-2 uppercase tracking-wide">
+                      Pilih Kategori Indikator
+                    </label>
+                    <select
+                      value={selectedKategoriId}
+                      onChange={(e) => setSelectedKategoriId(e.target.value)}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                    >
+                      <option value="">-- Pilih Indikator --</option>
+                      {masterKategori
+                        .filter(
+                          (mk) =>
+                            !schemaIndikator.some(
+                              (si) => si.kategoriIndikatorId === mk.id
+                            )
+                        )
+                        .map((mk) => (
+                          <option key={mk.id} value={mk.id}>
+                            {mk.nama} ({mk.kode})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleAddIndikator}
+                    disabled={addingIndikator || !selectedKategoriId}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-xl text-xs font-bold disabled:bg-slate-150 disabled:text-slate-400 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs"
                   >
-                    <option value="">-- Pilih Indikator --</option>
-                    {masterKategori
-                      // Filter out indicators that are already in the year schema
-                      .filter(
-                        (mk) =>
-                          !schemaIndikator.some(
-                            (si) => si.kategoriIndikatorId === mk.id
-                          )
-                      )
-                      .map((mk) => (
-                        <option key={mk.id} value={mk.id}>
-                          {mk.nama} ({mk.kode})
-                        </option>
-                      ))}
-                  </select>
+                    {addingIndikator ? (
+                      <>
+                        <Loader2 className="animate-spin" size={14} /> Menyimpan...
+                      </>
+                    ) : (
+                      <>
+                        <Check size={14} strokeWidth={2.5} /> Daftarkan Indikator
+                      </>
+                    )}
+                  </button>
                 </div>
 
-                <button
-                  onClick={handleAddIndikator}
-                  disabled={addingIndikator || !selectedKategoriId}
-                  className="w-full flex items-center justify-center gap-2 py-2.5 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-xl text-xs font-bold disabled:bg-slate-150 disabled:text-slate-400 disabled:cursor-not-allowed transition-all cursor-pointer shadow-xs"
-                >
-                  {addingIndikator ? (
-                    <>
-                      <Loader2 className="animate-spin" size={14} /> Menyimpan...
-                    </>
-                  ) : (
-                    <>
-                      <Check size={14} strokeWidth={2.5} /> Daftarkan Indikator
-                    </>
-                  )}
-                </button>
+                <div className="mt-6 pt-5 border-t border-slate-100 text-[10px] text-slate-400 leading-relaxed flex gap-2 font-medium">
+                  <HelpCircle size={28} className="text-slate-300 flex-shrink-0" />
+                  <span>
+                    <strong>Penting:</strong> Menambahkan/menghapus indikator akan mengubah susunan kolom di file template Excel secara otomatis di backend.
+                  </span>
+                </div>
               </div>
-
-              <div className="mt-6 pt-5 border-t border-slate-100 text-[10px] text-slate-400 leading-relaxed flex gap-2 font-medium">
-                <HelpCircle size={28} className="text-slate-300 flex-shrink-0" />
-                <span>
-                  <strong>Penting:</strong> Menambahkan/menghapus indikator akan mengubah susunan kolom di file template Excel secara otomatis di backend.
-                </span>
-              </div>
-            </div>
+            )}
           </div>
         </div>
       )}

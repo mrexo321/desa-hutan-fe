@@ -24,9 +24,6 @@ const initialState = {
   // Token — HANYA di Redux memory, TIDAK di localStorage
   accessToken: null,
   refreshToken: null,
-
-  // Status session
-  isSessionExpired: false,
 };
 
 const userSlice = createSlice({
@@ -40,7 +37,6 @@ const userSlice = createSlice({
       // Simpan data sensitif HANYA di Redux memory
       state.accessToken = accessToken || null;
       state.refreshToken = refreshToken || null;
-      state.isSessionExpired = false;
 
       // Simpan data profil non-sensitif ke localStorage
       const profileData = { userId, username, roles, permissions };
@@ -61,15 +57,6 @@ const userSlice = createSlice({
       // Update token HANYA di Redux memory
       if (accessToken) state.accessToken = accessToken;
       if (refreshToken) state.refreshToken = refreshToken;
-      state.isSessionExpired = false;
-    },
-
-    triggerSessionExpired: (state) => {
-      // Tampilkan layar session expired yang profesional
-      // Token di-clear dari memory, tapi TIDAK langsung redirect
-      state.accessToken = null;
-      state.refreshToken = null;
-      state.isSessionExpired = true;
     },
 
     clearUserData: () => {
@@ -87,12 +74,11 @@ const userSlice = createSlice({
         permissions: [],
         accessToken: null,
         refreshToken: null,
-        isSessionExpired: false,
       };
     },
   },
 });
 
-export const { setUserData, clearUserData, setToken, triggerSessionExpired } =
+export const { setUserData, clearUserData, setToken } =
   userSlice.actions;
 export default userSlice.reducer;

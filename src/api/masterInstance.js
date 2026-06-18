@@ -1,6 +1,6 @@
 import axios from "axios";
 import { toast } from "sonner";
-import { setToken, triggerSessionExpired } from "../store/userSlice";
+import { setToken, clearUserData } from "../store/userSlice";
 import environment from "../config/environment";
 import { reduxStore } from "../store/store";
 
@@ -10,11 +10,11 @@ const masterInstance = axios.create({
 });
 
 // ============================================================
-// Dispatch session expired action → UI menampilkan overlay
-// profesional, bukan redirect kasar
+// Hapus data user dan redirect langsung ke halaman login
 // ============================================================
 const handleSessionExpired = () => {
-  reduxStore.dispatch(triggerSessionExpired());
+  reduxStore.dispatch(clearUserData());
+  window.location.href = "/login";
 };
 
 // ============================================================

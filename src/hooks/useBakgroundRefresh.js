@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import axios from "axios";
 import environment from "../config/environment";
-import { setToken, triggerSessionExpired } from "../store/userSlice";
+import { setToken, clearUserData } from "../store/userSlice";
 
 // ============================================================
 // Background Token Refresh
@@ -33,8 +33,9 @@ export const useBackgroundRefresh = () => {
           }),
         );
       } catch {
-        // Refresh token sudah tidak valid → tampilkan session expired screen
-        dispatch(triggerSessionExpired());
+        // Refresh token sudah tidak valid → hapus data user & force logout ke login page
+        dispatch(clearUserData());
+        window.location.href = "/login";
       }
     }, 10 * 60 * 1000); // Setiap 10 menit
 

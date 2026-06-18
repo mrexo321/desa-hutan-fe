@@ -1,8 +1,6 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
-import { useSelector } from "react-redux";
 import ProtectedRoute from "./components/ProtectedRoute";
-import SessionExpiredScreen from "./components/SessionExpiredScreen";
 import ChatWidget from "./components/ChatWidget";
 
 // Import halaman Landing & Auth
@@ -45,8 +43,6 @@ import DataDesaPublic from "./pages/landing/DataDesaPublic";
 import PermintaanData from "./pages/dashboard/PermintaanData";
 
 const App = () => {
-  const isSessionExpired = useSelector((state) => state.user?.isSessionExpired);
-
   return (
     <>
     <Routes>
@@ -230,9 +226,6 @@ const App = () => {
         }
       />
     </Routes>
-
-    {/* Session Expired Overlay — tampil secara global di atas semua halaman */}
-    <SessionExpiredScreen isVisible={isSessionExpired} />
 
     {/* Floating AI Chatbot Widget — tampil di semua halaman */}
     <ChatWidget />

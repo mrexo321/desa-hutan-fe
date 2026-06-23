@@ -88,18 +88,16 @@ const SearchableDropdown = ({
       {/* Trigger Button */}
       <div
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${
-          isOpen ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm" : "border-gray-200 shadow-sm"
-        }`}
+        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${isOpen ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm" : "border-gray-200 shadow-sm"
+          }`}
       >
         <span className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}>
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
           size={14}
-          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
-            isOpen ? "transform rotate-180 text-[#2D7344]" : ""
-          }`}
+          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? "transform rotate-180 text-[#2D7344]" : ""
+            }`}
         />
       </div>
 
@@ -145,11 +143,10 @@ const SearchableDropdown = ({
                       onChange(opt.value);
                       setIsOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${
-                      isActive
-                        ? "bg-green-50 text-[#2D7344] font-extrabold"
-                        : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
-                    }`}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${isActive
+                      ? "bg-green-50 text-[#2D7344] font-extrabold"
+                      : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
+                      }`}
                   >
                     <span className="truncate">{opt.label}</span>
                     {isActive && (
@@ -199,16 +196,72 @@ export default function DesaHutan() {
   // ── FETCH INDEKS DESA HUTAN LIST (Opsional) ──
   const { data: indexDesaRes } = useQuery({
     queryKey: ["klasifikasi-desa-list"],
-    queryFn: () => klasifikasiService.getAllClassificationDesa({ page: 1, perPage: 100 }),
+    queryFn: () => klasifikasiService.getAllClassificationDesa(),
   });
   const indexDesaList = useMemo(() => getArrayData(indexDesaRes), [indexDesaRes]);
 
   // ── FETCH FUNGSI KAWASAN LIST (Opsional) ──
   const { data: fungsiKawasanRes } = useQuery({
     queryKey: ["klasifikasi-hutan-list"],
-    queryFn: () => klasifikasiService.getAllClassificationForest({ page: 1, perPage: 100 }),
+    queryFn: () => klasifikasiService.getAllClassificationForest(),
   });
   const fungsiKawasanList = useMemo(() => getArrayData(fungsiKawasanRes), [fungsiKawasanRes]);
+
+  const fungsiKawasanGrouped = useMemo(() => {
+    const list = fungsiKawasanList || [];
+    const konservasi = [];
+    const lindung = [];
+    const produksi = [];
+
+    list.forEach((fk) => {
+      const code = fk.kode || fk.code || "";
+      const name = (fk.nama || fk.name || "").toLowerCase().trim();
+
+      // Check if it's Konservasi
+      const isKonservasi =
+        code.startsWith("1000") ||
+        code.startsWith("1002") ||
+        [
+          "suaka margastwa",
+          "suaka margasatwa",
+          "ksa/kpa",
+          "ksa/kps",
+          "suaka alam dan wisata",
+          "cagar alam",
+          "taman buru",
+          "taman nasional",
+          "taman wisata alam",
+          "taman hutan raya",
+        ].some((kw) => name.includes(kw));
+
+      // Check if it's Lindung
+      const isLindung =
+        code === "100100" ||
+        name === "hutan lindung" ||
+        name.includes("hutan lindung");
+
+      // Check if it's Produksi
+      const isProduksi =
+        (code === "100300" || code === "100400" || code === "100500") ||
+        (!name.includes("cadangan") &&
+          !name.includes("pangonan") &&
+          (name === "hutan produksi" ||
+            name.includes("hutan produksi terbatas") ||
+            name.includes("hutan produksi konversi") ||
+            name === "hutan produksi terbatas" ||
+            name === "hutan produksi konversi"));
+
+      if (isKonservasi) {
+        konservasi.push(fk);
+      } else if (isLindung) {
+        lindung.push(fk);
+      } else if (isProduksi) {
+        produksi.push(fk);
+      }
+    });
+
+    return { konservasi, lindung, produksi };
+  }, [fungsiKawasanList]);
 
   // ── FETCH PERFORMA DESA HUTAN LIST ──
   const { data: performaRes, isLoading, isError } = useQuery({
@@ -402,43 +455,137 @@ export default function DesaHutan() {
 
         {/* FUNGSI KAWASAN INLINE CHECKBOXES */}
         <div className="mb-6 bg-slate-50/50 border border-slate-100 rounded-2xl p-5 shadow-sm animate-in fade-in duration-300">
-          <span className="text-[10px] text-[#2D7344] font-extrabold uppercase tracking-wider block mb-3">
+          <span className="text-[10px] text-[#2D7344] font-extrabold uppercase tracking-wider block mb-4">
             Fungsi Kawasan (Opsional)
           </span>
-          <div className="flex flex-wrap gap-3">
-            {fungsiKawasanList.length === 0 ? (
-              <span className="text-gray-400 text-xs italic">Memuat daftar fungsi kawasan...</span>
-            ) : (
-              fungsiKawasanList.map((fk) => {
-                const isChecked = selectedFungsiKawasanIds.includes(fk.id);
-                return (
-                  <label
-                    key={fk.id}
-                    className={`flex items-center gap-2 px-4 py-2 border rounded-xl cursor-pointer text-xs font-bold select-none transition-all duration-200 ${
-                      isChecked
-                        ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.02]"
-                        : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={isChecked}
-                      onChange={() => {
-                        if (isChecked) {
-                          setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
-                        } else {
-                          setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
-                        }
-                        setPage(1);
-                      }}
-                      className="rounded border-gray-300 text-[#2D7344] focus:ring-[#2D7344]/30 cursor-pointer"
-                    />
-                    <span>{fk.nama || fk.name}</span>
-                  </label>
-                );
-              })
-            )}
-          </div>
+          {fungsiKawasanList.length === 0 ? (
+            <span className="text-gray-400 text-xs italic">Memuat daftar fungsi kawasan...</span>
+          ) : (
+            <div className="space-y-4">
+              {/* Konservasi */}
+              {fungsiKawasanGrouped.konservasi.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100">
+                      Konservasi
+                    </span>
+                    <div className="h-px bg-slate-100 flex-grow" />
+                  </div>
+                  <div className="flex flex-wrap gap-2.5">
+                    {fungsiKawasanGrouped.konservasi.map((fk) => {
+                      const isChecked = selectedFungsiKawasanIds.includes(fk.id);
+                      return (
+                        <label
+                          key={fk.id}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
+                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
+                              } else {
+                                setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
+                              }
+                              setPage(1);
+                            }}
+                            className="rounded border-gray-300 text-[#2D7344] focus:ring-[#2D7344]/30 cursor-pointer"
+                          />
+                          <span>{fk.nama || fk.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Lindung */}
+              {fungsiKawasanGrouped.lindung.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2 py-0.5 rounded border border-cyan-100">
+                      Lindung
+                    </span>
+                    <div className="h-px bg-slate-100 flex-grow" />
+                  </div>
+                  <div className="flex flex-wrap gap-2.5">
+                    {fungsiKawasanGrouped.lindung.map((fk) => {
+                      const isChecked = selectedFungsiKawasanIds.includes(fk.id);
+                      return (
+                        <label
+                          key={fk.id}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
+                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
+                              } else {
+                                setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
+                              }
+                              setPage(1);
+                            }}
+                            className="rounded border-gray-300 text-[#2D7344] focus:ring-[#2D7344]/30 cursor-pointer"
+                          />
+                          <span>{fk.nama || fk.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Produksi */}
+              {fungsiKawasanGrouped.produksi.length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-100">
+                      Produksi
+                    </span>
+                    <div className="h-px bg-slate-100 flex-grow" />
+                  </div>
+                  <div className="flex flex-wrap gap-2.5">
+                    {fungsiKawasanGrouped.produksi.map((fk) => {
+                      const isChecked = selectedFungsiKawasanIds.includes(fk.id);
+                      return (
+                        <label
+                          key={fk.id}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
+                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                            }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => {
+                              if (isChecked) {
+                                setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
+                              } else {
+                                setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
+                              }
+                              setPage(1);
+                            }}
+                            className="rounded border-gray-300 text-[#2D7344] focus:ring-[#2D7344]/30 cursor-pointer"
+                          />
+                          <span>{fk.nama || fk.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* RESET ACTION BAR */}

@@ -19,11 +19,13 @@ import DataTable from "../../components/DataTable";
 import { indikatorService } from "../../services/master/indikatorService";
 import { useNavigate } from "react-router-dom";
 import DomainDesaIndikatorPage from "../DimensiDesa/DomainDesaIndikatorPage";
+import { usePermission } from "../../hooks/usePermission";
 
 
 const Indikator = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const { can } = usePermission();
   const [activeTab, setActiveTab] = useState("utama");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -247,7 +249,7 @@ const Indikator = () => {
   // 3. KONFIGURASI KOLOM TABEL
   // ==========================================
 
-  const ActionButtons = ({ row, onPreview, onEdit, onDelete }) => (
+  const ActionButtons = ({ row, onPreview, onEdit, onDelete, editPermission, deletePermission }) => (
     <div className="flex items-center justify-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity duration-300">
       <button
         onClick={() => onPreview(row)}
@@ -256,20 +258,24 @@ const Indikator = () => {
       >
         <Eye size={16} strokeWidth={2.5} />
       </button>
-      <button
-        onClick={() => onEdit(row)}
-        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-        title="Edit"
-      >
-        <Edit2 size={16} strokeWidth={2.5} />
-      </button>
-      <button
-        onClick={() => onDelete(row)}
-        className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-        title="Hapus"
-      >
-        <Trash2 size={16} strokeWidth={2.5} />
-      </button>
+      {(!editPermission || can(editPermission)) && (
+        <button
+          onClick={() => onEdit(row)}
+          className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Edit"
+        >
+          <Edit2 size={16} strokeWidth={2.5} />
+        </button>
+      )}
+      {(!deletePermission || can(deletePermission)) && (
+        <button
+          onClick={() => onDelete(row)}
+          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Hapus"
+        >
+          <Trash2 size={16} strokeWidth={2.5} />
+        </button>
+      )}
     </div>
   );
 
@@ -313,7 +319,9 @@ const Indikator = () => {
             row={row}
             onPreview={() => navigate(`/dashboard/indikator/utama/${row.id}`)}
             onEdit={() => navigate(`/dashboard/indikator/utama/edit/${row.id}`)}
-            onDelete={() => handleDeleteUtama(row)} // Tautkan handler toast Sonner di sini
+            onDelete={() => handleDeleteUtama(row)}
+            editPermission="master_indikator_utama:update"
+            deletePermission="master_indikator_utama:delete"
           />
         ),
       },
@@ -350,6 +358,8 @@ const Indikator = () => {
             onPreview={handlePreviewClick}
             onEdit={handleEditClick}
             onDelete={handleDeleteClick}
+            editPermission="master_kategori_indikator:update"
+            deletePermission="master_kategori_indikator:delete"
           />
         ),
       },
@@ -420,12 +430,15 @@ const Indikator = () => {
                       className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344]"
                     />
                   </div>
-                  <button
-                    onClick={handleAddClick}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
-                  >
-                    <Plus size={18} strokeWidth={3} /> Tambah Data
-                  </button>
+                  {((activeTab === 'utama' && can('master_indikator_utama:create')) ||
+                    (activeTab === 'kategori' && can('master_kategori_indikator:create'))) && (
+                    <button
+                      onClick={handleAddClick}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                    >
+                      <Plus size={18} strokeWidth={3} /> Tambah Data
+                    </button>
+                  )}
                 </div>
               </div>
 

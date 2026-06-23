@@ -1,5 +1,8 @@
 import React from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
+import { analystSpatialService } from "../../services/master/analystSpatialService";
+import { Loading } from "../../components/Loading";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
   ChevronLeft,
@@ -27,22 +30,42 @@ const formatJenisInteraksi = (jenis) => {
 };
 
 const DesaDetail = () => {
+  const { desaId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
-  const desa = location.state?.desaData;
-  const provinceName = location.state?.provinceName || "Provinsi";
+  const { data: desaResponse, isLoading, isError, error } = useQuery({
+    queryKey: ["desaDetail", desaId],
+    queryFn: () => analystSpatialService.getDesaDetail(desaId),
+    enabled: !!desaId,
+  });
 
-  if (!desa) {
+  const desa = desaResponse;
+  const provinceName = location.state?.provinceName || desa?.provinsi || "Provinsi";
+
+  if (isLoading) {
     return (
       <DashboardLayout activeMenu={"Dashboard"}>
-        <div className="flex flex-col items-center justify-center h-full">
+        <div className="flex flex-col items-center justify-center h-full py-32">
+          <Loading />
+          <p className="text-gray-500 mt-4 font-medium">Memuat detail desa...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (isError || !desa) {
+    return (
+      <DashboardLayout activeMenu={"Dashboard"}>
+        <div className="flex flex-col items-center justify-center h-full py-20 px-6">
           <AlertCircle size={48} className="text-amber-500 mb-4" />
           <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Data Tidak Ditemukan
+            {isError ? "Gagal Memuat Data" : "Data Tidak Ditemukan"}
           </h2>
-          <p className="text-gray-500 mb-6">
-            Silakan kembali dan pilih desa dari daftar tabel.
+          <p className="text-gray-500 mb-6 text-center max-w-sm">
+            {isError
+              ? error?.message || "Terjadi kesalahan saat mengambil data dari server."
+              : "Silakan kembali dan pilih desa dari daftar tabel."}
           </p>
           <button
             onClick={() => navigate(-1)}
@@ -151,7 +174,7 @@ const DesaDetail = () => {
                 </span>
               </div>
               <div className="text-4xl font-black text-gray-800">
-                {desa.luas_desa_ha?.toLocaleString() || "0"}{" "}
+                {desa.luasDesaHa?.toLocaleString() || "0"}{" "}
                 <span className="text-lg text-gray-400 font-medium ml-1">Ha</span>
               </div>
             </div>
@@ -167,7 +190,7 @@ const DesaDetail = () => {
                 </span>
               </div>
               <div className="text-4xl font-black text-gray-800">
-                {desa.ringkasanInteraksi?.totalLuasIrisanHa?.toLocaleString() || "0"}{" "}
+                {desa.ringkasanInteraksi?.luasIrisanHa?.toLocaleString() || "0"}{" "}
                 <span className="text-lg text-gray-400 font-medium ml-1">Ha</span>
               </div>
             </div>
@@ -204,13 +227,13 @@ const DesaDetail = () => {
                 <div
                   className="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-full transition-all duration-1000 ease-out"
                   style={{
-                    width: `${Math.min(desa.ringkasanInteraksi?.totalPersenIrisan || 0, 100)}%`,
+                    width: `${Math.min(desa.ringkasanInteraksi?.persenIrisan || 0, 100)}%`,
                   }}
                 />
               </div>
               <div className="flex justify-between items-center text-sm font-bold z-10 relative">
                 <span className="text-emerald-600">
-                  {desa.ringkasanInteraksi?.totalPersenIrisan || 0}% Tercover Hutan
+                  {desa.ringkasanInteraksi?.persenIrisan || 0}% Tercover Hutan
                 </span>
                 <span className="text-gray-400">100%</span>
               </div>
@@ -235,15 +258,15 @@ const DesaDetail = () => {
               </div>
               <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-2">
                 <span className="text-sm font-bold text-gray-700">
-                  Total: {desa.detailHutan?.length || 0} Kawasan
+                  Total: {desa.hutan?.length || 0} Kawasan
                 </span>
               </div>
             </div>
 
             <div className="p-6 md:p-8 bg-[#FAFAFA]">
-              {desa.detailHutan && desa.detailHutan.length > 0 ? (
+              {desa.hutan && desa.hutan.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {desa.detailHutan.map((hutan, idx) => (
+                  {desa.hutan.map((hutan, idx) => (
                     <div
                       key={idx}
                       className="bg-white p-6 rounded-[20px] border border-gray-100 shadow-sm hover:border-emerald-300 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
@@ -256,10 +279,10 @@ const DesaDetail = () => {
                           </div>
                           <div className="min-w-0">
                             <h4 className="font-bold text-gray-900 text-sm leading-tight">
-                              {hutan.fungsiKawasan?.nama || "Kawasan Tidak Diketahui / APL"}
+                              {hutan.fungsiKawasan || "Kawasan Tidak Diketahui / APL"}
                             </h4>
                             <p className="text-xs text-gray-400 mt-0.5">
-                              Kode {hutan.fungsiKawasan?.kode || "-"}
+                              Kode {hutan.fungsiKawasanKode || "-"}
                             </p>
                           </div>
                         </div>

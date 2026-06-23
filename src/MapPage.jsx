@@ -74,7 +74,7 @@ export default function MapPage() {
   // --- FETCHING SEARCH-MAP DARI API ---
   const { data: searchResponse, isFetching: isFetchingSearch } = useQuery({
     queryKey: ["searchMapDesa", debouncedQuery],
-    queryFn: () => wilayahDesaService.searchMap(debouncedQuery, 5),
+    queryFn: () => wilayahDesaService.searchMapPublic(debouncedQuery, 5),
     enabled: debouncedQuery.trim().length >= 2,
     staleTime: 30000,
   });

@@ -21,9 +21,11 @@ import {
 } from "lucide-react";
 
 import { klasifikasiService } from "../../services/master/klasifikasiService";
+import { usePermission } from "../../hooks/usePermission";
 
 const Klasifikasi = () => {
   const queryClient = useQueryClient();
+  const { can } = usePermission();
   const [activeTab, setActiveTab] = useState("hutan");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -345,20 +347,24 @@ const Klasifikasi = () => {
             >
               <Eye size={16} strokeWidth={2.5} />
             </button>
-            <button
-              onClick={() => handleEditClick(row)}
-              className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-              title="Edit"
-            >
-              <Edit2 size={16} strokeWidth={2.5} />
-            </button>
-            <button
-              onClick={() => handleDeleteClick(row)}
-              className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
-              title="Hapus"
-            >
-              <Trash2 size={16} strokeWidth={2.5} />
-            </button>
+            {can('master_klasifikasi_hutan:update') && (
+              <button
+                onClick={() => handleEditClick(row)}
+                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                title="Edit"
+              >
+                <Edit2 size={16} strokeWidth={2.5} />
+              </button>
+            )}
+            {can('master_klasifikasi_hutan:delete') && (
+              <button
+                onClick={() => handleDeleteClick(row)}
+                className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                title="Hapus"
+              >
+                <Trash2 size={16} strokeWidth={2.5} />
+              </button>
+            )}
           </div>
         ),
       },
@@ -439,13 +445,15 @@ const Klasifikasi = () => {
                   />
                 </div>
 
-                <button
-                  onClick={handleAddClick}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
-                >
-                  <Plus size={18} strokeWidth={3} />
-                  Tambah Data
-                </button>
+                {can('master_klasifikasi_hutan:create') && (
+                  <button
+                    onClick={handleAddClick}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                  >
+                    <Plus size={18} strokeWidth={3} />
+                    Tambah Data
+                  </button>
+                )}
               </div>
             </div>
 

@@ -29,6 +29,7 @@ import {
   Info,
   Loader2,
   Zap,
+  FileDown,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -38,6 +39,7 @@ import { analystSpatialService } from "../../services/master/analystSpatialServi
 import { wilayahDesaService } from "../../services/master/wilayahDesaService";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
+import masterInstance from "../../api/masterInstance";
 
 // --- IMPORT RECHARTS ---
 import {
@@ -88,6 +90,24 @@ const COLORS = {
 const Dashboard = () => {
   const navigate = useNavigate();
   const MAPBOX_TOKEN = environment.MAPBOX_URL;
+
+  const handleExportRekap = async () => {
+    try {
+      const res = await masterInstance.get("/export/rekap-provinsi", {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rekap-provinsi.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Error sudah ditangani oleh interceptor masterInstance
+    }
+  };
 
   // =========================================
   // 1. STATE UI DASHBOARD & MAPBOX
@@ -1112,17 +1132,26 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* TABS NAVIGASI */}
-        <div className="flex items-center gap-2 mb-6 bg-gray-100/50 p-1.5 rounded-full w-fit border border-gray-200/50">
-          {["Ringkasan", "Visualisasi Data"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab ? "bg-white text-[#00B67A] shadow-[0_4px_15px_rgb(0,0,0,0.05)] border border-white" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"}`}
-            >
-              {tab}
-            </button>
-          ))}
+        {/* TABS NAVIGASI + EXPORT */}
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
+          <div className="flex items-center gap-2 bg-gray-100/50 p-1.5 rounded-full w-fit border border-gray-200/50">
+            {["Ringkasan", "Visualisasi Data"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab ? "bg-white text-[#00B67A] shadow-[0_4px_15px_rgb(0,0,0,0.05)] border border-white" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleExportRekap}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#00B67A] hover:bg-[#009b68] text-white rounded-full text-sm font-bold shadow-[0_4px_15px_rgba(0,182,122,0.25)] hover:shadow-[0_6px_20px_rgba(0,182,122,0.4)] hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <FileDown size={15} strokeWidth={2.5} />
+            Export Excel
+          </button>
         </div>
 
         {activeTab === "Ringkasan" && (

@@ -1,10 +1,10 @@
 import React from "react";
+import { useBackgroundRefresh } from "../hooks/useBakgroundRefresh";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
-import { useBackgroundRefresh } from "../hooks/useBakgroundRefresh";
 
 export default function DashboardLayout({ children, activeMenu }) {
-  // Background token refresh
+  // Background token refresh: setiap 15 menit + setiap pindah halaman
   useBackgroundRefresh();
 
   return (

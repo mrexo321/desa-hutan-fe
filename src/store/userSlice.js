@@ -1,14 +1,26 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 // ============================================================
-// SECURITY: Hanya simpan data non-sensitif ke localStorage.
-// accessToken & refreshToken TIDAK disimpan di localStorage
-// untuk mencegah serangan XSS.
+// SECURITY:
+// - user_profile (non-sensitif) → localStorage (persist lintas tab)
+// - refreshToken → sessionStorage (persist hard-refresh, hilang saat tab tutup)
+// - accessToken → Redux memory SAJA (tidak pernah disimpan ke storage)
 // ============================================================
+
+const RT_KEY = "_rt"; // sessionStorage key untuk refreshToken
+
 const savedUserData = (() => {
   try {
     const raw = localStorage.getItem("user_profile");
     return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+})();
+
+const savedRefreshToken = (() => {
+  try {
+    return sessionStorage.getItem(RT_KEY) || null;
   } catch {
     return null;
   }
@@ -21,9 +33,13 @@ const initialState = {
   roles: savedUserData?.roles || [],
   permissions: savedUserData?.permissions || [],
 
-  // Token — HANYA di Redux memory, TIDAK di localStorage
+  // accessToken — HANYA di Redux memory (hilang saat hard-refresh → di-recover via refreshToken)
   accessToken: null,
-  refreshToken: null,
+  // refreshToken — disimpan ke sessionStorage agar tahan hard-refresh
+  refreshToken: savedRefreshToken,
+
+  // Status session
+  isSessionExpired: false,
 };
 
 const userSlice = createSlice({
@@ -34,11 +50,10 @@ const userSlice = createSlice({
       const { userId, username, roles, permissions, accessToken, refreshToken } =
         action.payload;
 
-      // Simpan data sensitif HANYA di Redux memory
       state.accessToken = accessToken || null;
       state.refreshToken = refreshToken || null;
 
-      // Simpan data profil non-sensitif ke localStorage
+      // Simpan profil non-sensitif ke localStorage
       const profileData = { userId, username, roles, permissions };
       state.userId = userId || null;
       state.username = username || null;
@@ -50,20 +65,50 @@ const userSlice = createSlice({
       } catch {
         // Ignore storage errors
       }
+
+      // Simpan refreshToken ke sessionStorage
+      try {
+        if (refreshToken) {
+          sessionStorage.setItem(RT_KEY, refreshToken);
+        } else {
+          sessionStorage.removeItem(RT_KEY);
+        }
+      } catch {
+        // Ignore storage errors
+      }
     },
 
     setToken: (state, action) => {
       const { accessToken, refreshToken } = action.payload;
-      // Update token HANYA di Redux memory
       if (accessToken) state.accessToken = accessToken;
-      if (refreshToken) state.refreshToken = refreshToken;
+      if (refreshToken) {
+        state.refreshToken = refreshToken;
+        // Perbarui sessionStorage dengan refreshToken terbaru
+        try {
+          sessionStorage.setItem(RT_KEY, refreshToken);
+        } catch {
+          // Ignore
+        }
+      }
+      state.isSessionExpired = false;
+    },
+
+    triggerSessionExpired: (state) => {
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isSessionExpired = true;
+      try {
+        sessionStorage.removeItem(RT_KEY);
+      } catch {
+        // Ignore
+      }
     },
 
     clearUserData: () => {
       try {
         localStorage.removeItem("user_profile");
-        // Bersihkan juga key lama jika masih ada
         localStorage.removeItem("user");
+        sessionStorage.removeItem(RT_KEY);
       } catch {
         // Ignore
       }

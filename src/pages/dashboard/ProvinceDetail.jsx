@@ -7,9 +7,13 @@ import {
   MapPin,
   TreePine,
   Eye,
+  FileDown,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { analystSpatialService } from "../../services/master/analystSpatialService";
+import environment from "../../config/environment";
+import masterInstance from "../../api/masterInstance";
+import { useAuthReady } from "../../hooks/useAuthReady";
 import { Loading } from "../../components/Loading";
 import Pagination from "../../components/Pagination";
 
@@ -21,11 +25,13 @@ const ProvinceDetail = () => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
 
+  const isAuthReady = useAuthReady();
+
   const { data: detailResponse, isLoading } = useQuery({
     queryKey: ["provinceDetail", provinceName, page, size],
     queryFn: () =>
       analystSpatialService.getProvinceDetail(provinceName, page, size),
-    enabled: !!provinceName,
+    enabled: isAuthReady && !!provinceName,
     keepPreviousData: true,
   });
 
@@ -61,12 +67,32 @@ const ProvinceDetail = () => {
   };
 
   const handleViewDetail = (desa) => {
-    navigate(`/desa-detail/${desa.id}`, {
+    navigate(`/dashboard/desa-detail/${desa.id}`, {
       state: {
         desaData: desa,
         provinceName: provinceName,
       },
     });
+  };
+
+  const handleExportDetail = async () => {
+    try {
+      const nama = decodeURIComponent(provinceName);
+      const res = await masterInstance.get(
+        `/export/detail-provinsi?provinsi=${encodeURIComponent(nama)}`,
+        { responseType: "blob" },
+      );
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `detail-provinsi-${nama}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Error sudah ditangani oleh interceptor masterInstance
+    }
   };
 
   return (
@@ -113,18 +139,28 @@ const ProvinceDetail = () => {
                 )}
               </div>
 
-              <div className="relative w-full lg:w-96">
-                <Search
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
-                  size={18}
-                />
-                <input
-                  type="text"
-                  placeholder="Cari desa, kecamatan, atau kode..."
-                  value={searchTerm}
-                  onChange={handleSearchChange}
-                  className="w-full bg-[#F8FAFC] border-none text-gray-700 py-3 pl-11 pr-4 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all font-medium"
-                />
+              <div className="flex items-center gap-3 w-full lg:w-auto">
+                <button
+                  onClick={handleExportDetail}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-sm font-bold shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 whitespace-nowrap"
+                >
+                  <FileDown size={15} strokeWidth={2.5} />
+                  Export Excel
+                </button>
+
+                <div className="relative w-full lg:w-96">
+                  <Search
+                    className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"
+                    size={18}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cari desa, kecamatan, atau kode..."
+                    value={searchTerm}
+                    onChange={handleSearchChange}
+                    className="w-full bg-[#F8FAFC] border-none text-gray-700 py-3 pl-11 pr-4 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all font-medium"
+                  />
+                </div>
               </div>
             </div>
 

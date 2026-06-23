@@ -51,123 +51,186 @@ import PermintaanData from "./pages/dashboard/PermintaanData";
 const App = () => {
   return (
     <>
-    <Routes>
-      {/* ======================================================= */}
-      {/* ROUTE PUBLIK (Bebas diakses tanpa login)                  */}
-      {/* ======================================================= */}
-      <Route path="/" element={<Homepage />} />
-      <Route path="/map" element={<MapPage />} />
-      <Route path="/login" element={<Login />} />
-      <Route path="/infografis" element={<Infografis />} />
-      <Route path="/about-us" element={<AboutUs />} />
-      <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="/data-desa" element={<DataDesaPublic />} />
+      <Routes>
+        {/* ======================================================= */}
+        {/* ROUTE PUBLIK (Bebas diakses tanpa login)                  */}
+        {/* ======================================================= */}
+        <Route path="/" element={<Homepage />} />
+        <Route path="/map" element={<MapPage />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/infografis" element={<Infografis />} />
+        <Route path="/about-us" element={<AboutUs />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/data-desa" element={<DataDesaPublic />} />
 
-      {/* ======================================================= */}
-      {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
-      {/* ======================================================= */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <Dashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/profile"
-        element={
-          <ProtectedRoute>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/permintaan-data"
-        element={
-          <ProtectedRoute>
-            <PermintaanData />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/provinsi/:provinceName"
-        element={<ProvinceDetail />}
-      />
-      <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
-      <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
-      <Route
-        path="/dashboard/performa-desa/edit"
-        element={<EditPerformaDesa />}
-      />
-      <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
-      <Route
-        path="/dashboard/desa-psn"
-        element={
-          <ProtectedRoute>
-            <DesaPSN />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/ai-asisten"
-        element={
-          <ProtectedRoute>
-            <AiAsisten />
-          </ProtectedRoute>
-        }
-      />
+        {/* ======================================================= */}
+        {/* ROUTE DASHBOARD DASAR (Minimal Wajib Login)               */}
+        {/* ======================================================= */}
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/permintaan-data"
+          element={
+            <ProtectedRoute>
+              <PermintaanData />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/provinsi/:provinceName"
+          element={<ProvinceDetail />}
+        />
+        <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
+        <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
+        <Route
+          path="/dashboard/performa-desa/edit"
+          element={<EditPerformaDesa />}
+        />
+        <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+        <Route
+          path="/dashboard/desa-psn"
+          element={
+            <ProtectedRoute>
+              <DesaPSN />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/ai-asisten"
+          element={
+            <ProtectedRoute>
+              <AiAsisten />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Indikator */}
-      <Route path="/dashboard/indikator" element={<Indikator />} />
-      <Route
-        path="/dashboard/indikator/utama/:id"
-        element={<DetailMainIndikator />}
-      />
-      <Route
-        path="/dashboard/indikator/utama/create"
-        element={<FormMainIndikator />}
-      />
-      <Route
-        path="/dashboard/indikator/utama/edit/:id"
-        element={<FormMainIndikator />}
-      />
-      <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
+        {/* Indikator */}
+        <Route path="/dashboard/indikator" element={<Indikator />} />
+        <Route
+          path="/dashboard/indikator/utama/:id"
+          element={<DetailMainIndikator />}
+        />
+        <Route
+          path="/dashboard/indikator/utama/create"
+          element={<FormMainIndikator />}
+        />
+        <Route
+          path="/dashboard/indikator/utama/edit/:id"
+          element={<FormMainIndikator />}
+        />
+        <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
+
+      {/* --- INDIKATOR PERHITUNGAN (master_indikator_perhitungan) --- */}
       <Route
         path="/dashboard/indikator-perhitungan"
-        element={<IndikatorPerhitungan />}
-      />
-      <Route
-        path="/dashboard/tahun-indikator-perhitungan"
-        element={<TahunIndikatorPerhitungan />}
-      />
-      <Route
-        path="/dashboard/tahun-indikator-perhitungan/tambah"
-        element={<FormTahunIndicator />}
+        element={
+          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:read"]}>
+            <IndikatorPerhitungan />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/dashboard/indikator-perhitungan/:id"
-        element={<DetailFormulaIndicator />}
+        element={
+          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:read"]}>
+            <DetailFormulaIndicator />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/dashboard/indikator-perhitungan/tambah"
-        element={<FormFormulaIndicator />}
+        element={
+          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:create"]}>
+            <FormFormulaIndicator />
+          </ProtectedRoute>
+        }
       />
       <Route
         path="/dashboard/indikator-perhitungan/edit/:id"
-        element={<FormFormulaIndicator />}
+        element={
+          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:update"]}>
+            <FormFormulaIndicator />
+          </ProtectedRoute>
+        }
       />
 
-      {/* Klasifikasi & Wilayah Dasar */}
-      <Route path="/dashboard/klasifikasi" element={<Klasifikasi />} />
-      <Route path="/dashboard/wilayah" element={<Wilayah />} />
-      <Route path="/dashboard/master-wilayah" element={<MasterWilayah />} />
-      <Route path="/dashboard/master-potensi" element={<MasterPotensi />} />
+      {/* --- TAHUN INDIKATOR PERHITUNGAN (master_tahun_indikator_perhitungan) --- */}
+      <Route
+        path="/dashboard/tahun-indikator-perhitungan"
+        element={
+          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:read"]}>
+            <TahunIndikatorPerhitungan />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/tahun-indikator-perhitungan/tambah"
+        element={
+          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:create"]}>
+            <FormTahunIndicator />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --- KLASIFIKASI (master_klasifikasi_hutan) --- */}
+      <Route
+        path="/dashboard/klasifikasi"
+        element={
+          <ProtectedRoute allowedPermissions={["master_klasifikasi_hutan:read"]}>
+            <Klasifikasi />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --- WILAYAH (wilayah_hutan + wilayah_desa) --- */}
+      <Route
+        path="/dashboard/wilayah"
+        element={
+          <ProtectedRoute
+            allowedPermissions={["wilayah_hutan:read", "wilayah_desa:read"]}
+          >
+            <Wilayah />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --- MASTER WILAYAH --- */}
+      <Route
+        path="/dashboard/master-wilayah"
+        element={
+          <ProtectedRoute allowedPermissions={["wilayah_desa:read"]}>
+            <MasterWilayah />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --- MASTER POTENSI --- */}
+      <Route
+        path="/dashboard/master-potensi"
+        element={
+          <ProtectedRoute allowedPermissions={["performa_desa_hutan:read"]}>
+            <MasterPotensi />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ======================================================= */}
-      {/* 2. ROUTE SENSITIF (Dilindungi Middleware + Cek Array Izin)*/}
+      {/* ROUTE SENSITIF (Manajemen User/Role/Settings)             */}
       {/* ======================================================= */}
-
       <Route
         path="/dashboard/manajemen-user"
         element={
@@ -202,19 +265,36 @@ const App = () => {
         }
       />
 
+      {/* --- MANAJEMEN ROLE SUBROUTES --- */}
       <Route
-        path="/dashboard/manajemen-role"
+        path="/dashboard/manajemen-role/create"
         element={
-          <ProtectedRoute
-            allowedPermissions={[
-              "role:read",
-              "role:create",
-              "role:update",
-              "role:delete",
-              "role_permission:assign",
-            ]}
-          >
-            <ManajemenRoles />
+          <ProtectedRoute allowedPermissions={["role:create"]}>
+            <CreateRole />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/manajemen-role/edit/:id"
+        element={
+          <ProtectedRoute allowedPermissions={["role:update"]}>
+            <EditRole />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/manajemen-role/detail/:id"
+        element={
+          <ProtectedRoute allowedPermissions={["role:read"]}>
+            <DetailRole />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/manajemen-role/assign/:id"
+        element={
+          <ProtectedRoute allowedPermissions={["role_permission:assign"]}>
+            <AssignPermission />
           </ProtectedRoute>
         }
       />
@@ -231,10 +311,10 @@ const App = () => {
           </ProtectedRoute>
         }
       />
-    </Routes>
+    </Routes >
 
-    {/* Floating AI Chatbot Widget — tampil di semua halaman */}
-    <ChatWidget />
+      {/* Floating AI Chatbot Widget — tampil di semua halaman */ }
+      < ChatWidget />
     </>
   );
 };

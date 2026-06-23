@@ -2,6 +2,7 @@ import React from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { analystSpatialService } from "../../services/master/analystSpatialService";
+import { useAuthReady } from "../../hooks/useAuthReady";
 import { Loading } from "../../components/Loading";
 import DashboardLayout from "../../components/DashboardLayout";
 import {
@@ -34,10 +35,12 @@ const DesaDetail = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  const isAuthReady = useAuthReady();
+
   const { data: desaResponse, isLoading, isError, error } = useQuery({
     queryKey: ["desaDetail", desaId],
     queryFn: () => analystSpatialService.getDesaDetail(desaId),
-    enabled: !!desaId,
+    enabled: isAuthReady && !!desaId,
   });
 
   const desa = desaResponse;

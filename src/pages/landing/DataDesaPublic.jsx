@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import HomeLayout from "../../components/HomeLayout";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { indikatorService } from "../../services/master/indikatorService";
-import { requestDataService } from "../../services/master/requestDataService";
+import { performaDesaService } from "../../services/master/performaDesaService";
 
 const WILAYAH_LEVELS = [
   { value: "nasional", label: "Nasional" },
@@ -159,28 +159,17 @@ export default function DataDesaPublic() {
     const selectedKecObj = kecamatans.find((kc) => String(kc.id) === String(selectedKecamatanId));
 
     const payload = {
+      tahun: Number(selectedTahunObj?.tahun || selectedTahunId),
       email,
-      tahun_id: selectedTahunId,
-      tahun: selectedTahunObj?.tahun || selectedTahunId,
-      wilayah_level: selectedWilayahLevel,
-      ...(showProvinsi && {
-        provinsi_id: selectedProvinsiId,
-        provinsi_nama: selectedProvObj?.name || selectedProvObj?.nama || selectedProvObj?.provinsi || "",
-      }),
-      ...(showKabupaten && {
-        kabupaten_id: selectedKabupatenId,
-        kabupaten_nama: selectedKabObj?.name || selectedKabObj?.nama || selectedKabObj?.kabupaten || "",
-      }),
-      ...(showKecamatan && {
-        kecamatan_id: selectedKecamatanId,
-        kecamatan_nama: selectedKecObj?.name || selectedKecObj?.nama || selectedKecObj?.kecamatan || "",
-      }),
+      provinsi: selectedWilayahLevel === "nasional" ? "Nasional" : (selectedProvObj?.name || selectedProvObj?.nama || selectedProvObj?.provinsi || ""),
+      kabupaten: ["kabupaten", "kecamatan"].includes(selectedWilayahLevel) ? (selectedKabObj?.name || selectedKabObj?.nama || selectedKabObj?.kabupaten || null) : null,
+      kecamatan: selectedWilayahLevel === "kecamatan" ? (selectedKecObj?.name || selectedKecObj?.nama || selectedKecObj?.kecamatan || null) : null,
     };
 
     try {
-      const response = await requestDataService.createRequest(payload);
-      if (response.success || response.id) {
-        toast.success("Permintaan data berhasil dikirim!", {
+      const response = await performaDesaService.createRequestExcel(payload);
+      if (response.success || response.id || response.data) {
+        toast.success("Permintaan ekspor Excel performa berhasil dikirim!", {
           description: "Anda dapat memantau status permohonan ini di dashboard dengan email tersebut.",
         });
         // Clear fields

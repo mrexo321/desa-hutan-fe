@@ -52,7 +52,6 @@ const userSlice = createSlice({
 
       state.accessToken = accessToken || null;
       state.refreshToken = refreshToken || null;
-      state.isSessionExpired = false;
 
       // Simpan profil non-sensitif ke localStorage
       const profileData = { userId, username, roles, permissions };
@@ -120,12 +119,11 @@ const userSlice = createSlice({
         permissions: [],
         accessToken: null,
         refreshToken: null,
-        isSessionExpired: false,
       };
     },
   },
 });
 
-export const { setUserData, clearUserData, setToken, triggerSessionExpired } =
+export const { setUserData, clearUserData, setToken } =
   userSlice.actions;
 export default userSlice.reducer;

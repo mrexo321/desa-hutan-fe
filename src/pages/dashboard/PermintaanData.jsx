@@ -17,7 +17,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
-import { requestDataService } from "../../services/master/requestDataService";
+import { performaDesaService } from "../../services/master/performaDesaService";
 
 export default function PermintaanData() {
   const queryClient = useQueryClient();
@@ -37,39 +37,102 @@ export default function PermintaanData() {
   const [alasanReject, setAlasanReject] = useState("");
   const [selectedRequest, setSelectedRequest] = useState(null);
 
-  // Fetch requests
-  const { data: requests = [], isLoading, isError, refetch } = useQuery({
-    queryKey: ["request-data-list"],
-    queryFn: requestDataService.getAllRequests,
+  // Pagination & Filter State
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(10);
+  const [statusFilter, setStatusFilter] = useState("all");
+
+  // Fetch paginated requests
+  const { data: requestRes, isLoading, isError, refetch } = useQuery({
+    queryKey: ["request-excel-list", page, size, searchQuery, statusFilter],
+    queryFn: () => performaDesaService.getAllRequestExcel({
+      page,
+      size,
+      search: searchQuery,
+      status: statusFilter === "all" ? "" : statusFilter
+    }),
   });
 
-  // Filter requests based on user type and search
-  const filteredRequests = React.useMemo(() => {
-    // 1. Filter by ownership
-    let list = isAdmin
-      ? requests
-      : requests.filter((r) => String(r.email).toLowerCase() === String(user?.username).toLowerCase());
+  // Fetch all requests for stats calculation (limit 1000)
+  const { data: allRequestsRes } = useQuery({
+    queryKey: ["request-excel-all-stats"],
+    queryFn: () => performaDesaService.getAllRequestExcel({ page: 1, size: 1000 }),
+  });
 
-    // 2. Filter by search query (email, wilayah)
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      list = list.filter(
-        (r) =>
-          String(r.email).toLowerCase().includes(q) ||
-          String(r.provinsiNama).toLowerCase().includes(q) ||
-          String(r.kabupatenNama).toLowerCase().includes(q) ||
-          String(r.kecamatanNama).toLowerCase().includes(q) ||
-          String(r.tahun).toLowerCase().includes(q)
-      );
+  // Extract paginated items
+  const requests = React.useMemo(() => {
+    let list = [];
+    if (requestRes) {
+      if (requestRes.data && Array.isArray(requestRes.data.items)) {
+        list = requestRes.data.items;
+      } else if (Array.isArray(requestRes.items)) {
+        list = requestRes.items;
+      } else if (Array.isArray(requestRes.data)) {
+        list = requestRes.data;
+      } else if (Array.isArray(requestRes)) {
+        list = requestRes;
+      }
+    }
+    if (!isAdmin) {
+      return list.filter((r) => String(r.email).toLowerCase() === String(user?.username || user?.email).toLowerCase());
     }
     return list;
-  }, [requests, isAdmin, user, searchQuery]);
+  }, [requestRes, isAdmin, user]);
 
-  // Statistics
+  // Extract all requests for stats
+  const allRequests = React.useMemo(() => {
+    if (!allRequestsRes) return [];
+    if (allRequestsRes.data && Array.isArray(allRequestsRes.data.items)) {
+      return allRequestsRes.data.items;
+    }
+    if (Array.isArray(allRequestsRes.items)) {
+      return allRequestsRes.items;
+    }
+    if (Array.isArray(allRequestsRes.data)) {
+      return allRequestsRes.data;
+    }
+    if (Array.isArray(allRequestsRes)) {
+      return allRequestsRes;
+    }
+    return [];
+  }, [allRequestsRes]);
+
+  // Calculate robust pagination info
+  const pagination = React.useMemo(() => {
+    let total = 0;
+    let totalPages = 1;
+    
+    if (requestRes) {
+      if (requestRes.data && typeof requestRes.data.total === "number") {
+        total = requestRes.data.total;
+      } else if (typeof requestRes.total === "number") {
+        total = requestRes.total;
+      }
+      
+      if (requestRes.data && typeof requestRes.data.totalPages === "number") {
+        totalPages = requestRes.data.totalPages;
+      } else if (typeof requestRes.totalPages === "number") {
+        totalPages = requestRes.totalPages;
+      } else if (typeof requestRes.total_pages === "number") {
+        totalPages = requestRes.total_pages;
+      } else if (total > 0) {
+        totalPages = Math.ceil(total / size);
+      }
+    }
+    
+    if (total === 0 && requests.length > 0) {
+      total = requests.length;
+      totalPages = Math.ceil(total / size) || 1;
+    }
+    
+    return { total, totalPages };
+  }, [requestRes, requests, size]);
+
+  // Statistics calculation
   const stats = React.useMemo(() => {
     const list = isAdmin
-      ? requests
-      : requests.filter((r) => String(r.email).toLowerCase() === String(user?.username).toLowerCase());
+      ? allRequests
+      : allRequests.filter((r) => String(r.email).toLowerCase() === String(user?.username || user?.email).toLowerCase());
 
     return {
       total: list.length,
@@ -77,14 +140,15 @@ export default function PermintaanData() {
       approved: list.filter((r) => r.status === "approved").length,
       rejected: list.filter((r) => r.status === "rejected").length,
     };
-  }, [requests, isAdmin, user]);
+  }, [allRequests, isAdmin, user]);
 
   // Approve mutation
   const approveMutation = useMutation({
-    mutationFn: (id) => requestDataService.approveRequest(id),
+    mutationFn: (id) => performaDesaService.updateRequestExcelStatus(id, { status: "approved", message: null }),
     onSuccess: () => {
       toast.success("Permintaan data berhasil disetujui!");
-      queryClient.invalidateQueries(["request-data-list"]);
+      queryClient.invalidateQueries(["request-excel-list"]);
+      queryClient.invalidateQueries(["request-excel-all-stats"]);
       refetch();
     },
     onError: (err) => {
@@ -94,12 +158,13 @@ export default function PermintaanData() {
 
   // Reject mutation
   const rejectMutation = useMutation({
-    mutationFn: ({ id, alasan }) => requestDataService.rejectRequest(id, { alasan }),
+    mutationFn: ({ id, alasan }) => performaDesaService.updateRequestExcelStatus(id, { status: "rejected", message: alasan }),
     onSuccess: () => {
       toast.success("Permintaan data berhasil ditolak.");
       setRejectingReqId(null);
       setAlasanReject("");
-      queryClient.invalidateQueries(["request-data-list"]);
+      queryClient.invalidateQueries(["request-excel-list"]);
+      queryClient.invalidateQueries(["request-excel-all-stats"]);
       refetch();
     },
     onError: (err) => {
@@ -124,15 +189,20 @@ export default function PermintaanData() {
 
   // CSV Generator for approved request
   const handleDownloadExcel = (req) => {
+    const prov = req.provinsi || req.provinsiNama || req.provinsi_nama || "Nasional";
+    const kab = req.kabupaten || req.kabupatenNama || req.kabupaten_nama || "-";
+    const kec = req.kecamatan || req.kecamatanNama || req.kecamatan_nama || "-";
+    const tahun = req.tahun || "-";
+
     const headers = ["No", "Tahun", "Provinsi", "Kabupaten", "Kecamatan", "Nama Desa", "Klasifikasi", "Nilai Indikator"];
 
     // Generate simulated village records
     const mockRows = [
-      [1, req.tahun, req.provinsiNama, req.kabupatenNama, req.kecamatanNama, `Desa ${req.kecamatanNama} Jaya`, "Mandiri", "88.40"],
-      [2, req.tahun, req.provinsiNama, req.kabupatenNama, req.kecamatanNama, `Desa ${req.kecamatanNama} Mulya`, "Maju", "79.10"],
-      [3, req.tahun, req.provinsiNama, req.kabupatenNama, req.kecamatanNama, `Desa ${req.kecamatanNama} Bakti`, "Berkembang", "68.50"],
-      [4, req.tahun, req.provinsiNama, req.kabupatenNama, req.kecamatanNama, `Desa ${req.kecamatanNama} Sari`, "Berkembang", "61.30"],
-      [5, req.tahun, req.provinsiNama, req.kabupatenNama, req.kecamatanNama, `Desa ${req.kecamatanNama} Wana`, "Tertinggal", "42.80"],
+      [1, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Jaya`, "Mandiri", "88.40"],
+      [2, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Mulya`, "Maju", "79.10"],
+      [3, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Bakti`, "Berkembang", "68.50"],
+      [4, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Sari`, "Berkembang", "61.30"],
+      [5, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Wana`, "Tertinggal", "42.80"],
     ];
 
     const csvContent = [
@@ -144,7 +214,7 @@ export default function PermintaanData() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `Data_Desa_${req.provinsiNama}_${req.kabupatenNama}_${req.kecamatanNama}_${req.tahun}.csv`);
+    link.setAttribute("download", `Data_Desa_${prov}_${kab}_${kec}_${tahun}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -175,7 +245,7 @@ export default function PermintaanData() {
           </div>
 
           {/* STATISTIK CARDS */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 font-sans">
             {/* Total */}
             <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
               <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Permintaan</span>
@@ -201,8 +271,35 @@ export default function PermintaanData() {
           {/* CARD UTAMA */}
           <div className="bg-white rounded-3xl shadow-[0_4px_25px_rgba(0,0,0,0.02)] border border-gray-100 flex flex-col overflow-hidden">
             {/* Toolbar */}
-            <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <h2 className="text-lg font-bold text-gray-800">Daftar Permintaan Ekspor</h2>
+            <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans">
+              <div className="flex flex-col gap-2">
+                <h2 className="text-lg font-bold text-gray-800">Daftar Permintaan Ekspor</h2>
+                {/* Status Filter Tabs */}
+                <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl w-fit">
+                  {[
+                    { value: "all", label: "Semua" },
+                    { value: "pending", label: "Pending" },
+                    { value: "approved", label: "Disetujui" },
+                    { value: "rejected", label: "Ditolak" },
+                  ].map((tab) => (
+                    <button
+                      key={tab.value}
+                      type="button"
+                      onClick={() => {
+                        setStatusFilter(tab.value);
+                        setPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                        statusFilter === tab.value
+                          ? "bg-white text-[#2D7344] shadow-sm"
+                          : "text-gray-500 hover:text-gray-800"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
               
               <div className="relative w-full md:w-80 group">
                 <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors" size={16} />
@@ -210,14 +307,17 @@ export default function PermintaanData() {
                   type="text"
                   placeholder="Cari email, wilayah, tahun..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setPage(1);
+                  }}
                   className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344] transition-all font-semibold"
                 />
               </div>
             </div>
 
             {/* Tabel Data */}
-            <div className="overflow-x-auto w-full">
+            <div className="overflow-x-auto w-full font-sans">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider font-bold text-gray-500">
@@ -248,7 +348,7 @@ export default function PermintaanData() {
                         Gagal memuat data permintaan. Silakan hubungi admin.
                       </td>
                     </tr>
-                  ) : filteredRequests.length === 0 ? (
+                  ) : requests.length === 0 ? (
                     <tr>
                       <td colSpan={isAdmin ? 9 : 8} className="py-16 text-center text-gray-400">
                         <div className="flex flex-col items-center justify-center gap-3">
@@ -258,23 +358,27 @@ export default function PermintaanData() {
                       </td>
                     </tr>
                   ) : (
-                    filteredRequests.map((req, idx) => {
-                      // Format date
-                      const dateStr = req.createdAt
+                    requests.map((req, idx) => {
+                      // Robust extraction of properties
+                      const prov = req.provinsi || req.provinsiNama || req.provinsi_nama || "-";
+                      const kab = req.kabupaten || req.kabupatenNama || req.kabupaten_nama || "-";
+                      const kec = req.kecamatan || req.kecamatanNama || req.kecamatan_nama || "-";
+                      const dateField = req.createdAt || req.created_at;
+                      const dateStr = dateField
                         ? new Intl.DateTimeFormat("id-ID", {
                             dateStyle: "medium",
                             timeStyle: "short",
-                          }).format(new Date(req.createdAt))
+                          }).format(new Date(dateField))
                         : "-";
 
                       return (
                         <tr key={req.id} className="border-b border-gray-50 hover:bg-[#F9FBFA] transition-colors">
-                          <td className="py-4 px-6 text-center font-mono text-gray-400">{idx + 1}</td>
+                          <td className="py-4 px-6 text-center font-mono text-gray-400">{(page - 1) * size + idx + 1}</td>
                           {isAdmin && <td className="py-4 px-6 text-gray-900 font-bold">{req.email}</td>}
                           <td className="py-4 px-6 font-mono font-bold text-gray-600">{req.tahun}</td>
-                          <td className="py-4 px-6">{req.provinsiNama}</td>
-                          <td className="py-4 px-6">{req.kabupatenNama}</td>
-                          <td className="py-4 px-6">{req.kecamatanNama}</td>
+                          <td className="py-4 px-6">{prov}</td>
+                          <td className="py-4 px-6">{kab}</td>
+                          <td className="py-4 px-6">{kec}</td>
                           <td className="py-4 px-6 text-gray-500">{dateStr}</td>
                           <td className="py-4 px-6 text-center">
                             {req.status === "pending" && (
@@ -301,7 +405,7 @@ export default function PermintaanData() {
                               {/* View detail */}
                               <button
                                 onClick={() => setSelectedRequest(req)}
-                                className="p-2 text-gray-500 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-xl transition-all"
+                                className="p-2 text-gray-500 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-xl transition-all cursor-pointer"
                                 title="Lihat Detail"
                               >
                                 <Eye size={16} />
@@ -311,7 +415,7 @@ export default function PermintaanData() {
                               {req.status === "approved" && (
                                 <button
                                   onClick={() => handleDownloadExcel(req)}
-                                  className="p-2 text-white bg-[#2D7344] hover:bg-[#1E5230] rounded-xl transition-all shadow-sm flex items-center justify-center"
+                                  className="p-2 text-white bg-[#2D7344] hover:bg-[#1E5230] rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
                                   title="Unduh Excel"
                                 >
                                   <Download size={16} />
@@ -323,14 +427,14 @@ export default function PermintaanData() {
                                 <>
                                   <button
                                     onClick={() => handleApprove(req.id)}
-                                    className="p-2 text-white bg-[#00C47C] hover:bg-[#00a86b] rounded-xl transition-all shadow-sm flex items-center justify-center"
+                                    className="p-2 text-white bg-[#00C47C] hover:bg-[#00a86b] rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
                                     title="Setujui"
                                   >
                                     <Check size={16} strokeWidth={2.5} />
                                   </button>
                                   <button
                                     onClick={() => setRejectingReqId(req.id)}
-                                    className="p-2 text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm flex items-center justify-center"
+                                    className="p-2 text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
                                     title="Tolak"
                                   >
                                     <X size={16} strokeWidth={2.5} />
@@ -346,6 +450,56 @@ export default function PermintaanData() {
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls */}
+            {pagination.totalPages > 1 && (
+              <div className="p-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50 font-sans">
+                <span className="text-xs text-gray-500 font-semibold">
+                  Menampilkan halaman <strong className="text-gray-800">{page}</strong> dari <strong className="text-gray-800">{pagination.totalPages}</strong> ({pagination.total} total data)
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    disabled={page === 1}
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    className="px-4 py-2 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Sebelumnya
+                  </button>
+                  {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
+                    .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1)
+                    .map((pageNum, idx, arr) => {
+                      const prevPage = arr[idx - 1];
+                      return (
+                        <React.Fragment key={pageNum}>
+                          {prevPage && pageNum - prevPage > 1 && (
+                            <span className="text-gray-400 text-xs px-1 select-none">...</span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setPage(pageNum)}
+                            className={`w-8 h-8 flex items-center justify-center text-xs font-bold rounded-xl transition-all cursor-pointer ${
+                              page === pageNum
+                                ? "bg-[#2D7344] text-white shadow-sm"
+                                : "text-gray-600 bg-white hover:bg-gray-100 border border-gray-200"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        </React.Fragment>
+                      );
+                    })}
+                  <button
+                    type="button"
+                    disabled={page === pagination.totalPages}
+                    onClick={() => setPage((prev) => Math.min(prev + 1, pagination.totalPages))}
+                    className="px-4 py-2 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                  >
+                    Selanjutnya
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -357,13 +511,13 @@ export default function PermintaanData() {
                 <h3 className="text-lg font-bold text-gray-800">Detail Permintaan</h3>
                 <button
                   onClick={() => setSelectedRequest(null)}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
               </div>
 
-              <div className="p-6 space-y-4">
+              <div className="p-6 space-y-4 font-sans">
                 <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
                   <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Email Pemohon</span>
                   <span className="col-span-2 text-gray-800 font-bold">{selectedRequest.email}</span>
@@ -374,15 +528,15 @@ export default function PermintaanData() {
                 </div>
                 <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
                   <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Provinsi</span>
-                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.provinsiNama}</span>
+                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.provinsi || selectedRequest.provinsiNama || selectedRequest.provinsi_nama || "-"}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
                   <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Kabupaten</span>
-                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.kabupatenNama}</span>
+                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.kabupaten || selectedRequest.kabupatenNama || selectedRequest.kabupaten_nama || "-"}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
                   <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Kecamatan</span>
-                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.kecamatanNama}</span>
+                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.kecamatan || selectedRequest.kecamatanNama || selectedRequest.kecamatan_nama || "-"}</span>
                 </div>
                 <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
                   <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Status</span>
@@ -397,18 +551,18 @@ export default function PermintaanData() {
                     <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
                     <div>
                       <h4 className="text-xs font-black text-red-700 uppercase tracking-widest mb-1">Alasan Penolakan</h4>
-                      <p className="text-xs text-red-800 font-medium leading-relaxed">
-                        {selectedRequest.alasanReject || "Tidak ada alasan spesifik."}
+                      <p className="text-xs text-red-800 font-medium leading-relaxed font-sans">
+                        {selectedRequest.message || selectedRequest.alasanReject || selectedRequest.alasan_reject || "Tidak ada alasan spesifik."}
                       </p>
                     </div>
                   </div>
                 )}
               </div>
 
-              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end">
+              <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end font-sans">
                 <button
                   onClick={() => setSelectedRequest(null)}
-                  className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all"
+                  className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
                 >
                   Tutup
                 </button>
@@ -428,14 +582,14 @@ export default function PermintaanData() {
                     setRejectingReqId(null);
                     setAlasanReject("");
                   }}
-                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors"
+                  className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
                 >
                   <X size={20} />
                 </button>
               </div>
 
               <form onSubmit={handleRejectSubmit}>
-                <div className="p-6 space-y-4">
+                <div className="p-6 space-y-4 font-sans">
                   <div className="space-y-2">
                     <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest ml-1">
                       Alasan Menolak Permintaan
@@ -451,14 +605,14 @@ export default function PermintaanData() {
                   </div>
                 </div>
 
-                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+                <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3 font-sans">
                   <button
                     type="button"
                     onClick={() => {
                       setRejectingReqId(null);
                       setAlasanReject("");
                     }}
-                    className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all"
+                    className="px-5 py-2.5 text-sm font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
                   >
                     Batal
                   </button>

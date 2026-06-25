@@ -164,42 +164,42 @@ const TabWilayahHutan = () => {
           </h2>
         </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative w-full sm:w-64 group">
-              <Search
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2D7344] transition-colors"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Cari kawasan hutan..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-medium text-slate-700"
-              />
-            </div>
-            {can('wilayah_hutan:create') && (
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-64 group">
+            <Search
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2D7344] transition-colors"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Cari kawasan hutan..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-medium text-slate-700"
+            />
+          </div>
+          {/* {can('wilayah_hutan:create') && (
               <button
                 onClick={() => navigate("/dashboard/wilayah/hutan/tambah")}
                 className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#1E5230] transition-colors shadow-sm">
                 <Plus size={18} strokeWidth={2.5} /> Tambah Hutan
               </button>
-            )}
-            {can('wilayah_hutan:import') && (
-              <button
-                onClick={() => setIsUploadOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 border border-[#2D7344] text-[#2D7344] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-green-50 transition-colors shadow-sm"
-              >
-                <UploadCloud size={18} strokeWidth={2.5} /> Import SHP
-              </button>
-            )}
+            )} */}
+          {can('wilayah_hutan:import') && (
             <button
-              onClick={() => setIsSyncGeomOpen(true)}
-              className="w-full sm:w-auto flex items-center justify-center gap-2 border border-blue-600 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm"
+              onClick={() => setIsUploadOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 border border-[#2D7344] text-[#2D7344] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-green-50 transition-colors shadow-sm"
             >
-              <RefreshCw size={18} strokeWidth={2.5} /> Sync Geom
+              <Plus size={18} strokeWidth={2.5} /> Tambah Data
             </button>
-          </div>
+          )}
+          <button
+            onClick={() => setIsSyncGeomOpen(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 border border-blue-600 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm"
+          >
+            <RefreshCw size={18} strokeWidth={2.5} /> Sync Geom
+          </button>
+        </div>
       </div>
 
       {/* COMPONENT DATATABLE */}
@@ -388,36 +388,36 @@ const TabWilayahDesa = () => {
           </h2>
         </div>
 
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <div className="relative w-full sm:w-64 group">
-              <Search
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
-                size={16}
-              />
-              <input
-                type="text"
-                placeholder="Cari wilayah desa..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-700"
-              />
-            </div>
-            {can('wilayah_desa:create') && (
-              <button
-                onClick={() => navigate("/dashboard/wilayah/desa/tambah")}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
-                <Plus size={18} strokeWidth={2.5} /> Tambah Desa
-              </button>
-            )}
-            {can('wilayah_desa:import') && (
-              <button
-                onClick={() => setIsUploadOpen(true)}
-                className="w-full sm:w-auto flex items-center justify-center gap-2 border border-blue-600 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm"
-              >
-                <UploadCloud size={18} strokeWidth={2.5} /> Import SHP
-              </button>
-            )}
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative w-full sm:w-64 group">
+            <Search
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors"
+              size={16}
+            />
+            <input
+              type="text"
+              placeholder="Cari wilayah desa..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-700"
+            />
           </div>
+          {/* {can('wilayah_desa:create') && (
+            <button
+              onClick={() => navigate("/dashboard/wilayah/desa/tambah")}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+              <Plus size={18} strokeWidth={2.5} /> Tambah Desa
+            </button>
+          )} */}
+          {can('wilayah_desa:import') && (
+            <button
+              onClick={() => setIsUploadOpen(true)}
+              className="w-full sm:w-auto flex items-center justify-center gap-2 border border-blue-600 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm"
+            >
+              <Plus size={18} strokeWidth={2.5} /> Tambah Data
+            </button>
+          )}
+        </div>
       </div>
 
       {/* COMPONENT DATATABLE */}
@@ -475,7 +475,7 @@ const Wilayah = () => {
 
           {/* TABS CONTROLLER */}
           <div className="flex p-1.5 bg-slate-200/60 backdrop-blur-sm rounded-xl w-max mb-8 border border-slate-200">
-            {["hutan", "desa", "khdtk"].map((tab) => (
+            {["hutan", "desa"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
@@ -492,15 +492,7 @@ const Wilayah = () => {
           {/* RENDER TAB SECARA KONDISIONAL */}
           {activeTab === "hutan" && <TabWilayahHutan />}
           {activeTab === "desa" && <TabWilayahDesa />}
-          {activeTab === "khdtk" && (
-            <div className="py-20 text-center flex flex-col items-center justify-center bg-white rounded-2xl shadow-sm border border-slate-200">
-              <Map className="w-16 h-16 text-slate-200 mb-4" />
-              <h3 className="text-lg font-bold text-slate-700">KHDTK</h3>
-              <p className="text-slate-500 mt-1">
-                Modul KHDTK sedang dalam pengembangan.
-              </p>
-            </div>
-          )}
+
         </div>
       </main>
     </DashboardLayout>

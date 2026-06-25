@@ -82,8 +82,8 @@ export default function ModalUploadChunked({
 
     // ── Config label per uploadType ────────────────────────────────────────────
     const UPLOAD_TYPE_LABELS = {
-        shpWilayahDesa: { title: "Import Shapefile Desa", subtitle: "Upload file .zip berisi SHP wilayah desa" },
-        shpWilayahHutan: { title: "Import Shapefile Hutan", subtitle: "Upload file .zip berisi SHP kawasan hutan" },
+        shpWilayahDesa: { title: "Tambah Data dengan Import Shapefile Desa", subtitle: "Upload file .zip berisi SHP wilayah desa" },
+        shpWilayahHutan: { title: "Tambah Data dengan Import Shapefile Hutan", subtitle: "Upload file .zip berisi SHP kawasan hutan" },
         shpWilayahKhdtk: { title: "Import Shapefile KHDTK", subtitle: "Upload file .zip berisi SHP kawasan KHDTK" },
     };
     const typeLabel = UPLOAD_TYPE_LABELS[uploadType] ?? {

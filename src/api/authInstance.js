@@ -13,12 +13,16 @@ const authInstance = axios.create({
 // ============================================================
 const handleSessionExpired = () => {
   reduxStore.dispatch(clearUserData());
-  window.location.href = "/login";
+  if (window.location.pathname.startsWith("/dashboard")) {
+    window.location.href = "/login";
+  }
 };
 
 const handleForceLogout = () => {
   reduxStore.dispatch(clearUserData());
-  window.location.href = "/login";
+  if (window.location.pathname.startsWith("/dashboard")) {
+    window.location.href = "/login";
+  }
 };
 
 // ============================================================

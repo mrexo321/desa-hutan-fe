@@ -32,7 +32,7 @@ import {
   FileDown,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // --- IMPORT SERVICE ---
 import { analystSpatialService } from "../../services/master/analystSpatialService";
@@ -89,6 +89,7 @@ const COLORS = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const MAPBOX_TOKEN = environment.MAPBOX_URL;
 
   const handleExportRekap = async () => {
@@ -386,6 +387,48 @@ const Dashboard = () => {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
+
+  // --- FLY-TO FROM DETAIL DESA (via location.state.flyToKode) ---
+  useEffect(() => {
+    const flyToKode = location.state?.flyToKode;
+    if (!flyToKode) return;
+
+    // Clear the state so it doesn't re-trigger on re-render
+    window.history.replaceState({}, document.title);
+
+    const flyToDesa = async () => {
+      try {
+        const res = await wilayahDesaService.searchMap(flyToKode, 1);
+        const results = res?.data || [];
+        const desa = results[0];
+        if (desa?.centroid?.lat && desa?.centroid?.lng) {
+          // Wait for the map to be ready
+          const attemptFlyTo = () => {
+            if (mapRef.current) {
+              setSearchQuery(desa.nama || flyToKode);
+              mapRef.current.flyTo({
+                center: [desa.centroid.lng, desa.centroid.lat],
+                zoom: 14,
+                duration: 2500,
+                essential: true,
+              });
+              setClickedLocation({
+                longitude: desa.centroid.lng,
+                latitude: desa.centroid.lat,
+              });
+            } else {
+              // Map not loaded yet, retry briefly
+              setTimeout(attemptFlyTo, 300);
+            }
+          };
+          attemptFlyTo();
+        }
+      } catch (err) {
+        console.error("Gagal fly-to desa dari DetailDesa:", err);
+      }
+    };
+    flyToDesa();
+  }, [location.state?.flyToKode]);
 
   // --- SEARCH-MAP RESULTS (already fetched above) ---
 
@@ -1224,7 +1267,7 @@ const Dashboard = () => {
             </div>
 
             {/* LUAS AREA CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {[
                 {
                   title: "Total Luas Desa",
@@ -1238,12 +1281,12 @@ const Dashboard = () => {
                   icon: <Trees size={22} strokeWidth={2.5} />,
                   color: "emerald",
                 },
-                {
-                  title: "Total Luas Irisan Desa-Hutan",
-                  value: ringkasanData?.total_luas_irisan_ha || 0,
-                  icon: <Layers size={22} strokeWidth={2.5} />,
-                  color: "purple",
-                },
+                // {
+                //   title: "Total Luas Irisan Desa-Hutan",
+                //   value: ringkasanData?.total_luas_irisan_ha || 0,
+                //   icon: <Layers size={22} strokeWidth={2.5} />,
+                //   color: "purple",
+                // },
               ].map((card, i) => (
                 <div
                   key={i}
@@ -1569,10 +1612,10 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* DUAL INTERACTIVE CHARTS */}
+            {/* INTERACTIVE CHART */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
               {/* Pie Chart Card (Status IDM) */}
-              <div className="lg:col-span-7 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
+              <div className="lg:col-span-12 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
                 <div className="mb-4">
                   <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-[#00B67A]"></div>
@@ -1592,9 +1635,9 @@ const Dashboard = () => {
                     Tidak ada data chart yang tersedia.
                   </div>
                 ) : (
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
+                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 h-full">
                     {/* Responsive Pie Chart Container */}
-                    <div className="w-full md:w-1/2 h-64 relative">
+                    <div className="w-full md:w-1/2 h-80 relative">
                       <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                           <Pie
@@ -1603,8 +1646,8 @@ const Dashboard = () => {
                             dataKey="jumlah"
                             cx="50%"
                             cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
+                            innerRadius={75}
+                            outerRadius={110}
                             paddingAngle={3}
                             fill="#8884d8"
                             onClick={(data) => {
@@ -1662,10 +1705,10 @@ const Dashboard = () => {
                         </PieChart>
                       </ResponsiveContainer>
                       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                        <div className="text-2xl font-extrabold text-gray-800">
+                        <div className="text-3xl font-extrabold text-gray-800">
                           {matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0)}
                         </div>
-                        <div className="text-[10px] text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
+                        <div className="text-xs text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
                       </div>
                     </div>
 
@@ -1696,92 +1739,6 @@ const Dashboard = () => {
                           </div>
                         );
                       })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Bar Chart Card (Average IDM Score Breakdown) */}
-              <div className="lg:col-span-5 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
-                <div className="mb-4">
-                  <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                    Rata-rata Skor IDM per Letak Spasial
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5 font-semibold">
-                    Perbandingan rata-rata nilai indeks desa lintas zona tata ruang kehutanan.
-                  </p>
-                </div>
-
-                {isMatrixLoading ? (
-                  <div className="h-80 flex items-center justify-center">
-                    <Loading />
-                  </div>
-                ) : (
-                  <div className="h-80 flex flex-col justify-between">
-                    <div className="w-full h-56 mt-2">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={[
-                            { name: "Dalam Kawasan", score: onlyPsn ? 0.635 : 0.612, fill: "#EF4444" },
-                            { name: "Beririsan Hutan", score: onlyPsn ? 0.718 : 0.684, fill: "#F59E0B" },
-                            { name: "Luar Kawasan", score: onlyPsn ? 0.776 : 0.742, fill: "#10B981" }
-                          ]}
-                          margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                          <XAxis
-                            dataKey="name"
-                            tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            domain={[0, 1.0]}
-                            tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <ChartTooltip
-                            cursor={{ fill: '#F8FAFC' }}
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
-                                    <span className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">{data.name}</span>
-                                    <span className="text-sm font-extrabold text-emerald-400">{data.score.toFixed(3)}</span>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Bar
-                            dataKey="score"
-                            radius={[8, 8, 0, 0]}
-                            maxBarSize={45}
-                          >
-                            {[
-                              { name: "Dalam Kawasan", score: onlyPsn ? 0.635 : 0.612, fill: "#EF4444" },
-                              { name: "Beririsan Hutan", score: onlyPsn ? 0.718 : 0.684, fill: "#F59E0B" },
-                              { name: "Luar Kawasan", score: onlyPsn ? 0.776 : 0.742, fill: "#10B981" }
-                            ].map((entry, idx) => (
-                              <Cell key={`bar-cell-${idx}`} fill={entry.fill} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Insight Teks Card */}
-                    <div className="bg-[#F8FAFC] border border-gray-100 p-3 rounded-2xl flex gap-3 items-center">
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                        <Info size={14} />
-                      </div>
-                      <p className="text-[10px] leading-relaxed text-gray-500 font-bold">
-                        Desa di <strong className="text-gray-700">Luar Kawasan Hutan</strong> memiliki rata-rata IDM tertinggi disebabkan oleh aksesibilitas infrastruktur publik yang lebih optimal dibandingkan desa di dalam kawasan.
-                      </p>
                     </div>
                   </div>
                 )}

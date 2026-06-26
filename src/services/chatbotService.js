@@ -518,7 +518,7 @@ export const getPageContext = (pathname, additionalData = null) => {
     if (pathname.startsWith("/dashboard/provinsi/")) {
       const provinceName = decodeURIComponent(pathname.split("/").pop());
       context = `Halaman Detail Provinsi: ${provinceName} — menampilkan daftar desa dan analisis spasial provinsi tersebut`;
-    } else if (pathname.startsWith("/desa-detail/")) {
+    } else if (pathname.includes("/desa-detail/")) {
       context = "Halaman Detail Desa — informasi lengkap desa: luas, kawasan hutan yang beririsan, status interaksi, dan rincian per kawasan";
     } else if (pathname.includes("/tambah") || pathname.includes("/create")) {
       context = `Halaman Tambah Data di ${pathname}`;

@@ -50,33 +50,10 @@ export default function Sidebar({ activeMenu }) {
       icon: <LayoutDashboard {...iconProps} />,
     },
     {
-      name: "Desa Hutan",
-      path: "/dashboard/desa-hutan",
-      icon: <Trees {...iconProps} />,
-      permission: "performa_desa_hutan:read",
-    },
-    {
-      name: "Performa Desa",
-      path: "/dashboard/performa-desa",
-      icon: <LineChart {...iconProps} />,
-      permission: "performa_desa_hutan:read",
-    },
-    // {
-    //   name: "Potensi Desa",
-    //   path: "/dashboard/potensi-desa",
-    //   icon: <Sprout {...iconProps} />,
-    // },
-    {
       name: "Desa PSN",
       path: "/dashboard/desa-psn",
       icon: <Layers {...iconProps} />,
       permission: "desa_psn:read",
-    },
-    {
-      name: "AI Asisten",
-      path: "/dashboard/ai-asisten",
-      icon: <BrainCircuit {...iconProps} />,
-      isNew: true,
     },
     {
       name: "Permintaan Data",
@@ -85,7 +62,7 @@ export default function Sidebar({ activeMenu }) {
     },
   ];
 
-  const metadataMenus = [
+  const calculationMenus = [
     {
       name: "Indikator",
       path: "/dashboard/indikator",
@@ -97,11 +74,26 @@ export default function Sidebar({ activeMenu }) {
       ],
     },
     {
-      name: "Tahun Indikator Perhitungan",
+      name: "Rumus Indeks",
       path: "/dashboard/tahun-indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
       permission: "master_tahun_indikator_perhitungan:read",
     },
+    {
+      name: "Perhitungan Indeks",
+      path: "/dashboard/performa-desa",
+      icon: <LineChart {...iconProps} />,
+      permission: "performa_desa_hutan:read",
+    },
+    {
+      name: "Indeks Desa Hutan",
+      path: "/dashboard/desa-hutan",
+      icon: <Trees {...iconProps} />,
+      permission: "performa_desa_hutan:read",
+    }
+  ];
+
+  const metadataMenus = [
     {
       name: "Klasifikasi",
       path: "/dashboard/klasifikasi",
@@ -144,6 +136,12 @@ export default function Sidebar({ activeMenu }) {
       icon: <Settings2 {...iconProps} />,
       permission: "site:read",
     },
+    {
+      name: "AI Asisten",
+      path: "/dashboard/ai-asisten",
+      icon: <BrainCircuit {...iconProps} />,
+      isNew: true,
+    },
   ];
 
   // ── FILTER MENU BERDASARKAN PERMISSION ──
@@ -160,6 +158,7 @@ export default function Sidebar({ activeMenu }) {
   };
 
   const visibleHomeMenus = filterMenuByPermission(homeMenus);
+  const visibleCalculationMenus = filterMenuByPermission(calculationMenus);
   const visibleMetadataMenus = filterMenuByPermission(metadataMenus);
 
   return (
@@ -174,11 +173,10 @@ export default function Sidebar({ activeMenu }) {
 
       {/* --- OVERLAY MOBILE --- */}
       <div
-        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${
-          isOpenMobile
-            ? "opacity-100 pointer-events-auto"
-            : "opacity-0 pointer-events-none"
-        }`}
+        className={`md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 transition-opacity duration-300 ${isOpenMobile
+          ? "opacity-100 pointer-events-auto"
+          : "opacity-0 pointer-events-none"
+          }`}
         onClick={() => setIsOpenMobile(false)}
       />
 
@@ -253,8 +251,8 @@ export default function Sidebar({ activeMenu }) {
                         to={item.path}
                         title={isCollapsed ? item.name : ""}
                         className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
-                            ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                            : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
+                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
                           }`}
                       >
                         <div
@@ -273,6 +271,49 @@ export default function Sidebar({ activeMenu }) {
                         {item.isNew && !isCollapsed && (
                           <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${isActive ? "bg-white/20 text-white" : "bg-[#00C47C]/20 text-[#00C47C]"}`}>
                             NEW
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+
+          {/* BAGIAN PERHITUNGAN INDEKS */}
+          {visibleCalculationMenus.length > 0 && (
+            <div>
+              <div
+                className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
+              >
+                <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
+                  Perhitungan Indeks
+                </p>
+              </div>
+              <ul className="space-y-2">
+                {visibleCalculationMenus.map((item, idx) => {
+                  const isActive = activeMenu === item.name;
+                  return (
+                    <li key={idx}>
+                      <Link
+                        to={item.path}
+                        title={isCollapsed ? item.name : ""}
+                        className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
+                          ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
+                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          }`}
+                      >
+                        <div
+                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
+                        >
+                          {item.icon}
+                        </div>
+                        {!isCollapsed && (
+                          <span
+                            className={`ml-4 text-[15px] tracking-wide ${isActive ? "font-bold" : "font-medium"}`}
+                          >
+                            {item.name}
                           </span>
                         )}
                       </Link>
@@ -302,8 +343,8 @@ export default function Sidebar({ activeMenu }) {
                         to={item.path}
                         title={isCollapsed ? item.name : ""}
                         className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
-                            ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                            : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
+                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
                           }`}
                       >
                         <div

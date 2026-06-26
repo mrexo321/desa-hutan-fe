@@ -93,12 +93,31 @@ const DesaDetail = () => {
     desa.ringkasanInteraksi?.klasifikasi?.toLowerCase() === "mayoritas";
 
   const getKlasifikasiBadge = (klasifikasi) => {
+    if (!klasifikasi) return "bg-gray-100 text-gray-600 border-gray-200";
+    const normalized = klasifikasi.toLowerCase().trim();
     const map = {
       mayoritas: "bg-emerald-50 text-emerald-700 border-emerald-200",
       sebagian_besar: "bg-amber-50 text-amber-700 border-amber-200",
+      sebagian_kecil: "bg-amber-50 text-amber-700 border-amber-200",
       irisan_kecil: "bg-red-50 text-red-700 border-red-200",
     };
-    return map[klasifikasi] || "bg-gray-100 text-gray-600 border-gray-200";
+    return map[normalized] || "bg-gray-100 text-gray-600 border-gray-200";
+  };
+
+  const formatKlasifikasi = (klasifikasi) => {
+    if (!klasifikasi) return "-";
+    const normalized = klasifikasi.toLowerCase().trim();
+    const map = {
+      sebagian_kecil: "Sedang",
+      sebagian_besar: "Besar",
+      irisan_kecil: "Kecil",
+      mayoritas: "Mayoritas",
+    };
+    if (map[normalized]) return map[normalized];
+    return klasifikasi
+      .split("_")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(" ");
   };
 
   return (
@@ -107,7 +126,7 @@ const DesaDetail = () => {
         <div className="px-6 md:px-10 py-8 max-w-7xl mx-auto w-full space-y-8">
 
           {/* --- BREADCRUMB & BACK BUTTON --- */}
-          <div>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <button
               onClick={() => navigate(-1)}
               className="flex items-center gap-2 text-gray-500 hover:text-emerald-700 font-medium text-sm transition-colors w-fit px-3 py-1.5 -ml-3 rounded-xl hover:bg-emerald-50"
@@ -115,6 +134,15 @@ const DesaDetail = () => {
               <ChevronLeft size={18} />
               Kembali ke Daftar Desa {decodeURIComponent(provinceName)}
             </button>
+            {desa.kodeKemendagri && (
+              <button
+                onClick={() => navigate("/dashboard", { state: { flyToKode: desa.kodeKemendagri } })}
+                className="flex items-center gap-2 bg-emerald-50 text-emerald-700 px-3 py-1.5 rounded-lg border border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300 transition-all cursor-pointer font-bold text-sm shrink-0"
+              >
+                <MapPinned size={16} />
+                <span>Lihat pada Peta</span>
+              </button>
+            )}
           </div>
 
           {/* --- HERO HEADER --- */}
@@ -152,13 +180,14 @@ const DesaDetail = () => {
                 Status Interaksi
               </p>
               <div
-                className={`inline-flex items-center px-4 py-2 rounded-xl border ${isMayoritas
-                  ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-                  : "bg-amber-50 border-amber-200 text-amber-700"
-                  }`}
+                className={`inline-flex items-center px-4 py-2 rounded-xl border ${getKlasifikasiBadge(
+                  desa.ringkasanInteraksi?.klasifikasi
+                )}`}
               >
-                <span className="font-bold capitalize text-lg">
-                  {desa.ringkasanInteraksi?.klasifikasi || "Minoritas"}
+                <span className="font-bold text-lg">
+                  {desa.ringkasanInteraksi?.klasifikasi
+                    ? formatKlasifikasi(desa.ringkasanInteraksi.klasifikasi)
+                    : "Minoritas"}
                 </span>
               </div>
             </div>
@@ -189,7 +218,7 @@ const DesaDetail = () => {
                   <PieChart size={20} className="text-amber-600" />
                 </div>
                 <span className="text-sm font-bold uppercase tracking-wider">
-                  Luas Irisan Hutan
+                  Luas Kawasan Hutan di Desa
                 </span>
               </div>
               <div className="text-4xl font-black text-gray-800">
@@ -223,7 +252,7 @@ const DesaDetail = () => {
                   <Activity size={20} className="text-blue-600" />
                 </div>
                 <span className="text-sm font-bold uppercase tracking-wider">
-                  Rasio Tutupan
+                  Rasio Luas Kawasan
                 </span>
               </div>
               <div className="relative w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-3">
@@ -236,7 +265,7 @@ const DesaDetail = () => {
               </div>
               <div className="flex justify-between items-center text-sm font-bold z-10 relative">
                 <span className="text-emerald-600">
-                  {desa.ringkasanInteraksi?.persenIrisan || 0}% Tercover Hutan
+                  {desa.ringkasanInteraksi?.persenIrisan || 0}% Kawasan Hutan
                 </span>
                 <span className="text-gray-400">100%</span>
               </div>
@@ -252,10 +281,10 @@ const DesaDetail = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">
-                    Rincian Area Hutan
+                    Rincian Kawasan Hutan
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Penjabaran spesifik fungsi kawasan hutan yang beririsan dengan desa.
+                    Penjabaran spesifik fungsi kawasan hutan yang berada di desa.
                   </p>
                 </div>
               </div>
@@ -291,9 +320,9 @@ const DesaDetail = () => {
                         </div>
                         {/* Badge klasifikasi */}
                         <span
-                          className={`text-xs font-bold px-2.5 py-1 rounded-lg border capitalize shrink-0 ml-2 ${getKlasifikasiBadge(hutan.klasifikasi)}`}
+                          className={`text-xs font-bold px-2.5 py-1 rounded-lg border shrink-0 ml-2 ${getKlasifikasiBadge(hutan.klasifikasi)}`}
                         >
-                          {hutan.klasifikasi?.replace(/_/g, " ") || "-"}
+                          {formatKlasifikasi(hutan.klasifikasi)}
                         </span>
                       </div>
 

@@ -132,7 +132,7 @@ const App = () => {
           path="/dashboard/indikator/utama/edit/:id"
           element={<FormMainIndikator />}
         />
-        <Route path="/desa-detail/:desaId" element={<DesaDetail />} />
+        <Route path="/dashboard/desa-detail/:desaId" element={<DesaDetail />} />
 
       {/* --- INDIKATOR PERHITUNGAN (master_indikator_perhitungan) --- */}
       <Route

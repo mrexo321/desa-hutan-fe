@@ -42,15 +42,15 @@ const Klasifikasi = () => {
 
   // State Add
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [addForm, setAddForm] = useState({ kode: "", nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100 });
+  const [addForm, setAddForm] = useState({ kode: "", nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100, isActive: true });
 
   // State Edit
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editForm, setEditForm] = useState({
     id: "", kode: "", nama: "", warna: "",
-    nilaiMin: 0, nilaiMax: 100,
+    nilaiMin: 0, nilaiMax: 100, isActive: true,
     originalNama: "", originalWarna: "", originalKode: "",
-    originalNilaiMin: 0, originalNilaiMax: 100,
+    originalNilaiMin: 0, originalNilaiMax: 100, originalIsActive: true,
   });
 
   // State Delete
@@ -124,7 +124,7 @@ const Klasifikasi = () => {
       queryClient.invalidateQueries({ queryKey: ["klasifikasi-hutan"] });
       toast.success("Data klasifikasi berhasil ditambahkan!");
       setIsAddModalOpen(false);
-      setAddForm({ nama: "", warna: "#2D7344" });
+      setAddForm({ nama: "", warna: "#2D7344", isActive: true });
     },
     onError: (error) => {
       toast.error(
@@ -218,7 +218,7 @@ const Klasifikasi = () => {
 
   // Handler Add
   const handleAddClick = () => {
-    setAddForm({ kode: "", nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100 });
+    setAddForm({ kode: "", nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100, isActive: true });
     setIsAddModalOpen(true);
   };
 
@@ -235,7 +235,7 @@ const Klasifikasi = () => {
         nilai_max: Number(addForm.nilaiMax),
       });
     } else {
-      createMutation.mutate({ nama: addForm.nama, warna: addForm.warna });
+      createMutation.mutate({ nama: addForm.nama, warna: addForm.warna, isActive: addForm.isActive ?? true });
     }
   };
 
@@ -246,8 +246,10 @@ const Klasifikasi = () => {
     setEditForm({
       id: row.id, kode: row.kode || "", nama: row.nama, warna: row.warna,
       nilaiMin: minVal, nilaiMax: maxVal,
+      isActive: row.isActive ?? true,
       originalNama: row.nama, originalWarna: row.warna, originalKode: row.kode || "",
       originalNilaiMin: minVal, originalNilaiMax: maxVal,
+      originalIsActive: row.isActive ?? true,
     });
     setIsEditModalOpen(true);
   };
@@ -268,10 +270,21 @@ const Klasifikasi = () => {
         }
       });
     } else {
-      if (editForm.nama === editForm.originalNama && editForm.warna === editForm.originalWarna) {
+      if (
+        editForm.nama === editForm.originalNama &&
+        editForm.warna === editForm.originalWarna &&
+        editForm.isActive === editForm.originalIsActive
+      ) {
         toast.info("Tidak ada perubahan data."); setIsEditModalOpen(false); return;
       }
-      updateMutation.mutate({ id: editForm.id, payload: { nama: editForm.nama, warna: editForm.warna } });
+      updateMutation.mutate({
+        id: editForm.id,
+        payload: {
+          nama: editForm.nama,
+          warna: editForm.warna,
+          isActive: editForm.isActive,
+        }
+      });
     }
   };
 
@@ -293,11 +306,75 @@ const Klasifikasi = () => {
   // ==========================================
   const displayData = useMemo(() => {
     const rawData = activeTab === "hutan" ? dataHutan : dataDesa;
-    if (!searchQuery.trim()) return rawData;
-    return rawData.filter((item) =>
-      item.nama?.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    const filtered = searchQuery.trim()
+      ? rawData.filter((item) =>
+        item.nama?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+      : rawData;
+    // Sort by name alphabetically
+    return [...filtered].sort((a, b) => (a.nama || "").localeCompare(b.nama || ""));
   }, [activeTab, dataHutan, dataDesa, searchQuery]);
+
+  const groupedHutanData = useMemo(() => {
+    const list = displayData || [];
+    if (activeTab !== "hutan") return { konservasi: [], lindung: [], produksi: [], lainnya: [] };
+
+    const konservasi = [];
+    const lindung = [];
+    const produksi = [];
+    const lainnya = [];
+
+    list.forEach((item) => {
+      const code = item.kode || item.code || "";
+      const name = (item.nama || item.name || "").toLowerCase().trim();
+
+      // Check if it's Konservasi
+      const isKonservasi =
+        code.startsWith("1000") ||
+        code.startsWith("1002") ||
+        [
+          "suaka margastwa",
+          "suaka margasatwa",
+          "ksa/kpa",
+          "ksa/kps",
+          "suaka alam dan wisata",
+          "cagar alam",
+          "taman buru",
+          "taman nasional",
+          "taman wisata alam",
+          "taman hutan raya",
+        ].some((kw) => name.includes(kw));
+
+      // Check if it's Lindung
+      const isLindung =
+        code === "100100" ||
+        name === "hutan lindung" ||
+        name.includes("hutan lindung");
+
+      // Check if it's Produksi
+      const isProduksi =
+        (code === "100300" || code === "100400" || code === "100500") ||
+        (!name.includes("cadangan") &&
+          !name.includes("pangonan") &&
+          (name === "hutan produksi" ||
+            name.includes("hutan produksi terbatas") ||
+            name.includes("hutan produksi konversi") ||
+            name === "hutan produksi terbatas" ||
+            name === "hutan produksi konversi"));
+
+      if (isKonservasi) {
+        konservasi.push(item);
+      } else if (isLindung) {
+        lindung.push(item);
+      } else if (isProduksi) {
+        produksi.push(item);
+      } else {
+        lainnya.push(item);
+      }
+    });
+
+    return { konservasi, lindung, produksi, lainnya };
+  }, [activeTab, displayData]);
 
   const columns = useMemo(
     () => [
@@ -315,7 +392,7 @@ const Klasifikasi = () => {
         ]
         : []),
       {
-        header: activeTab === "hutan" ? "Nama Hutan" : "Nama Desa",
+        header: activeTab === "hutan" ? "Kawasan Hutan" : "Nama Desa",
         accessor: "nama",
         render: (row) => (
           <span className="text-slate-800 font-semibold">{row.nama}</span>
@@ -334,6 +411,20 @@ const Klasifikasi = () => {
       ...(activeTab === "desa" ? [
         { header: "Nilai Min", accessor: "nilaiMin", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilai_min ?? row.nilaiMin ?? "-"}</span> },
         { header: "Nilai Max", accessor: "nilaiMax", render: (row) => <span className="font-mono text-xs font-semibold text-slate-600">{row.nilai_max ?? row.nilaiMax ?? "-"}</span> },
+      ] : []),
+      ...(activeTab === "hutan" ? [
+        {
+          header: "Active",
+          accessor: "isActive",
+          render: (row) => (
+            <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-lg border ${row.isActive
+                ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                : "bg-slate-50 text-slate-500 border-slate-200"
+              }`}>
+              {row.isActive ? "Aktif" : "Tidak Aktif"}
+            </span>
+          )
+        }
       ] : []),
       {
         header: "Aksi",
@@ -457,14 +548,121 @@ const Klasifikasi = () => {
               </div>
             </div>
 
-            <DataTable
-              columns={columns}
-              data={displayData}
-              isLoading={activeTab === "hutan" ? isLoadingHutan : isLoadingDesa}
-              isError={activeTab === "hutan" ? isErrorHutan : isErrorDesa}
-              searchQuery={searchQuery}
-              emptyMessage={`Belum ada data klasifikasi ${activeTab} yang ditambahkan`}
-            />
+            {activeTab === "hutan" ? (
+              <div className="p-6 space-y-8">
+                {/* Konservasi Group */}
+                {groupedHutanData.konservasi.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#2D7344] bg-green-50 px-2.5 py-1 rounded border border-green-100">
+                        Konservasi
+                      </span>
+                      <div className="h-px bg-slate-100 flex-grow" />
+                    </div>
+                    <div className="border border-slate-150 rounded-xl overflow-hidden shadow-sm">
+                      <DataTable
+                        columns={columns}
+                        data={groupedHutanData.konservasi}
+                        isLoading={isLoadingHutan}
+                        isError={isErrorHutan}
+                        searchQuery={searchQuery}
+                        emptyMessage="Tidak ada data konservasi"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Lindung Group */}
+                {groupedHutanData.lindung.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-cyan-800 bg-cyan-50 px-2.5 py-1 rounded border border-cyan-100">
+                        Lindung
+                      </span>
+                      <div className="h-px bg-slate-100 flex-grow" />
+                    </div>
+                    <div className="border border-slate-150 rounded-xl overflow-hidden shadow-sm">
+                      <DataTable
+                        columns={columns}
+                        data={groupedHutanData.lindung}
+                        isLoading={isLoadingHutan}
+                        isError={isErrorHutan}
+                        searchQuery={searchQuery}
+                        emptyMessage="Tidak ada data lindung"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Produksi Group */}
+                {groupedHutanData.produksi.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-50 px-2.5 py-1 rounded border border-amber-100">
+                        Produksi
+                      </span>
+                      <div className="h-px bg-slate-100 flex-grow" />
+                    </div>
+                    <div className="border border-slate-150 rounded-xl overflow-hidden shadow-sm">
+                      <DataTable
+                        columns={columns}
+                        data={groupedHutanData.produksi}
+                        isLoading={isLoadingHutan}
+                        isError={isErrorHutan}
+                        searchQuery={searchQuery}
+                        emptyMessage="Tidak ada data produksi"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Lainnya Group */}
+                {groupedHutanData.lainnya.length > 0 && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-800 bg-slate-50 px-2.5 py-1 rounded border border-slate-200">
+                        Lainnya
+                      </span>
+                      <div className="h-px bg-slate-100 flex-grow" />
+                    </div>
+                    <div className="border border-slate-150 rounded-xl overflow-hidden shadow-sm">
+                      <DataTable
+                        columns={columns}
+                        data={groupedHutanData.lainnya}
+                        isLoading={isLoadingHutan}
+                        isError={isErrorHutan}
+                        searchQuery={searchQuery}
+                        emptyMessage="Tidak ada data lainnya"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Fallback if no data is found across all groups */}
+                {groupedHutanData.konservasi.length === 0 &&
+                  groupedHutanData.lindung.length === 0 &&
+                  groupedHutanData.produksi.length === 0 &&
+                  groupedHutanData.lainnya.length === 0 && (
+                    <DataTable
+                      columns={columns}
+                      data={[]}
+                      isLoading={isLoadingHutan}
+                      isError={isErrorHutan}
+                      searchQuery={searchQuery}
+                      emptyMessage="Belum ada data klasifikasi hutan yang ditambahkan"
+                    />
+                  )}
+              </div>
+            ) : (
+              <DataTable
+                columns={columns}
+                data={displayData}
+                isLoading={isLoadingDesa}
+                isError={isErrorDesa}
+                searchQuery={searchQuery}
+                emptyMessage="Belum ada data klasifikasi desa yang ditambahkan"
+              />
+            )}
 
             <Pagination
               currentPage={currentPage}
@@ -545,6 +743,21 @@ const Klasifikasi = () => {
                       </div>
                     </div>
                   </div>
+
+                  {/* Status/Active — hanya untuk tab hutan */}
+                  {activeTab === "hutan" && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                        Status Aktivasi
+                      </p>
+                      <span className={`inline-flex items-center text-xs font-bold px-2.5 py-1 rounded-lg border ${previewData.isActive
+                          ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                          : "bg-slate-50 text-slate-500 border-slate-200"
+                        }`}>
+                        {previewData.isActive ? "Aktif" : "Tidak Aktif"}
+                      </span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 // TAMPILAN ERROR/KOSONG
@@ -611,6 +824,25 @@ const Klasifikasi = () => {
                       placeholder="#000000" pattern="^#[0-9A-Fa-f]{6}$" required />
                   </div>
                 </div>
+
+                {/* Status/Active — hanya untuk tab hutan */}
+                {activeTab === "hutan" && (
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div>
+                      <label className="block text-sm font-bold text-[#2D7344]">Status Aktif</label>
+                      <span className="text-xs text-slate-500">Nonaktifkan untuk menyembunyikan style ini di peta</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!addForm.isActive}
+                        onChange={(e) => setAddForm({ ...addForm, isActive: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2D7344]"></div>
+                    </label>
+                  </div>
+                )}
 
                 {/* nilaiMin & nilaiMax — hanya untuk tab desa */}
                 {activeTab === "desa" && (
@@ -680,6 +912,25 @@ const Klasifikasi = () => {
                       placeholder="#000000" pattern="^#[0-9A-Fa-f]{6}$" required />
                   </div>
                 </div>
+
+                {/* Status/Active — hanya untuk tab hutan */}
+                {activeTab === "hutan" && (
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200/60">
+                    <div>
+                      <label className="block text-sm font-bold text-[#2D7344]">Status Aktif</label>
+                      <span className="text-xs text-slate-500">Nonaktifkan untuk menyembunyikan style ini di peta</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!!editForm.isActive}
+                        onChange={(e) => setEditForm({ ...editForm, isActive: e.target.checked })}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#2D7344]"></div>
+                    </label>
+                  </div>
+                )}
 
                 {/* nilaiMin & nilaiMax — hanya untuk tab desa */}
                 {activeTab === "desa" && (

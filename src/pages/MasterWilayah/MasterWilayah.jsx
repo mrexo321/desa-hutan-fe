@@ -229,7 +229,7 @@ const MasterWilayah = () => {
 
           {/* HEADER HALAMAN */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Manajemen Master Wilayah</h1>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Manajemen Wilayah Administratif</h1>
             <p className="text-sm text-gray-500 mt-1">Kelola data hierarki administratif wilayah (Provinsi {">"} Kabupaten/Kota {">"} Kecamatan) dalam satu tabel tunggal.</p>
           </div>
 

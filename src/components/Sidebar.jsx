@@ -119,7 +119,7 @@ export default function Sidebar({ activeMenu }) {
       permission: "role:read",
     },
     {
-      name: "Master Wilayah",
+      name: "Wilayah Administrasi",
       path: "/dashboard/master-wilayah",
       icon: <MapPinned {...iconProps} />,
       permission: "wilayah_desa:read",

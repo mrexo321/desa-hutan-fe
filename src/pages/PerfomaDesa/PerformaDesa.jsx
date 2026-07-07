@@ -105,7 +105,7 @@ export default function PerformaDesa() {
 
         {/* HEADER */}
         <div className="flex flex-col items-center mb-6">
-          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest mb-3">Performa Desa Hutan</h2>
+          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest mb-3">Perhitungan Indeks</h2>
           <div className="w-full h-[2px] bg-[#2D7344]"></div>
         </div>
 

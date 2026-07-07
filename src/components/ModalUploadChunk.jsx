@@ -7,8 +7,13 @@ import {
     CheckCircle2,
     AlertCircle,
     Loader2,
+    ChevronDown,
+    MapPin,
+    Info,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useChunkedUpload } from "../hooks/useChunkedUpload";
+import { masterWilayahService } from "../services/master/masterWilayahService";
 
 /**
  * Modal upload SHP (chunked)
@@ -27,6 +32,7 @@ export default function ModalUploadChunked({
 }) {
     const [file, setFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [selectedProvinsi, setSelectedProvinsi] = useState("");
 
     const fileInputRef = useRef(null);
     const { upload, progress, status, result, error, reset } = useChunkedUpload();
@@ -34,6 +40,16 @@ export default function ModalUploadChunked({
     const isUploading = status === "uploading" || status === "processing";
     const isDone = status === "done";
     const isError = status === "error";
+
+    // ── Fetch daftar provinsi (hanya untuk uploadType shpWilayahDesa) ──────────
+    const isDesaUpload = uploadType === "shpWilayahDesa";
+    const { data: provinsiData, isLoading: isLoadingProvinsi } = useQuery({
+        queryKey: ["master-provinsi-all"],
+        queryFn: () => masterWilayahService.getAllProvinsi(),
+        enabled: isOpen && isDesaUpload,
+        staleTime: 5 * 60 * 1000, // cache 5 menit
+    });
+    const provinsiList = provinsiData?.items || provinsiData || [];
 
     // ── File handling ──────────────────────────────────────────────────────────
     const handleFileSelect = (selected) => {
@@ -63,7 +79,12 @@ export default function ModalUploadChunked({
     const handleSubmit = async () => {
         if (!file || isUploading) return;
         try {
-            const res = await upload(file, uploadType, {});
+            // Build meta — include provinsi for Desa SHP if selected (triggers replace mode)
+            const meta = {};
+            if (isDesaUpload && selectedProvinsi) {
+                meta.provinsi = selectedProvinsi;
+            }
+            const res = await upload(file, uploadType, meta);
             onSuccess?.(res);
         } catch {
             // error sudah di-handle di hook, tidak perlu re-throw
@@ -75,6 +96,7 @@ export default function ModalUploadChunked({
         if (isUploading) return;
         reset();
         setFile(null);
+        setSelectedProvinsi("");
         onClose();
     };
 
@@ -204,6 +226,56 @@ export default function ModalUploadChunked({
                                         </p>
                                     </>
                                 )}
+                            </div>
+                        )}
+
+                        {/* ── Provinsi dropdown (hanya untuk Desa SHP) ────────────────── */}
+                        {isDesaUpload && !isDone && (
+                            <div className="flex flex-col gap-2">
+                                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+                                    <MapPin size={14} className="text-gray-400" />
+                                    Provinsi
+                                    <span className="text-[10px] font-normal text-gray-400 ml-1">(opsional)</span>
+                                </label>
+                                <div className="relative">
+                                    <select
+                                        value={selectedProvinsi}
+                                        onChange={(e) => setSelectedProvinsi(e.target.value)}
+                                        disabled={isUploading || isLoadingProvinsi}
+                                        className="w-full px-3.5 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-medium focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                    >
+                                        <option value="">— Tidak pilih (Append / Upsert) —</option>
+                                        {Array.isArray(provinsiList) && provinsiList.map((prov) => (
+                                            <option key={prov.id} value={prov.name}>
+                                                {prov.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                        {isLoadingProvinsi ? (
+                                            <Loader2 size={14} className="animate-spin" />
+                                        ) : (
+                                            <ChevronDown size={16} />
+                                        )}
+                                    </div>
+                                </div>
+
+                                {/* Info box: behavior explanation */}
+                                <div className={`flex items-start gap-2 px-3 py-2.5 rounded-lg text-xs leading-relaxed transition-colors ${selectedProvinsi
+                                    ? "bg-amber-50 border border-amber-100 text-amber-700"
+                                    : "bg-gray-50 border border-gray-100 text-gray-500"
+                                    }`}>
+                                    <Info size={14} className="shrink-0 mt-0.5" />
+                                    {selectedProvinsi ? (
+                                        <span>
+                                            Mode <strong>Replace</strong>: Data desa di provinsi <strong>{selectedProvinsi}</strong> akan dihapus dan diganti dengan data dari file SHP yang diupload.
+                                        </span>
+                                    ) : (
+                                        <span>
+                                            Mode <strong>Append/Upsert</strong>: Data baru akan ditambahkan tanpa menghapus data yang sudah ada.
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         )}
 

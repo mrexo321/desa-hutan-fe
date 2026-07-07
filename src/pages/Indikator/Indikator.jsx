@@ -251,13 +251,15 @@ const Indikator = () => {
 
   const ActionButtons = ({ row, onPreview, onEdit, onDelete, editPermission, deletePermission }) => (
     <div className="flex items-center justify-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity duration-300">
-      <button
-        onClick={() => onPreview(row)}
-        className="p-2 text-slate-500 hover:text-[#2D7344] hover:bg-green-50 rounded-lg transition-colors"
-        title="Lihat Detail"
-      >
-        <Eye size={16} strokeWidth={2.5} />
-      </button>
+      {onPreview && (
+        <button
+          onClick={() => onPreview(row)}
+          className="p-2 text-slate-500 hover:text-[#2D7344] hover:bg-green-50 rounded-lg transition-colors"
+          title="Lihat Detail"
+        >
+          <Eye size={16} strokeWidth={2.5} />
+        </button>
+      )}
       {(!editPermission || can(editPermission)) && (
         <button
           onClick={() => onEdit(row)}
@@ -355,9 +357,20 @@ const Indikator = () => {
         render: (row) => (
           <ActionButtons
             row={row}
-            onPreview={handlePreviewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
+            onEdit={(r) => {
+              setEditForm({
+                id: r.id,
+                kode: r.kode,
+                nama: r.nama,
+                originalKode: r.kode,
+                originalNama: r.nama,
+              });
+              setIsEditModalOpen(true);
+            }}
+            onDelete={(r) => {
+              setItemToDelete(r);
+              setIsDeleteModalOpen(true);
+            }}
             editPermission="master_kategori_indikator:update"
             deletePermission="master_kategori_indikator:delete"
           />

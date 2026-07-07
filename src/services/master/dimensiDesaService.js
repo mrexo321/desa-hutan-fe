@@ -59,6 +59,18 @@ export const dimensiDesaService = {
     return response.data;
   },
 
+  // Ambil data dimensi desa (tabel dengan kolom dinamis)
+  async getDimensiDesa(params = {}) {
+    const response = await masterInstance.get("/dimensi-desa", {
+      params: {
+        tahun: params.tahun,
+        page: params.page || 1,
+        size: params.size || 10,
+      },
+    });
+    return response.data;
+  },
+
   // Ambil detail desa untuk drill-down modal
   async getDetailDesa(tahun, params = {}) {
     const response = await masterInstance.get(`/dimensi-desa/matrix/${tahun}/detail`, {

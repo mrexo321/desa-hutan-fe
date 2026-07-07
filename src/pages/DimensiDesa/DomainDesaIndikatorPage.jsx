@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
   Plus,
   ChevronRight,
+  ChevronLeft,
   ArrowLeft,
   Trash2,
   Download,
@@ -18,6 +19,7 @@ import { toast } from "sonner";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { usePermission } from "../../hooks/usePermission";
+import DataTable from "../../components/DataTable";
 
 export default function DomainDesaIndikatorPage() {
   const { can } = usePermission();
@@ -41,6 +43,13 @@ export default function DomainDesaIndikatorPage() {
 
   // State Excel Upload
   const [uploadingExcel, setUploadingExcel] = useState(false);
+
+  // State Dimensi Desa DataTable
+  const [dimensiDesaData, setDimensiDesaData] = useState(null);
+  const [loadingDimensiDesa, setLoadingDimensiDesa] = useState(false);
+  const [errorDimensiDesa, setErrorDimensiDesa] = useState(false);
+  const [dimensiDesaPage, setDimensiDesaPage] = useState(1);
+  const [dimensiDesaSize, setDimensiDesaSize] = useState(10);
 
   // ==================== FETCH DATA ====================
   const fetchTahunList = async () => {
@@ -78,6 +87,21 @@ export default function DomainDesaIndikatorPage() {
       setMasterKategori(list);
     } catch (err) {
       toast.error("Gagal mengambil daftar master kategori indikator");
+    }
+  };
+
+  // Fetch data dimensi desa (tabel dinamis)
+  const fetchDimensiDesa = async (tahun, page = 1, size = 10) => {
+    setLoadingDimensiDesa(true);
+    setErrorDimensiDesa(false);
+    try {
+      const res = await dimensiDesaService.getDimensiDesa({ tahun, page, size });
+      setDimensiDesaData(res?.data || null);
+    } catch (err) {
+      setErrorDimensiDesa(true);
+      toast.error("Gagal memuat data dimensi desa");
+    } finally {
+      setLoadingDimensiDesa(false);
     }
   };
 
@@ -206,8 +230,141 @@ export default function DomainDesaIndikatorPage() {
   // Switch ke Detail View
   const handleSelectTahun = (item) => {
     setSelectedTahun(item);
+    setDimensiDesaPage(1);
     fetchSchemaIndikator(item.tahun);
+    fetchDimensiDesa(item.tahun, 1, dimensiDesaSize);
   };
+
+  // Handler pagination
+  const handleDimensiDesaPageChange = (newPage) => {
+    setDimensiDesaPage(newPage);
+    fetchDimensiDesa(selectedTahun.tahun, newPage, dimensiDesaSize);
+  };
+
+  const handleDimensiDesaSizeChange = (newSize) => {
+    const size = parseInt(newSize);
+    setDimensiDesaSize(size);
+    setDimensiDesaPage(1);
+    fetchDimensiDesa(selectedTahun.tahun, 1, size);
+  };
+
+  // Build dynamic columns for dimensi desa table
+  const dimensiDesaColumns = useMemo(() => {
+    const baseColumns = [
+      {
+        header: "No",
+        accessor: "no",
+        className: "w-14 text-center",
+        render: (row, rowIndex) => (
+          <span className="text-slate-500 font-semibold text-xs">
+            {(dimensiDesaPage - 1) * dimensiDesaSize + rowIndex + 1}
+          </span>
+        ),
+      },
+      {
+        header: "Kode Kemendagri",
+        accessor: "kodeKemendagri",
+        className: "w-40",
+        render: (row) => (
+          <span className="font-mono text-xs font-semibold text-slate-600 bg-slate-100 px-2.5 py-1 rounded-md border border-slate-200">
+            {row.desa?.kodeKemendagri || "-"}
+          </span>
+        ),
+      },
+      {
+        header: "Nama Desa",
+        accessor: "namaDesa",
+        render: (row) => (
+          <div>
+            <span className="text-slate-800 font-semibold block">{row.desa?.nama || "-"}</span>
+            <span className="text-slate-400 text-xs">{row.desa?.provinsi || ""}</span>
+          </div>
+        ),
+      },
+    ];
+
+    // Dynamic columns from API response
+    const dynamicColumns = (dimensiDesaData?.column || []).map((col) => ({
+      header: col.kode,
+      accessor: col.id,
+      className: "text-center",
+      render: (row) => {
+        const nilaiItem = (row.nilai || []).find(
+          (n) => n.kategoriIndikatorId === col.id
+        );
+        if (!nilaiItem) return <span className="text-slate-300">—</span>;
+
+        const val = nilaiItem.nilai;
+        if (typeof val === "number") {
+          return (
+            <span className="font-mono text-xs font-bold text-slate-700">
+              {val.toFixed(2)}
+            </span>
+          );
+        }
+        // String value (like status)
+        const statusColors = {
+          MAJU: "bg-emerald-50 text-emerald-700 border-emerald-200",
+          BERKEMBANG: "bg-blue-50 text-blue-700 border-blue-200",
+          TERTINGGAL: "bg-red-50 text-red-700 border-red-200",
+          MANDIRI: "bg-purple-50 text-purple-700 border-purple-200",
+          SANGAT_TERTINGGAL: "bg-orange-50 text-orange-700 border-orange-200",
+        };
+        const colorClass = statusColors[val?.toUpperCase()] || "bg-slate-50 text-slate-700 border-slate-200";
+        return (
+          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${colorClass}`}>
+            {val}
+          </span>
+        );
+      },
+    }));
+
+    // Also add columns for nilai items not in the column array (like Status)
+    // Check first item's nilai for extra columns
+    const existingColIds = new Set((dimensiDesaData?.column || []).map((c) => c.id));
+    const firstItem = (dimensiDesaData?.items || [])[0];
+    const extraColumns = [];
+    if (firstItem) {
+      (firstItem.nilai || []).forEach((n) => {
+        if (!existingColIds.has(n.kategoriIndikatorId)) {
+          extraColumns.push({
+            header: n.kode,
+            accessor: n.kategoriIndikatorId,
+            className: "text-center",
+            render: (row) => {
+              const nilaiItem = (row.nilai || []).find(
+                (ni) => ni.kategoriIndikatorId === n.kategoriIndikatorId
+              );
+              if (!nilaiItem) return <span className="text-slate-300">—</span>;
+              const val = nilaiItem.nilai;
+              if (typeof val === "number") {
+                return (
+                  <span className="font-mono text-xs font-bold text-slate-700">
+                    {val.toFixed(2)}
+                  </span>
+                );
+              }
+              const statusColors = {
+                MAJU: "bg-emerald-50 text-emerald-700 border-emerald-200",
+                BERKEMBANG: "bg-blue-50 text-blue-700 border-blue-200",
+                TERTINGGAL: "bg-red-50 text-red-700 border-red-200",
+                MANDIRI: "bg-purple-50 text-purple-700 border-purple-200",
+                SANGAT_TERTINGGAL: "bg-orange-50 text-orange-700 border-orange-200",
+              };
+              const colorClass = statusColors[val?.toUpperCase()] || "bg-slate-50 text-slate-700 border-slate-200";
+              return (
+                <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${colorClass}`}>
+                  {val}
+                </span>
+              );
+            },
+          });
+        }
+      });
+    }
+
+    return [...baseColumns, ...dynamicColumns, ...extraColumns];
+  }, [dimensiDesaData, dimensiDesaPage, dimensiDesaSize]);
 
   return (
     <div className="w-full text-slate-800 animate-in fade-in duration-300">
@@ -460,6 +617,112 @@ export default function DomainDesaIndikatorPage() {
                   <span>
                     <strong>Penting:</strong> Menambahkan/menghapus indikator akan mengubah susunan kolom di file template Excel secara otomatis di backend.
                   </span>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ================= SECTION 3: DATA TABLE DIMENSI DESA ================= */}
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
+            <div className="p-5 border-b border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+              <div>
+                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                  <Award size={16} className="text-[#2D7344]" />
+                  Data Dimensi Desa — Tahun {selectedTahun.tahun}
+                </h3>
+                <p className="text-xs text-slate-400 font-medium mt-0.5">
+                  {dimensiDesaData?.pagination
+                    ? `Menampilkan ${dimensiDesaData.items?.length || 0} dari ${dimensiDesaData.pagination.total} data`
+                    : "Memuat data..."}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-xs font-semibold text-slate-500">Tampilkan:</label>
+                <select
+                  value={dimensiDesaSize}
+                  onChange={(e) => handleDimensiDesaSizeChange(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                >
+                  {[5, 10, 25, 50, 100].map((s) => (
+                    <option key={s} value={s}>
+                      {s} data
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            <DataTable
+              columns={dimensiDesaColumns}
+              data={dimensiDesaData?.items || []}
+              isLoading={loadingDimensiDesa}
+              isError={errorDimensiDesa}
+              emptyMessage="Belum ada data dimensi desa untuk tahun ini"
+            />
+
+            {/* Pagination */}
+            {dimensiDesaData?.pagination && dimensiDesaData.pagination.totalPage > 1 && (
+              <div className="px-5 py-4 border-t border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-center gap-3">
+                <p className="text-xs text-slate-500 font-medium">
+                  Halaman <span className="font-bold text-slate-700">{dimensiDesaData.pagination.currentPage}</span> dari{" "}
+                  <span className="font-bold text-slate-700">{dimensiDesaData.pagination.totalPage}</span>
+                  {" "}• Total <span className="font-bold text-slate-700">{dimensiDesaData.pagination.total}</span> data
+                </p>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    onClick={() => handleDimensiDesaPageChange(1)}
+                    disabled={dimensiDesaData.pagination.currentPage <= 1}
+                    className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    Awal
+                  </button>
+                  <button
+                    onClick={() => handleDimensiDesaPageChange(dimensiDesaData.pagination.currentPage - 1)}
+                    disabled={dimensiDesaData.pagination.currentPage <= 1}
+                    className="p-1.5 text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <ChevronLeft size={14} strokeWidth={2.5} />
+                  </button>
+
+                  {/* Page number buttons */}
+                  {(() => {
+                    const current = dimensiDesaData.pagination.currentPage;
+                    const total = dimensiDesaData.pagination.totalPage;
+                    const pages = [];
+                    let start = Math.max(1, current - 2);
+                    let end = Math.min(total, current + 2);
+                    if (current <= 3) end = Math.min(total, 5);
+                    if (current >= total - 2) start = Math.max(1, total - 4);
+                    for (let i = start; i <= end; i++) pages.push(i);
+                    return pages.map((p) => (
+                      <button
+                        key={p}
+                        onClick={() => handleDimensiDesaPageChange(p)}
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
+                          p === current
+                            ? "bg-[#2D7344] text-white border-[#2D7344] shadow-sm"
+                            : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ));
+                  })()}
+
+                  <button
+                    onClick={() => handleDimensiDesaPageChange(dimensiDesaData.pagination.currentPage + 1)}
+                    disabled={dimensiDesaData.pagination.currentPage >= dimensiDesaData.pagination.totalPage}
+                    className="p-1.5 text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    <ChevronRight size={14} strokeWidth={2.5} />
+                  </button>
+                  <button
+                    onClick={() => handleDimensiDesaPageChange(dimensiDesaData.pagination.totalPage)}
+                    disabled={dimensiDesaData.pagination.currentPage >= dimensiDesaData.pagination.totalPage}
+                    className="px-3 py-1.5 text-xs font-bold text-slate-600 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                  >
+                    Akhir
+                  </button>
                 </div>
               </div>
             )}

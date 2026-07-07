@@ -133,25 +133,32 @@ export const performaDesaService = {
   },
 
   /**
-   * POST /performa-desa-hutan/request-excel
-   * Buat permohonan excel performa baru.
+   * POST /public/performa-desa-hutan/request-excel
+   * Buat permohonan excel performa baru (public endpoint).
    */
   async createRequestExcel(payload) {
     try {
-      const response = await masterInstance.post("/performa-desa-hutan/request-excel", payload);
+      const response = await masterInstance.post("/public/performa-desa-hutan/request-excel", payload);
       return response.data;
     } catch (error) {
       console.warn("Using localStorage fallback for performa request-excel creation", error);
       const local = getLocalPerformaRequests();
       const newRequest = {
         id: "req-perf-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9),
-        tahun: Number(payload.tahun),
         email: payload.email,
-        provinsi: payload.provinsi,
-        kabupaten: payload.kabupaten || null,
-        kecamatan: payload.kecamatan || null,
+        export_type: "performa_desa_hutan",
+        filters: {
+          tahun: Number(payload.tahun),
+          provinsi: payload.provinsi,
+          kabupaten: payload.kabupaten || null,
+          kecamatan: payload.kecamatan || null,
+          formulaId: null,
+          fungsiKawasan: null,
+          indexDesaHutan: null,
+        },
         status: "pending",
-        message: null,
+        reject_reason: null,
+        error_message: null,
         createdAt: new Date().toISOString(),
       };
       local.unshift(newRequest);
@@ -173,8 +180,13 @@ export const performaDesaService = {
       const local = getLocalPerformaRequests();
       const index = local.findIndex((r) => String(r.id) === String(id));
       if (index !== -1) {
-        local[index].status = payload.status; // approved or rejected
+        local[index].status = payload.status; // approved, rejected, failed
         local[index].message = payload.message || null;
+        if (payload.status === "rejected") {
+          local[index].reject_reason = payload.message || payload.reject_reason || null;
+        } else if (payload.status === "failed") {
+          local[index].error_message = payload.message || payload.error_message || null;
+        }
         saveLocalPerformaRequests(local);
         return { success: true, data: local[index] };
       }

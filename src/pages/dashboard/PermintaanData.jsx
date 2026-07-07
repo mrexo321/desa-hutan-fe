@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useSelector } from "react-redux";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -14,10 +14,54 @@ import {
   Search,
   Loader2,
   Inbox,
-  AlertCircle
+  AlertCircle,
+  AlertTriangle,
 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { performaDesaService } from "../../services/master/performaDesaService";
+
+// ── Status config ──
+const STATUS_CONFIG = {
+  pending: {
+    label: "Pending",
+    icon: Clock,
+    className: "bg-yellow-50 text-yellow-600 border-yellow-100",
+  },
+  approved: {
+    label: "Disetujui",
+    icon: CheckCircle2,
+    className: "bg-green-50 text-[#2D7344] border-green-100",
+  },
+  rejected: {
+    label: "Ditolak",
+    icon: XCircle,
+    className: "bg-red-50 text-red-600 border-red-100",
+  },
+  failed: {
+    label: "Gagal",
+    icon: AlertTriangle,
+    className: "bg-orange-50 text-orange-600 border-orange-100",
+  },
+};
+
+const StatusBadge = ({ status }) => {
+  const config = STATUS_CONFIG[status] || STATUS_CONFIG.pending;
+  const Icon = config.icon;
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider border ${config.className}`}
+    >
+      <Icon size={12} />
+      {config.label}
+    </span>
+  );
+};
+
+// ── Helpers ──
+const getFilterValue = (filters, key, fallback = "-") => {
+  if (!filters) return fallback;
+  return filters[key] || fallback;
+};
 
 export default function PermintaanData() {
   const queryClient = useQueryClient();
@@ -34,6 +78,7 @@ export default function PermintaanData() {
   // State
   const [searchQuery, setSearchQuery] = useState("");
   const [rejectingReqId, setRejectingReqId] = useState(null);
+  const [approvingReqId, setApprovingReqId] = useState(null);
   const [alasanReject, setAlasanReject] = useState("");
   const [selectedRequest, setSelectedRequest] = useState(null);
 
@@ -42,113 +87,99 @@ export default function PermintaanData() {
   const [size, setSize] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // Fetch paginated requests
+  // ── Fetch paginated requests ──
   const { data: requestRes, isLoading, isError, refetch } = useQuery({
     queryKey: ["request-excel-list", page, size, searchQuery, statusFilter],
-    queryFn: () => performaDesaService.getAllRequestExcel({
-      page,
-      size,
-      search: searchQuery,
-      status: statusFilter === "all" ? "" : statusFilter
-    }),
+    queryFn: () =>
+      performaDesaService.getAllRequestExcel({
+        page,
+        size,
+        search: searchQuery,
+        status: statusFilter === "all" ? "" : statusFilter,
+      }),
   });
 
-  // Fetch all requests for stats calculation (limit 1000)
+  // ── Fetch all requests for stats (limit 1000) ──
   const { data: allRequestsRes } = useQuery({
     queryKey: ["request-excel-all-stats"],
     queryFn: () => performaDesaService.getAllRequestExcel({ page: 1, size: 1000 }),
   });
 
-  // Extract paginated items
+  // ── Extract paginated items ──
   const requests = React.useMemo(() => {
-    let list = [];
-    if (requestRes) {
-      if (requestRes.data && Array.isArray(requestRes.data.items)) {
-        list = requestRes.data.items;
-      } else if (Array.isArray(requestRes.items)) {
-        list = requestRes.items;
-      } else if (Array.isArray(requestRes.data)) {
-        list = requestRes.data;
-      } else if (Array.isArray(requestRes)) {
-        list = requestRes;
-      }
-    }
+    const list = requestRes?.data?.items || requestRes?.items || [];
     if (!isAdmin) {
-      return list.filter((r) => String(r.email).toLowerCase() === String(user?.username || user?.email).toLowerCase());
+      const userEmail = String(user?.username || user?.email || "").toLowerCase();
+      return list.filter((r) => String(r.email).toLowerCase() === userEmail);
     }
     return list;
   }, [requestRes, isAdmin, user]);
 
-  // Extract all requests for stats
+  // ── Extract pagination from response ──
+  const pagination = React.useMemo(() => {
+    const p = requestRes?.data?.pagination || requestRes?.pagination;
+    if (p) {
+      return {
+        total: p.total || 0,
+        totalPages: p.totalPage || p.totalPages || 1,
+        currentPage: p.currentPage || 1,
+        perPage: p.perPage || size,
+      };
+    }
+    // Check direct properties for fallback
+    const directData = requestRes?.data || requestRes;
+    if (directData && typeof directData.total === "number") {
+      return {
+        total: directData.total,
+        totalPages: directData.totalPages || Math.ceil(directData.total / size) || 1,
+        currentPage: directData.page || page,
+        perPage: directData.size || size,
+      };
+    }
+    // Fallback
+    return {
+      total: requests.length,
+      totalPages: Math.ceil(requests.length / size) || 1,
+      currentPage: page,
+      perPage: size,
+    };
+  }, [requestRes, requests, size, page]);
+
+  // ── Extract all requests for stats ──
   const allRequests = React.useMemo(() => {
-    if (!allRequestsRes) return [];
-    if (allRequestsRes.data && Array.isArray(allRequestsRes.data.items)) {
-      return allRequestsRes.data.items;
-    }
-    if (Array.isArray(allRequestsRes.items)) {
-      return allRequestsRes.items;
-    }
-    if (Array.isArray(allRequestsRes.data)) {
-      return allRequestsRes.data;
-    }
-    if (Array.isArray(allRequestsRes)) {
-      return allRequestsRes;
-    }
-    return [];
+    return allRequestsRes?.data?.items || allRequestsRes?.items || [];
   }, [allRequestsRes]);
 
-  // Calculate robust pagination info
-  const pagination = React.useMemo(() => {
-    let total = 0;
-    let totalPages = 1;
-    
-    if (requestRes) {
-      if (requestRes.data && typeof requestRes.data.total === "number") {
-        total = requestRes.data.total;
-      } else if (typeof requestRes.total === "number") {
-        total = requestRes.total;
-      }
-      
-      if (requestRes.data && typeof requestRes.data.totalPages === "number") {
-        totalPages = requestRes.data.totalPages;
-      } else if (typeof requestRes.totalPages === "number") {
-        totalPages = requestRes.totalPages;
-      } else if (typeof requestRes.total_pages === "number") {
-        totalPages = requestRes.total_pages;
-      } else if (total > 0) {
-        totalPages = Math.ceil(total / size);
-      }
-    }
-    
-    if (total === 0 && requests.length > 0) {
-      total = requests.length;
-      totalPages = Math.ceil(total / size) || 1;
-    }
-    
-    return { total, totalPages };
-  }, [requestRes, requests, size]);
-
-  // Statistics calculation
+  // ── Statistics ──
   const stats = React.useMemo(() => {
     const list = isAdmin
       ? allRequests
-      : allRequests.filter((r) => String(r.email).toLowerCase() === String(user?.username || user?.email).toLowerCase());
+      : allRequests.filter(
+          (r) =>
+            String(r.email).toLowerCase() ===
+            String(user?.username || user?.email || "").toLowerCase()
+        );
 
     return {
       total: list.length,
       pending: list.filter((r) => r.status === "pending").length,
       approved: list.filter((r) => r.status === "approved").length,
       rejected: list.filter((r) => r.status === "rejected").length,
+      failed: list.filter((r) => r.status === "failed").length,
     };
   }, [allRequests, isAdmin, user]);
 
-  // Approve mutation
+  // ── Mutations ──
   const approveMutation = useMutation({
-    mutationFn: (id) => performaDesaService.updateRequestExcelStatus(id, { status: "approved", message: null }),
+    mutationFn: (id) =>
+      performaDesaService.updateRequestExcelStatus(id, {
+        status: "approved",
+        message: null,
+      }),
     onSuccess: () => {
       toast.success("Permintaan data berhasil disetujui!");
-      queryClient.invalidateQueries(["request-excel-list"]);
-      queryClient.invalidateQueries(["request-excel-all-stats"]);
+      queryClient.invalidateQueries({ queryKey: ["request-excel-list"] });
+      queryClient.invalidateQueries({ queryKey: ["request-excel-all-stats"] });
       refetch();
     },
     onError: (err) => {
@@ -156,27 +187,26 @@ export default function PermintaanData() {
     },
   });
 
-  // Reject mutation
   const rejectMutation = useMutation({
-    mutationFn: ({ id, alasan }) => performaDesaService.updateRequestExcelStatus(id, { status: "rejected", message: alasan }),
+    mutationFn: ({ id, alasan }) =>
+      performaDesaService.updateRequestExcelStatus(id, {
+        status: "rejected",
+        message: alasan,
+        reject_reason: alasan,
+        rejectReason: alasan,
+      }),
     onSuccess: () => {
       toast.success("Permintaan data berhasil ditolak.");
       setRejectingReqId(null);
       setAlasanReject("");
-      queryClient.invalidateQueries(["request-excel-list"]);
-      queryClient.invalidateQueries(["request-excel-all-stats"]);
+      queryClient.invalidateQueries({ queryKey: ["request-excel-list"] });
+      queryClient.invalidateQueries({ queryKey: ["request-excel-all-stats"] });
       refetch();
     },
     onError: (err) => {
       toast.error(err.response?.data?.message || "Gagal menolak permintaan.");
     },
   });
-
-  const handleApprove = (id) => {
-    if (window.confirm("Apakah Anda yakin ingin menyetujui permintaan data ini?")) {
-      approveMutation.mutate(id);
-    }
-  };
 
   const handleRejectSubmit = (e) => {
     e.preventDefault();
@@ -187,46 +217,15 @@ export default function PermintaanData() {
     rejectMutation.mutate({ id: rejectingReqId, alasan: alasanReject.trim() });
   };
 
-  // CSV Generator for approved request
-  const handleDownloadExcel = (req) => {
-    const prov = req.provinsi || req.provinsiNama || req.provinsi_nama || "Nasional";
-    const kab = req.kabupaten || req.kabupatenNama || req.kabupaten_nama || "-";
-    const kec = req.kecamatan || req.kecamatanNama || req.kecamatan_nama || "-";
-    const tahun = req.tahun || "-";
-
-    const headers = ["No", "Tahun", "Provinsi", "Kabupaten", "Kecamatan", "Nama Desa", "Klasifikasi", "Nilai Indikator"];
-
-    // Generate simulated village records
-    const mockRows = [
-      [1, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Jaya`, "Mandiri", "88.40"],
-      [2, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Mulya`, "Maju", "79.10"],
-      [3, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Bakti`, "Berkembang", "68.50"],
-      [4, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Sari`, "Berkembang", "61.30"],
-      [5, tahun, prov, kab, kec, `Desa ${kec !== "-" ? kec : ""} Wana`, "Tertinggal", "42.80"],
-    ];
-
-    const csvContent = [
-      headers.join(","),
-      ...mockRows.map((row) => row.map((val) => `"${val}"`).join(",")),
-    ].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `Data_Desa_${prov}_${kab}_${kec}_${tahun}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success("File Excel (CSV) berhasil diunduh!");
-  };
+  // ── Column count for colSpan ──
+  const colCount = isAdmin ? 9 : 8;
 
   return (
     <DashboardLayout activeMenu="Permintaan Data">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
-          
-          {/* HEADER HALAMAN */}
+
+          {/* HEADER */}
           <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#0B241A] to-[#1E5230] p-6 rounded-3xl text-white shadow-lg shadow-green-950/10 relative overflow-hidden">
             <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
             <div className="flex items-center gap-4 z-10">
@@ -244,28 +243,13 @@ export default function PermintaanData() {
             </div>
           </div>
 
-          {/* STATISTIK CARDS */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8 font-sans">
-            {/* Total */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Total Permintaan</span>
-              <span className="text-2xl font-extrabold text-gray-900 mt-2">{stats.total}</span>
-            </div>
-            {/* Pending */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-wider">Menunggu Persetujuan</span>
-              <span className="text-2xl font-extrabold text-yellow-600 mt-2">{stats.pending}</span>
-            </div>
-            {/* Approved */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] font-bold text-[#2D7344] uppercase tracking-wider">Disetujui</span>
-              <span className="text-2xl font-extrabold text-[#2D7344] mt-2">{stats.approved}</span>
-            </div>
-            {/* Rejected */}
-            <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
-              <span className="text-[10px] font-bold text-red-500 uppercase tracking-wider">Ditolak</span>
-              <span className="text-2xl font-extrabold text-red-500 mt-2">{stats.rejected}</span>
-            </div>
+          {/* STATISTIK */}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8 font-sans">
+            <StatCard label="Total Permintaan" value={stats.total} color="text-gray-900" />
+            <StatCard label="Menunggu Persetujuan" value={stats.pending} color="text-yellow-600" />
+            <StatCard label="Disetujui" value={stats.approved} color="text-[#2D7344]" />
+            <StatCard label="Ditolak" value={stats.rejected} color="text-red-500" />
+            <StatCard label="Gagal" value={stats.failed} color="text-orange-500" />
           </div>
 
           {/* CARD UTAMA */}
@@ -274,13 +258,13 @@ export default function PermintaanData() {
             <div className="p-6 border-b border-gray-50 flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans">
               <div className="flex flex-col gap-2">
                 <h2 className="text-lg font-bold text-gray-800">Daftar Permintaan Ekspor</h2>
-                {/* Status Filter Tabs */}
-                <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl w-fit">
+                <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-xl w-fit flex-wrap">
                   {[
                     { value: "all", label: "Semua" },
                     { value: "pending", label: "Pending" },
                     { value: "approved", label: "Disetujui" },
                     { value: "rejected", label: "Ditolak" },
+                    { value: "failed", label: "Gagal" },
                   ].map((tab) => (
                     <button
                       key={tab.value}
@@ -300,34 +284,53 @@ export default function PermintaanData() {
                   ))}
                 </div>
               </div>
-              
-              <div className="relative w-full md:w-80 group">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors" size={16} />
-                <input
-                  type="text"
-                  placeholder="Cari email, wilayah, tahun..."
-                  value={searchQuery}
+
+              <div className="flex items-center gap-3 w-full md:w-auto">
+                <div className="relative flex-1 md:w-72 group">
+                  <Search
+                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors"
+                    size={16}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Cari email, wilayah, tahun..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(1);
+                    }}
+                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344] transition-all font-semibold"
+                  />
+                </div>
+                <select
+                  value={size}
                   onChange={(e) => {
-                    setSearchQuery(e.target.value);
+                    setSize(parseInt(e.target.value));
                     setPage(1);
                   }}
-                  className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344] transition-all font-semibold"
-                />
+                  className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-xs font-bold text-gray-600 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-green-500/10 transition-all cursor-pointer"
+                >
+                  {[5, 10, 25, 50].map((s) => (
+                    <option key={s} value={s}>
+                      {s} baris
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
-            {/* Tabel Data */}
+            {/* TABLE */}
             <div className="overflow-x-auto w-full font-sans">
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider font-bold text-gray-500">
                     <th className="py-4 px-6 w-12 text-center">No</th>
                     {isAdmin && <th className="py-4 px-6">Email Pemohon</th>}
+                    <th className="py-4 px-6">Tipe Ekspor</th>
                     <th className="py-4 px-6">Tahun</th>
                     <th className="py-4 px-6">Provinsi</th>
                     <th className="py-4 px-6">Kabupaten</th>
                     <th className="py-4 px-6">Kecamatan</th>
-                    <th className="py-4 px-6">Tanggal Permintaan</th>
                     <th className="py-4 px-6 text-center">Status</th>
                     <th className="py-4 px-6 text-center w-36">Aksi</th>
                   </tr>
@@ -335,7 +338,7 @@ export default function PermintaanData() {
                 <tbody className="text-xs font-semibold text-gray-700">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center text-gray-400">
+                      <td colSpan={colCount} className="py-12 text-center text-gray-400">
                         <div className="flex justify-center items-center gap-2 text-[#2D7344]">
                           <Loader2 className="animate-spin" size={18} />
                           <span>Memuat daftar permintaan...</span>
@@ -344,13 +347,13 @@ export default function PermintaanData() {
                     </tr>
                   ) : isError ? (
                     <tr>
-                      <td colSpan={isAdmin ? 9 : 8} className="py-12 text-center text-red-500">
+                      <td colSpan={colCount} className="py-12 text-center text-red-500">
                         Gagal memuat data permintaan. Silakan hubungi admin.
                       </td>
                     </tr>
                   ) : requests.length === 0 ? (
                     <tr>
-                      <td colSpan={isAdmin ? 9 : 8} className="py-16 text-center text-gray-400">
+                      <td colSpan={colCount} className="py-16 text-center text-gray-400">
                         <div className="flex flex-col items-center justify-center gap-3">
                           <Inbox size={40} className="text-gray-300" />
                           <p className="text-sm font-medium">Belum ada data permintaan.</p>
@@ -359,46 +362,40 @@ export default function PermintaanData() {
                     </tr>
                   ) : (
                     requests.map((req, idx) => {
-                      // Robust extraction of properties
-                      const prov = req.provinsi || req.provinsiNama || req.provinsi_nama || "-";
-                      const kab = req.kabupaten || req.kabupatenNama || req.kabupaten_nama || "-";
-                      const kec = req.kecamatan || req.kecamatanNama || req.kecamatan_nama || "-";
-                      const dateField = req.createdAt || req.created_at;
-                      const dateStr = dateField
-                        ? new Intl.DateTimeFormat("id-ID", {
-                            dateStyle: "medium",
-                            timeStyle: "short",
-                          }).format(new Date(dateField))
-                        : "-";
+                      const filters = req.filters || {};
+                      const prov = getFilterValue(filters, "provinsi");
+                      const kab = getFilterValue(filters, "kabupaten");
+                      const kec = getFilterValue(filters, "kecamatan");
+
+                      // Format export_type for display
+                      const exportType = (req.export_type || "-")
+                        .replace(/_/g, " ")
+                        .replace(/\b\w/g, (c) => c.toUpperCase());
 
                       return (
-                        <tr key={req.id} className="border-b border-gray-50 hover:bg-[#F9FBFA] transition-colors">
-                          <td className="py-4 px-6 text-center font-mono text-gray-400">{(page - 1) * size + idx + 1}</td>
-                          {isAdmin && <td className="py-4 px-6 text-gray-900 font-bold">{req.email}</td>}
-                          <td className="py-4 px-6 font-mono font-bold text-gray-600">{req.tahun}</td>
+                        <tr
+                          key={req.id}
+                          className="border-b border-gray-50 hover:bg-[#F9FBFA] transition-colors"
+                        >
+                          <td className="py-4 px-6 text-center font-mono text-gray-400">
+                            {(page - 1) * size + idx + 1}
+                          </td>
+                          {isAdmin && (
+                            <td className="py-4 px-6 text-gray-900 font-bold">{req.email}</td>
+                          )}
+                          <td className="py-4 px-6">
+                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                              {exportType}
+                            </span>
+                          </td>
+                          <td className="py-4 px-6 font-mono font-bold text-gray-600">
+                            {filters.tahun || "-"}
+                          </td>
                           <td className="py-4 px-6">{prov}</td>
                           <td className="py-4 px-6">{kab}</td>
                           <td className="py-4 px-6">{kec}</td>
-                          <td className="py-4 px-6 text-gray-500">{dateStr}</td>
                           <td className="py-4 px-6 text-center">
-                            {req.status === "pending" && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-yellow-50 text-yellow-600 border border-yellow-100">
-                                <Clock size={12} />
-                                Pending
-                              </span>
-                            )}
-                            {req.status === "approved" && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-green-50 text-[#2D7344] border border-green-100 animate-pulse-slow">
-                                <CheckCircle2 size={12} />
-                                Disetujui
-                              </span>
-                            )}
-                            {req.status === "rejected" && (
-                              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-600 border border-red-100">
-                                <XCircle size={12} />
-                                Ditolak
-                              </span>
-                            )}
+                            <StatusBadge status={req.status} />
                           </td>
                           <td className="py-4 px-6">
                             <div className="flex items-center justify-center gap-2">
@@ -411,22 +408,11 @@ export default function PermintaanData() {
                                 <Eye size={16} />
                               </button>
 
-                              {/* Download Excel if approved */}
-                              {req.status === "approved" && (
-                                <button
-                                  onClick={() => handleDownloadExcel(req)}
-                                  className="p-2 text-white bg-[#2D7344] hover:bg-[#1E5230] rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
-                                  title="Unduh Excel"
-                                >
-                                  <Download size={16} />
-                                </button>
-                              )}
-
-                              {/* Admin action: approve / reject */}
+                              {/* Admin: approve / reject */}
                               {isAdmin && req.status === "pending" && (
                                 <>
                                   <button
-                                    onClick={() => handleApprove(req.id)}
+                                    onClick={() => setApprovingReqId(req.id)}
                                     className="p-2 text-white bg-[#00C47C] hover:bg-[#00a86b] rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
                                     title="Setujui"
                                   >
@@ -451,11 +437,13 @@ export default function PermintaanData() {
               </table>
             </div>
 
-            {/* Pagination Controls */}
+            {/* PAGINATION */}
             {pagination.totalPages > 1 && (
               <div className="p-6 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 bg-gray-50/50 font-sans">
                 <span className="text-xs text-gray-500 font-semibold">
-                  Menampilkan halaman <strong className="text-gray-800">{page}</strong> dari <strong className="text-gray-800">{pagination.totalPages}</strong> ({pagination.total} total data)
+                  Halaman <strong className="text-gray-800">{pagination.currentPage}</strong> dari{" "}
+                  <strong className="text-gray-800">{pagination.totalPages}</strong>
+                  {" "}• <strong className="text-gray-800">{pagination.total}</strong> total data
                 </span>
                 <div className="flex items-center gap-2">
                   <button
@@ -467,7 +455,10 @@ export default function PermintaanData() {
                     Sebelumnya
                   </button>
                   {Array.from({ length: pagination.totalPages }, (_, i) => i + 1)
-                    .filter((p) => p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1)
+                    .filter(
+                      (p) =>
+                        p === 1 || p === pagination.totalPages || Math.abs(p - page) <= 1
+                    )
                     .map((pageNum, idx, arr) => {
                       const prevPage = arr[idx - 1];
                       return (
@@ -503,7 +494,7 @@ export default function PermintaanData() {
           </div>
         </div>
 
-        {/* MODAL DETAIL PERMINTAAN */}
+        {/* MODAL DETAIL */}
         {selectedRequest && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in">
             <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
@@ -517,42 +508,71 @@ export default function PermintaanData() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-4 font-sans">
-                <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
-                  <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Email Pemohon</span>
-                  <span className="col-span-2 text-gray-800 font-bold">{selectedRequest.email}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
-                  <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Tahun</span>
-                  <span className="col-span-2 text-gray-800 font-semibold font-mono">{selectedRequest.tahun}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
-                  <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Provinsi</span>
-                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.provinsi || selectedRequest.provinsiNama || selectedRequest.provinsi_nama || "-"}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
-                  <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Kabupaten</span>
-                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.kabupaten || selectedRequest.kabupatenNama || selectedRequest.kabupaten_nama || "-"}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
-                  <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Kecamatan</span>
-                  <span className="col-span-2 text-gray-800 font-semibold">{selectedRequest.kecamatan || selectedRequest.kecamatanNama || selectedRequest.kecamatan_nama || "-"}</span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 py-2 border-b border-gray-50">
-                  <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">Status</span>
-                  <span className="col-span-2 font-bold">
-                    {selectedRequest.status === "pending" && <span className="text-yellow-600">Pending</span>}
-                    {selectedRequest.status === "approved" && <span className="text-[#2D7344]">Disetujui</span>}
-                    {selectedRequest.status === "rejected" && <span className="text-red-500">Ditolak</span>}
-                  </span>
-                </div>
-                {selectedRequest.status === "rejected" && (
-                  <div className="p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3">
+              <div className="p-6 space-y-0 font-sans">
+                <DetailRow label="Email Pemohon" value={selectedRequest.email} bold />
+                <DetailRow
+                  label="Tipe Ekspor"
+                  value={
+                    <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
+                      {(selectedRequest.export_type || "-").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())}
+                    </span>
+                  }
+                />
+                <DetailRow
+                  label="Tahun"
+                  value={selectedRequest.filters?.tahun || "-"}
+                  mono
+                />
+                <DetailRow
+                  label="Provinsi"
+                  value={getFilterValue(selectedRequest.filters, "provinsi")}
+                />
+                <DetailRow
+                  label="Kabupaten"
+                  value={getFilterValue(selectedRequest.filters, "kabupaten")}
+                />
+                <DetailRow
+                  label="Kecamatan"
+                  value={getFilterValue(selectedRequest.filters, "kecamatan")}
+                />
+                <DetailRow
+                  label="Fungsi Kawasan"
+                  value={getFilterValue(selectedRequest.filters, "fungsiKawasan")}
+                />
+                <DetailRow
+                  label="Index Desa Hutan"
+                  value={getFilterValue(selectedRequest.filters, "indexDesaHutan")}
+                />
+                <DetailRow
+                  label="Status"
+                  value={<StatusBadge status={selectedRequest.status} />}
+                />
+
+                {/* Reject reason */}
+                {selectedRequest.status === "rejected" && selectedRequest.reject_reason && (
+                  <div className="mt-3 p-4 bg-red-50 border border-red-100 rounded-2xl flex gap-3">
                     <AlertCircle className="text-red-500 shrink-0 mt-0.5" size={16} />
                     <div>
-                      <h4 className="text-xs font-black text-red-700 uppercase tracking-widest mb-1">Alasan Penolakan</h4>
-                      <p className="text-xs text-red-800 font-medium leading-relaxed font-sans">
-                        {selectedRequest.message || selectedRequest.alasanReject || selectedRequest.alasan_reject || "Tidak ada alasan spesifik."}
+                      <h4 className="text-xs font-black text-red-700 uppercase tracking-widest mb-1">
+                        Alasan Penolakan
+                      </h4>
+                      <p className="text-xs text-red-800 font-medium leading-relaxed">
+                        {selectedRequest.reject_reason}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Error message for failed */}
+                {selectedRequest.status === "failed" && selectedRequest.error_message && (
+                  <div className="mt-3 p-4 bg-orange-50 border border-orange-100 rounded-2xl flex gap-3">
+                    <AlertTriangle className="text-orange-500 shrink-0 mt-0.5" size={16} />
+                    <div>
+                      <h4 className="text-xs font-black text-orange-700 uppercase tracking-widest mb-1">
+                        Pesan Error
+                      </h4>
+                      <p className="text-xs text-orange-800 font-medium leading-relaxed">
+                        {selectedRequest.error_message}
                       </p>
                     </div>
                   </div>
@@ -571,7 +591,48 @@ export default function PermintaanData() {
           </div>
         )}
 
-        {/* MODAL INPUT REJECT REASON */}
+        {/* MODAL APPROVE CONFIRMATION */}
+        {approvingReqId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in">
+            <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="h-1 bg-[#00C47C]" />
+              <div className="p-6">
+                <div className="flex items-center gap-3 text-[#00C47C] mb-3">
+                  <CheckCircle2 size={24} />
+                  <h3 className="text-lg font-bold text-gray-800">Setujui Permintaan</h3>
+                </div>
+                <p className="text-xs text-gray-500 font-semibold mb-6">
+                  Apakah Anda yakin ingin menyetujui permintaan data ini? Berkas data desa akan dipersiapkan untuk pemohon.
+                </p>
+                <div className="flex justify-end gap-3 font-sans">
+                  <button
+                    type="button"
+                    onClick={() => setApprovingReqId(null)}
+                    className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      approveMutation.mutate(approvingReqId);
+                      setApprovingReqId(null);
+                    }}
+                    disabled={approveMutation.isPending}
+                    className="px-4 py-2.5 text-xs font-bold text-white bg-[#00C47C] hover:bg-[#00a86b] rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {approveMutation.isPending && (
+                      <Loader2 size={12} className="animate-spin" />
+                    )}
+                    Ya, Setujui
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL REJECT */}
         {rejectingReqId && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in">
             <div className="bg-white rounded-3xl shadow-xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200">
@@ -631,5 +692,33 @@ export default function PermintaanData() {
         )}
       </main>
     </DashboardLayout>
+  );
+}
+
+// ── Reusable sub-components ──
+
+function StatCard({ label, value, color }) {
+  return (
+    <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between">
+      <span className={`text-[10px] font-bold uppercase tracking-wider ${color}`}>{label}</span>
+      <span className={`text-2xl font-extrabold mt-2 ${color}`}>{value}</span>
+    </div>
+  );
+}
+
+function DetailRow({ label, value, bold, mono }) {
+  return (
+    <div className="grid grid-cols-3 gap-2 py-2.5 border-b border-gray-50">
+      <span className="text-gray-400 font-semibold uppercase tracking-wider text-[10px]">
+        {label}
+      </span>
+      <span
+        className={`col-span-2 text-gray-800 ${bold ? "font-bold" : "font-semibold"} ${
+          mono ? "font-mono" : ""
+        }`}
+      >
+        {value}
+      </span>
+    </div>
   );
 }

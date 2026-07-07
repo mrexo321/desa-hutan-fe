@@ -95,6 +95,7 @@ const MasterWilayah = () => {
   const [formLevel, setFormLevel] = useState(0); // 0: Prov, 1: Kab, 2: Kec
   const [formData, setFormData] = useState({ id: null, code: "", name: "", parent_id: "" });
   const [searchQuery, setSearchQuery] = useState("");
+  const [deleteItem, setDeleteItem] = useState(null);
 
   const handleOpenModal = (mode, item = null, defaultLevel = 0, defaultParent = "") => {
     setModalMode(mode);
@@ -163,9 +164,13 @@ const MasterWilayah = () => {
   });
 
   const handleDelete = (item) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus ${item.nama}?`)) {
-      mutationDelete.mutate({ id: item.originalId, level: item.level });
-    }
+    setDeleteItem(item);
+  };
+
+  const confirmDelete = () => {
+    if (!deleteItem) return;
+    mutationDelete.mutate({ id: deleteItem.originalId, level: deleteItem.level });
+    setDeleteItem(null);
   };
 
 
@@ -534,6 +539,39 @@ const MasterWilayah = () => {
             </div>
           </div>
         )}
+      {/* MODAL CONFIRMATION DELETE */}
+      {deleteItem && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Wilayah</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans">
+                Apakah Anda yakin ingin menghapus {deleteItem.nama}? Tindakan ini tidak dapat dibatalkan.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setDeleteItem(null)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmDelete}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       </main>
     </DashboardLayout>
   );

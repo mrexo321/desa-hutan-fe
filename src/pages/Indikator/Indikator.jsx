@@ -53,6 +53,7 @@ const Indikator = () => {
   // State Delete (Hanya untuk Kategori Modal)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToDeleteUtama, setItemToDeleteUtama] = useState(null);
 
   // ==========================================
   // 1. DATA FETCHING & MUTATION
@@ -230,19 +231,16 @@ const Indikator = () => {
     if (itemToDelete) deleteCategoryMutation.mutate(itemToDelete.id);
   };
 
-  // HANDLER BARU: Hapus Indikator Utama (Pakai Sonner Toast)
+  // HANDLER BARU: Hapus Indikator Utama (Pakai Modal)
   const handleDeleteUtama = (row) => {
-    toast("Konfirmasi Hapus Data", {
-      description: `Apakah Anda yakin ingin menghapus indikator utama "${row.nama}"? Data yang dihapus tidak dapat dikembalikan.`,
-      action: {
-        label: "Ya, Hapus",
-        onClick: () => deleteMainMutation.mutate(row.id),
-      },
-      cancel: {
-        label: "Batal",
-      },
-      duration: 6000, // Durasi lebih lama agar user sempat klik
-    });
+    setItemToDeleteUtama(row);
+  };
+
+  const handleConfirmDeleteUtama = () => {
+    if (itemToDeleteUtama) {
+      deleteMainMutation.mutate(itemToDeleteUtama.id);
+      setItemToDeleteUtama(null);
+    }
   };
 
   // ==========================================
@@ -763,6 +761,55 @@ const Indikator = () => {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {deleteCategoryMutation.isLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  "Ya, Hapus"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==========================================
+          MODAL DELETE (UNTUK INDIKATOR UTAMA)
+      ========================================== */}
+      {itemToDeleteUtama && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 border-[6px] border-red-50/50">
+              <AlertTriangle size={28} strokeWidth={2.5} className="text-red-500" />
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              Hapus Data?
+            </h3>
+            <p className="text-sm text-slate-500 mb-8 leading-relaxed font-sans">
+              Apakah Anda yakin ingin menghapus indikator utama{" "}
+              <span className="font-bold text-slate-800">
+                "{itemToDeleteUtama?.nama}"
+              </span>
+              ? Data yang telah dihapus tidak dapat dikembalikan.
+            </p>
+
+            <div className="flex items-center justify-center gap-3 w-full font-sans">
+              <button
+                type="button"
+                onClick={() => {
+                  setItemToDeleteUtama(null);
+                }}
+                className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                disabled={deleteMainMutation.isLoading}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteUtama}
+                disabled={deleteMainMutation.isLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {deleteMainMutation.isLoading ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
                   "Ya, Hapus"

@@ -34,6 +34,8 @@ const ManajemenUser = () => {
   // =========================================================
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState([]); // State untuk Bulk Delete
+  const [deleteUserObj, setDeleteUserObj] = useState(null); // State untuk modal single delete
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false); // State untuk modal bulk delete
 
   // =========================================================
   // 2. STATE UNTUK MODAL ASSIGN ROLE (MULTIPLE)
@@ -253,28 +255,22 @@ const ManajemenUser = () => {
   // 9. HANDLERS HAPUS USER (SONNER TOAST)
   // =========================================================
   const confirmDelete = (user) => {
-    toast.warning("Yakin ingin menghapus pengguna ini?", {
-      description: `Akun @${user.username} akan dihapus secara permanen.`,
-      action: {
-        label: "Ya, Hapus",
-        onClick: () => deleteMutation.mutate(user.id),
-      },
-      cancel: { label: "Batal" },
-    });
+    setDeleteUserObj(user);
+  };
+
+  const handleDeleteUser = () => {
+    if (!deleteUserObj) return;
+    deleteMutation.mutate(deleteUserObj.id);
+    setDeleteUserObj(null);
   };
 
   const confirmBulkDelete = () => {
-    toast.error(
-      `Yakin ingin menghapus ${selectedIds.length} pengguna terpilih?`,
-      {
-        description: "Operasi massal ini tidak dapat dibatalkan.",
-        action: {
-          label: "Ya, Hapus Semua",
-          onClick: () => deleteBulkMutation.mutate(selectedIds),
-        },
-        cancel: { label: "Batal" },
-      },
-    );
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const handleBulkDeleteUsers = () => {
+    deleteBulkMutation.mutate(selectedIds);
+    setShowBulkDeleteConfirm(false);
   };
 
   const handleSelectAll = (e) => {
@@ -827,6 +823,74 @@ const ManajemenUser = () => {
               >
                 Simpan Perubahan
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMATION DELETE SINGLE */}
+      {deleteUserObj && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Pengguna</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans leading-relaxed">
+                Apakah Anda yakin ingin menghapus akun <span className="font-extrabold text-slate-800">@{deleteUserObj.username}</span>? Tindakan ini akan menghapus pengguna secara permanen.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setDeleteUserObj(null)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteUser}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMATION DELETE BULK */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Banyak Pengguna</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans leading-relaxed">
+                Apakah Anda yakin ingin menghapus <span className="font-extrabold text-slate-800">{selectedIds.length} pengguna</span> yang terpilih? Operasi massal ini tidak dapat dibatalkan.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDeleteUsers}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus Semua
+                </button>
+              </div>
             </div>
           </div>
         </div>

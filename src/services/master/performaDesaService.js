@@ -18,7 +18,7 @@ export const performaDesaService = {
    * Menampilkan data performa desa hutan.
    * Response: { items: [...], pagination: { total, perPage, currentPage, totalPage } }
    */
-  async getIndexPerformaDesaHutan({ page = 1, size = 10, formulaId, tahun, provinsi, indexDesaHutanId, fungsiKawasanId } = {}) {
+  async getIndexPerformaDesaHutan({ page = 1, size = 10, formulaId, tahun, provinsi, kabupaten, kecamatan, indexDesaHutanId, fungsiKawasanId } = {}) {
     const params = {
       page,
       size,
@@ -27,6 +27,8 @@ export const performaDesaService = {
     if (formulaId) params.formulaId = formulaId;
     if (tahun) params.tahun = tahun;
     if (provinsi) params.provinsi = provinsi;
+    if (kabupaten) params.kabupaten = kabupaten;
+    if (kecamatan) params.kecamatan = kecamatan;
     if (indexDesaHutanId) params.indexDesaHutanId = indexDesaHutanId;
     if (fungsiKawasanId && (Array.isArray(fungsiKawasanId) ? fungsiKawasanId.length > 0 : true)) {
       params.fungsiKawasanId = fungsiKawasanId;

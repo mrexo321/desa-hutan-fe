@@ -9,13 +9,15 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
-  Download,
   Eye,
   Search,
   Loader2,
   Inbox,
   AlertCircle,
   AlertTriangle,
+  ChevronDown,
+  ChevronRight,
+  Info,
 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { performaDesaService } from "../../services/master/performaDesaService";
@@ -81,74 +83,105 @@ export default function PermintaanData() {
   const [approvingReqId, setApprovingReqId] = useState(null);
   const [alasanReject, setAlasanReject] = useState("");
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [expandedEmails, setExpandedEmails] = useState({});
 
   // Pagination & Filter State
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
 
-  // ── Fetch paginated requests ──
-  const { data: requestRes, isLoading, isError, refetch } = useQuery({
-    queryKey: ["request-excel-list", page, size, searchQuery, statusFilter],
-    queryFn: () =>
-      performaDesaService.getAllRequestExcel({
-        page,
-        size,
-        search: searchQuery,
-        status: statusFilter === "all" ? "" : statusFilter,
-      }),
-  });
-
-  // ── Fetch all requests for stats (limit 1000) ──
-  const { data: allRequestsRes } = useQuery({
+  // ── Fetch all requests for stats and listing ──
+  const { data: allRequestsRes, isLoading, isError, refetch } = useQuery({
     queryKey: ["request-excel-all-stats"],
     queryFn: () => performaDesaService.getAllRequestExcel({ page: 1, size: 1000 }),
   });
 
-  // ── Extract paginated items ──
-  const requests = React.useMemo(() => {
-    const list = requestRes?.data?.items || requestRes?.items || [];
-    if (!isAdmin) {
-      const userEmail = String(user?.username || user?.email || "").toLowerCase();
-      return list.filter((r) => String(r.email).toLowerCase() === userEmail);
-    }
-    return list;
-  }, [requestRes, isAdmin, user]);
-
-  // ── Extract pagination from response ──
-  const pagination = React.useMemo(() => {
-    const p = requestRes?.data?.pagination || requestRes?.pagination;
-    if (p) {
-      return {
-        total: p.total || 0,
-        totalPages: p.totalPage || p.totalPages || 1,
-        currentPage: p.currentPage || 1,
-        perPage: p.perPage || size,
-      };
-    }
-    // Check direct properties for fallback
-    const directData = requestRes?.data || requestRes;
-    if (directData && typeof directData.total === "number") {
-      return {
-        total: directData.total,
-        totalPages: directData.totalPages || Math.ceil(directData.total / size) || 1,
-        currentPage: directData.page || page,
-        perPage: directData.size || size,
-      };
-    }
-    // Fallback
-    return {
-      total: requests.length,
-      totalPages: Math.ceil(requests.length / size) || 1,
-      currentPage: page,
-      perPage: size,
-    };
-  }, [requestRes, requests, size, page]);
-
-  // ── Extract all requests for stats ──
   const allRequests = React.useMemo(() => {
     return allRequestsRes?.data?.items || allRequestsRes?.items || [];
   }, [allRequestsRes]);
+
+  // ── Client-side search, status filter, grouping by email ──
+  const groupedRequests = React.useMemo(() => {
+    let list = [...allRequests];
+
+    // Filter by user role (normal user sees only their own request)
+    if (!isAdmin) {
+      const userEmail = String(user?.username || user?.email || "").toLowerCase();
+      list = list.filter((r) => String(r.email).toLowerCase() === userEmail);
+    }
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase();
+      list = list.filter((r) => {
+        const prov = getFilterValue(r.filters, "provinsi").toLowerCase();
+        const kab = getFilterValue(r.filters, "kabupaten").toLowerCase();
+        const kec = getFilterValue(r.filters, "kecamatan").toLowerCase();
+        const emailVal = String(r.email).toLowerCase();
+        const statusVal = String(r.status).toLowerCase();
+        const tahunVal = String(r.filters?.tahun || "").toLowerCase();
+
+        return (
+          emailVal.includes(q) ||
+          prov.includes(q) ||
+          kab.includes(q) ||
+          kec.includes(q) ||
+          statusVal.includes(q) ||
+          tahunVal.includes(q)
+        );
+      });
+    }
+
+    // Apply status filter
+    if (statusFilter !== "all") {
+      list = list.filter((r) => r.status === statusFilter);
+    }
+
+    // Group by email
+    const groups = {};
+    list.forEach((item) => {
+      const emailKey = String(item.email).toLowerCase();
+      if (!groups[emailKey]) {
+        groups[emailKey] = {
+          email: item.email,
+          items: [],
+          hasPending: false,
+          stats: {
+            pending: 0,
+            approved: 0,
+            rejected: 0,
+            failed: 0,
+          },
+        };
+      }
+      groups[emailKey].items.push(item);
+      if (item.status === "pending") {
+        groups[emailKey].hasPending = true;
+      }
+      if (item.status in groups[emailKey].stats) {
+        groups[emailKey].stats[item.status]++;
+      }
+    });
+
+    return Object.values(groups);
+  }, [allRequests, isAdmin, user, searchQuery, statusFilter]);
+
+  // ── Pagination of grouped emails ──
+  const pagination = React.useMemo(() => {
+    const total = groupedRequests.length;
+    const totalPages = Math.ceil(total / size) || 1;
+    return {
+      total,
+      totalPages,
+      currentPage: page,
+      perPage: size,
+    };
+  }, [groupedRequests, size, page]);
+
+  const paginatedGroupedRequests = React.useMemo(() => {
+    const startIdx = (page - 1) * size;
+    return groupedRequests.slice(startIdx, startIdx + size);
+  }, [groupedRequests, page, size]);
 
   // ── Statistics ──
   const stats = React.useMemo(() => {
@@ -217,8 +250,14 @@ export default function PermintaanData() {
     rejectMutation.mutate({ id: rejectingReqId, alasan: alasanReject.trim() });
   };
 
-  // ── Column count for colSpan ──
-  const colCount = isAdmin ? 9 : 8;
+  const toggleExpandEmail = (email) => {
+    setExpandedEmails((prev) => ({
+      ...prev,
+      [email]: !prev[email],
+    }));
+  };
+
+  const colCount = isAdmin ? 5 : 4;
 
   return (
     <DashboardLayout activeMenu="Permintaan Data">
@@ -250,6 +289,15 @@ export default function PermintaanData() {
             <StatCard label="Disetujui" value={stats.approved} color="text-[#2D7344]" />
             <StatCard label="Ditolak" value={stats.rejected} color="text-red-500" />
             <StatCard label="Gagal" value={stats.failed} color="text-orange-500" />
+          </div>
+
+          {/* INFO BOX */}
+          <div className="mb-6 p-4 bg-emerald-50 border border-emerald-100 rounded-2xl flex gap-3 text-xs text-[#2d7344] font-semibold font-sans">
+            <Info size={18} className="shrink-0 mt-0.5" />
+            <p>
+              Permintaan data dikelompokkan berdasarkan <strong>Email Pemohon</strong> agar mempermudah monitoring. 
+              Klik tombol panah di sebelah kiri email untuk menampilkan detail berkas, status permohonan, dan tindakan persetujuan.
+            </p>
           </div>
 
           {/* CARD UTAMA */}
@@ -324,15 +372,11 @@ export default function PermintaanData() {
               <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider font-bold text-gray-500">
+                    <th className="py-4 px-6 w-12 text-center"></th>
                     <th className="py-4 px-6 w-12 text-center">No</th>
                     {isAdmin && <th className="py-4 px-6">Email Pemohon</th>}
-                    <th className="py-4 px-6">Tipe Ekspor</th>
-                    <th className="py-4 px-6">Tahun</th>
-                    <th className="py-4 px-6">Provinsi</th>
-                    <th className="py-4 px-6">Kabupaten</th>
-                    <th className="py-4 px-6">Kecamatan</th>
-                    <th className="py-4 px-6 text-center">Status</th>
-                    <th className="py-4 px-6 text-center w-36">Aksi</th>
+                    <th className="py-4 px-6">Status Antrean</th>
+                    <th className="py-4 px-6 text-center w-36">Total Permintaan</th>
                   </tr>
                 </thead>
                 <tbody className="text-xs font-semibold text-gray-700">
@@ -351,7 +395,7 @@ export default function PermintaanData() {
                         Gagal memuat data permintaan. Silakan hubungi admin.
                       </td>
                     </tr>
-                  ) : requests.length === 0 ? (
+                  ) : paginatedGroupedRequests.length === 0 ? (
                     <tr>
                       <td colSpan={colCount} className="py-16 text-center text-gray-400">
                         <div className="flex flex-col items-center justify-center gap-3">
@@ -361,75 +405,153 @@ export default function PermintaanData() {
                       </td>
                     </tr>
                   ) : (
-                    requests.map((req, idx) => {
-                      const filters = req.filters || {};
-                      const prov = getFilterValue(filters, "provinsi");
-                      const kab = getFilterValue(filters, "kabupaten");
-                      const kec = getFilterValue(filters, "kecamatan");
-
-                      // Format export_type for display
-                      const exportType = (req.export_type || "-")
-                        .replace(/_/g, " ")
-                        .replace(/\b\w/g, (c) => c.toUpperCase());
+                    paginatedGroupedRequests.map((group, idx) => {
+                      const isExpanded = !!expandedEmails[group.email];
 
                       return (
-                        <tr
-                          key={req.id}
-                          className="border-b border-gray-50 hover:bg-[#F9FBFA] transition-colors"
-                        >
-                          <td className="py-4 px-6 text-center font-mono text-gray-400">
-                            {(page - 1) * size + idx + 1}
-                          </td>
-                          {isAdmin && (
-                            <td className="py-4 px-6 text-gray-900 font-bold">{req.email}</td>
-                          )}
-                          <td className="py-4 px-6">
-                            <span className="px-2.5 py-1 rounded-lg text-[10px] font-bold bg-indigo-50 text-indigo-600 border border-indigo-100">
-                              {exportType}
-                            </span>
-                          </td>
-                          <td className="py-4 px-6 font-mono font-bold text-gray-600">
-                            {filters.tahun || "-"}
-                          </td>
-                          <td className="py-4 px-6">{prov}</td>
-                          <td className="py-4 px-6">{kab}</td>
-                          <td className="py-4 px-6">{kec}</td>
-                          <td className="py-4 px-6 text-center">
-                            <StatusBadge status={req.status} />
-                          </td>
-                          <td className="py-4 px-6">
-                            <div className="flex items-center justify-center gap-2">
-                              {/* View detail */}
-                              <button
-                                onClick={() => setSelectedRequest(req)}
-                                className="p-2 text-gray-500 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-xl transition-all cursor-pointer"
-                                title="Lihat Detail"
-                              >
-                                <Eye size={16} />
+                        <React.Fragment key={group.email}>
+                          {/* Row Induk */}
+                          <tr
+                            onClick={() => toggleExpandEmail(group.email)}
+                            className="border-b border-gray-50 hover:bg-[#F9FBFA] transition-colors cursor-pointer select-none"
+                          >
+                            <td className="py-4 px-6 text-center">
+                              <button className="text-gray-400 hover:text-[#2D7344] transition-colors">
+                                {isExpanded ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                               </button>
+                            </td>
+                            <td className="py-4 px-6 text-center font-mono text-gray-400">
+                              {(page - 1) * size + idx + 1}
+                            </td>
+                            {isAdmin && (
+                              <td className="py-4 px-6 text-gray-900 font-extrabold">{group.email}</td>
+                            )}
+                            <td className="py-4 px-6">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {group.hasPending ? (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-yellow-50 text-yellow-600 border border-yellow-100 animate-pulse">
+                                    <Clock size={12} />
+                                    Permintaan Sedang Berlangsung
+                                  </span>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-slate-50 text-slate-500 border border-slate-200">
+                                    <Check size={12} />
+                                    Antrean Selesai
+                                  </span>
+                                )}
+                                {/* Statistik ringkasan kecil */}
+                                <div className="flex items-center gap-1.5 text-[10px] font-bold text-gray-400">
+                                  {group.stats.pending > 0 && <span>• {group.stats.pending} Pending</span>}
+                                  {group.stats.approved > 0 && <span className="text-[#2D7344]">• {group.stats.approved} Selesai</span>}
+                                  {group.stats.rejected > 0 && <span className="text-red-500">• {group.stats.rejected} Ditolak</span>}
+                                  {group.stats.failed > 0 && <span className="text-orange-500">• {group.stats.failed} Gagal</span>}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-4 px-6 text-center">
+                              <span className="px-3 py-1 bg-slate-100 border border-slate-200 rounded-lg font-bold text-slate-700">
+                                {group.items.length} Permintaan
+                              </span>
+                            </td>
+                          </tr>
 
-                              {/* Admin: approve / reject */}
-                              {isAdmin && req.status === "pending" && (
-                                <>
-                                  <button
-                                    onClick={() => setApprovingReqId(req.id)}
-                                    className="p-2 text-white bg-[#00C47C] hover:bg-[#00a86b] rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
-                                    title="Setujui"
-                                  >
-                                    <Check size={16} strokeWidth={2.5} />
-                                  </button>
-                                  <button
-                                    onClick={() => setRejectingReqId(req.id)}
-                                    className="p-2 text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm flex items-center justify-center cursor-pointer"
-                                    title="Tolak"
-                                  >
-                                    <X size={16} strokeWidth={2.5} />
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
+                          {/* Detail Rincian Anak (Collapsible) */}
+                          {isExpanded && (
+                            <tr className="bg-slate-50/50">
+                              <td colSpan={colCount} className="p-5">
+                                <div className="bg-white rounded-2xl border border-gray-150 p-5 shadow-xs space-y-4">
+                                  <h4 className="text-xs font-extrabold text-gray-800 flex items-center gap-2 border-b border-gray-100 pb-3">
+                                    <FileSpreadsheet size={16} className="text-[#2D7344]" />
+                                    Daftar Rincian Permintaan data untuk email:{" "}
+                                    <span className="text-[#2D7344] font-black">{group.email}</span>
+                                  </h4>
+                                  <div className="overflow-x-auto w-full">
+                                    <table className="w-full text-left text-xs border-collapse">
+                                      <thead>
+                                        <tr className="border-b border-gray-100 text-[10px] uppercase tracking-wider font-extrabold text-gray-400">
+                                          <th className="pb-2.5 w-12">No</th>
+                                          <th className="pb-2.5">Tipe Ekspor</th>
+                                          <th className="pb-2.5">Tahun</th>
+                                          <th className="pb-2.5">Provinsi</th>
+                                          <th className="pb-2.5">Kabupaten</th>
+                                          <th className="pb-2.5">Kecamatan</th>
+                                          <th className="pb-2.5 text-center">Status</th>
+                                          <th className="pb-2.5 text-center w-24">Aksi</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="text-gray-700 font-semibold">
+                                        {group.items.map((item, childIdx) => {
+                                          const filters = item.filters || {};
+                                          const prov = getFilterValue(filters, "provinsi");
+                                          const kab = getFilterValue(filters, "kabupaten");
+                                          const kec = getFilterValue(filters, "kecamatan");
+                                          const exportType = (item.export_type || "-")
+                                            .replace(/_/g, " ")
+                                            .replace(/\b\w/g, (c) => c.toUpperCase());
+
+                                          return (
+                                            <tr key={item.id} className="border-b border-gray-50 last:border-0 hover:bg-slate-50/50 transition-colors">
+                                              <td className="py-3 font-mono text-gray-400">{childIdx + 1}</td>
+                                              <td className="py-3 font-bold text-gray-800">{exportType}</td>
+                                              <td className="py-3 font-mono font-bold text-gray-600">{filters.tahun || "-"}</td>
+                                              <td className="py-3">{prov}</td>
+                                              <td className="py-3">{kab}</td>
+                                              <td className="py-3">{kec}</td>
+                                              <td className="py-3 text-center">
+                                                <StatusBadge status={item.status} />
+                                              </td>
+                                              <td className="py-3">
+                                                <div className="flex items-center justify-center gap-1.5">
+                                                  {/* View detail */}
+                                                  <button
+                                                    onClick={(e) => {
+                                                      e.stopPropagation();
+                                                      setSelectedRequest(item);
+                                                    }}
+                                                    className="p-1.5 text-gray-400 hover:text-[#2D7344] hover:bg-[#EAFBF0] rounded-lg transition-colors cursor-pointer"
+                                                    title="Lihat Detail"
+                                                  >
+                                                    <Eye size={14} />
+                                                  </button>
+
+                                                  {/* Admin actions: approve / reject */}
+                                                  {isAdmin && item.status === "pending" && (
+                                                    <>
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          setApprovingReqId(item.id);
+                                                        }}
+                                                        className="p-1.5 text-white bg-[#00C47C] hover:bg-[#00a86b] rounded-lg transition-all shadow-xs flex items-center justify-center cursor-pointer"
+                                                        title="Setujui"
+                                                      >
+                                                        <Check size={14} strokeWidth={2.5} />
+                                                      </button>
+                                                      <button
+                                                        onClick={(e) => {
+                                                          e.stopPropagation();
+                                                          setRejectingReqId(item.id);
+                                                        }}
+                                                        className="p-1.5 text-white bg-red-500 hover:bg-red-600 rounded-lg transition-all shadow-xs flex items-center justify-center cursor-pointer"
+                                                        title="Tolak"
+                                                      >
+                                                        <X size={14} strokeWidth={2.5} />
+                                                      </button>
+                                                    </>
+                                                  )}
+                                                </div>
+                                              </td>
+                                            </tr>
+                                          );
+                                        })}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          )}
+                        </React.Fragment>
                       );
                     })
                   )}
@@ -443,7 +565,7 @@ export default function PermintaanData() {
                 <span className="text-xs text-gray-500 font-semibold">
                   Halaman <strong className="text-gray-800">{pagination.currentPage}</strong> dari{" "}
                   <strong className="text-gray-800">{pagination.totalPages}</strong>
-                  {" "}• <strong className="text-gray-800">{pagination.total}</strong> total data
+                  {" "}• <strong className="text-gray-800">{pagination.total}</strong> total email
                 </span>
                 <div className="flex items-center gap-2">
                   <button

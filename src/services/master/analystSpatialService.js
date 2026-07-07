@@ -57,6 +57,11 @@ export const analystSpatialService = {
     });
     return response.data.data;
   },
+
+  async getDimensiDesa(id) {
+    const response = await masterInstance.get(`/dimensi-desa/${id}`);
+    return response.data.data;
+  },
 };
 
 

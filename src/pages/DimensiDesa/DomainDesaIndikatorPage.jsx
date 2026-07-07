@@ -40,6 +40,7 @@ export default function DomainDesaIndikatorPage() {
   const [masterKategori, setMasterKategori] = useState([]);
   const [selectedKategoriId, setSelectedKategoriId] = useState("");
   const [addingIndikator, setAddingIndikator] = useState(false);
+  const [deleteKategori, setDeleteKategori] = useState(null);
 
   // State Excel Upload
   const [uploadingExcel, setUploadingExcel] = useState(false);
@@ -154,19 +155,19 @@ export default function DomainDesaIndikatorPage() {
     }
   };
 
-  const handleRemoveIndikator = async (kategoriId, nama) => {
-    if (
-      window.confirm(
-        `Apakah Anda yakin ingin menghapus indikator "${nama}" dari skema tahun ini?`
-      )
-    ) {
-      try {
-        await dimensiDesaService.removeIndikator(selectedTahun.tahun, [kategoriId]);
-        toast.success(`Berhasil menghapus indikator ${nama}`);
-        fetchSchemaIndikator(selectedTahun.tahun);
-      } catch (err) {
-        toast.error(err.response?.data?.message || "Gagal menghapus indikator");
-      }
+  const handleRemoveIndikator = (kategoriId, nama) => {
+    setDeleteKategori({ id: kategoriId, nama });
+  };
+
+  const confirmRemoveIndikator = async () => {
+    if (!deleteKategori) return;
+    try {
+      await dimensiDesaService.removeIndikator(selectedTahun.tahun, [deleteKategori.id]);
+      toast.success(`Berhasil menghapus indikator ${deleteKategori.nama}`);
+      setDeleteKategori(null);
+      fetchSchemaIndikator(selectedTahun.tahun);
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Gagal menghapus indikator");
     }
   };
 
@@ -767,6 +768,39 @@ export default function DomainDesaIndikatorPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL CONFIRMATION DELETE INDICATOR */}
+      {deleteKategori && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Indikator</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans">
+                Apakah Anda yakin ingin menghapus indikator "{deleteKategori.nama}" dari skema tahun ini?
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setDeleteKategori(null)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={confirmRemoveIndikator}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

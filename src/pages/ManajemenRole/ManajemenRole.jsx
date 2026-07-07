@@ -15,6 +15,9 @@ import {
   ShieldAlert,
   Trash,
   Key,
+  X,
+  Loader2,
+  Save,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -26,6 +29,10 @@ const ManajemenRole = () => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIds, setSelectedIds] = useState([]); // State untuk Bulk Action
+  const [deleteRoleId, setDeleteRoleId] = useState(null);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [roleInputs, setRoleInputs] = useState([{ name: "" }]);
 
   // =========================================================
   // FETCH DATA
@@ -74,6 +81,31 @@ const ManajemenRole = () => {
     },
   });
 
+  const createRoleMutation = useMutation({
+    mutationFn: (payload) => {
+      if (payload.length === 1) {
+        return roleService.createRole({ name: payload[0].name });
+      } else {
+        return roleService.createBulkRoles(payload);
+      }
+    },
+    onSuccess: () => {
+      toast.success("Role berhasil ditambahkan!");
+      queryClient.invalidateQueries({ queryKey: ["roles"] });
+      setIsAddModalOpen(false);
+      setRoleInputs([{ name: "" }]);
+    },
+    onError: (err) => {
+      console.error(err);
+      const data = err?.response?.data;
+      let errorMsg = data?.message || "Gagal menyimpan role.";
+      if (data?.errors && data.errors.length > 0) {
+        errorMsg = `${errorMsg}: ${data.errors[0].message}`;
+      }
+      toast.error(errorMsg);
+    },
+  });
+
   // =========================================================
   // HANDLERS
   // =========================================================
@@ -92,25 +124,46 @@ const ManajemenRole = () => {
   };
 
   const confirmDelete = (id) => {
-    toast.warning("Yakin ingin menghapus role ini?", {
-      description: "Data yang dihapus tidak dapat dikembalikan.",
-      action: {
-        label: "Ya, Hapus",
-        onClick: () => deleteMutation.mutate(id),
-      },
-      cancel: { label: "Batal" },
-    });
+    setDeleteRoleId(id);
+  };
+
+  const handleDeleteRole = () => {
+    if (!deleteRoleId) return;
+    deleteMutation.mutate(deleteRoleId);
+    setDeleteRoleId(null);
   };
 
   const confirmBulkDelete = () => {
-    toast.error(`Yakin ingin menghapus ${selectedIds.length} role terpilih?`, {
-      description: "Operasi massal ini tidak dapat dibatalkan.",
-      action: {
-        label: "Ya, Hapus Semua",
-        onClick: () => deleteBulkMutation.mutate(selectedIds), // selectedIds ini sudah berupa array
-      },
-      cancel: { label: "Batal" },
-    });
+    setShowBulkDeleteConfirm(true);
+  };
+
+  const handleBulkDeleteRoles = () => {
+    deleteBulkMutation.mutate(selectedIds);
+    setShowBulkDeleteConfirm(false);
+  };
+
+  const handleAddInput = () => {
+    setRoleInputs([...roleInputs, { name: "" }]);
+  };
+
+  const handleRemoveInput = (index) => {
+    const updated = roleInputs.filter((_, i) => i !== index);
+    setRoleInputs(updated);
+  };
+
+  const handleChangeRoleInput = (index, value) => {
+    const updated = [...roleInputs];
+    updated[index].name = value;
+    setRoleInputs(updated);
+  };
+
+  const handleSubmitRole = (e) => {
+    e.preventDefault();
+    const validInputs = roleInputs.filter((r) => r.name.trim() !== "");
+    if (validInputs.length === 0) {
+      return toast.error("Minimal satu nama role harus diisi!");
+    }
+    createRoleMutation.mutate(validInputs);
   };
 
   // =========================================================
@@ -282,8 +335,8 @@ const ManajemenRole = () => {
                   />
                 </div>
                 <button
-                  onClick={() => navigate("/dashboard/manajemen-role/create")}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm"
+                  onClick={() => setIsAddModalOpen(true)}
+                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm cursor-pointer"
                 >
                   <Plus size={18} strokeWidth={2.5} /> Tambah Role
                 </button>
@@ -301,6 +354,179 @@ const ManajemenRole = () => {
           </div>
         </div>
       </main>
+
+      {/* MODAL CONFIRMATION DELETE SINGLE */}
+      {deleteRoleId && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Role</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans leading-relaxed">
+                Apakah Anda yakin ingin menghapus role ini? Data yang telah dihapus tidak dapat dikembalikan.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setDeleteRoleId(null)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteRole}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMATION DELETE BULK */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Banyak Role</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans leading-relaxed">
+                Apakah Anda yakin ingin menghapus <span className="font-extrabold text-slate-800">{selectedIds.length} role</span> yang terpilih? Operasi massal ini tidak dapat dibatalkan.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDeleteRoles}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus Semua
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL TAMBAH ROLE BARU */}
+      {isAddModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#F8FAFC] rounded-[32px] shadow-2xl w-full max-w-xl overflow-hidden border border-slate-200/50 animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            {/* Emerald Header Accent */}
+            <div className="h-1.5 bg-gradient-to-r from-emerald-600 to-[#10B981]" />
+            
+            {/* Header */}
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div>
+                <span className="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg uppercase tracking-wider">
+                  Pengaturan Keamanan
+                </span>
+                <h3 className="text-xl font-bold text-slate-800 mt-1.5">
+                  Tambah Peran Baru
+                </h3>
+              </div>
+              <button
+                onClick={() => {
+                  setIsAddModalOpen(false);
+                  setRoleInputs([{ name: "" }]);
+                }}
+                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Form & Body */}
+            <form onSubmit={handleSubmitRole} className="flex flex-col flex-1 overflow-hidden">
+              <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-5">
+                <p className="text-xs text-slate-500 font-semibold leading-relaxed">
+                  Silakan masukkan satu atau beberapa nama role baru yang ingin ditambahkan. Anda dapat menambahkan baris input secara dinamis.
+                </p>
+
+                <div className="space-y-4">
+                  {roleInputs.map((input, index) => (
+                    <div key={index} className="flex items-end gap-3 animate-in slide-in-from-bottom-2 duration-200">
+                      <div className="flex-1">
+                        <label className="block text-xs font-bold text-slate-600 mb-1.5 uppercase tracking-wider font-mono">
+                          Nama Role #{index + 1}
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          placeholder="Contoh: Admin Desa, Petugas Lapangan"
+                          value={input.name}
+                          onChange={(e) => handleChangeRoleInput(index, e.target.value)}
+                          className="w-full px-4 py-3 bg-white border border-slate-200/80 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all font-sans font-semibold text-slate-700"
+                        />
+                      </div>
+                      {roleInputs.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveInput(index)}
+                          className="p-3 text-red-500 bg-red-50 hover:bg-red-100 rounded-xl transition-colors mb-[1px] cursor-pointer"
+                          title="Hapus Baris"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handleAddInput}
+                  className="flex items-center gap-2 text-xs font-extrabold text-[#2D7344] hover:text-[#1E5230] mt-4 font-sans bg-emerald-50 hover:bg-emerald-100/80 px-4 py-2.5 rounded-xl border border-emerald-100/50 transition-all cursor-pointer w-fit"
+                >
+                  <Plus size={14} strokeWidth={3} />
+                  <span>Tambah Baris Role Lain</span>
+                </button>
+              </div>
+
+              {/* Footer */}
+              <div className="px-8 py-5 border-t border-slate-100 flex justify-end gap-3 bg-white">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddModalOpen(false);
+                    setRoleInputs([{ name: "" }]);
+                  }}
+                  className="px-5 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={createRoleMutation.isPending}
+                  className="flex items-center gap-2 px-6 py-2.5 text-xs font-bold text-white bg-[#2D7344] hover:bg-[#1E5230] rounded-xl transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm shadow-emerald-800/10 cursor-pointer"
+                >
+                  {createRoleMutation.isPending ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    <Save size={14} />
+                  )}
+                  <span>Simpan Peran</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

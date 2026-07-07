@@ -13,6 +13,8 @@ export default function PeriodeTab({ onSelectPeriode }) {
   const [tahunInput, setTahunInput] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
+  const [deleteId, setDeleteId] = useState(null);
+  const [deleteTahun, setDeleteTahun] = useState("");
 
   const fetchPeriodes = async () => {
     setLoading(true);
@@ -68,15 +70,21 @@ export default function PeriodeTab({ onSelectPeriode }) {
     }
   };
 
-  const handleDelete = async (id, tahun) => {
-    if (window.confirm(`Apakah Anda yakin ingin menghapus periode tahun ${tahun}? Semua data desa terkait periode ini akan ikut terhapus.`)) {
-      try {
-        await desaPsnService.deleteTahun(id);
-        toast.success("Periode berhasil dihapus");
-        fetchPeriodes();
-      } catch (error) {
-        toast.error(error.response?.data?.message || "Gagal menghapus data");
-      }
+  const confirmDelete = (id, tahun) => {
+    setDeleteId(id);
+    setDeleteTahun(tahun);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      await desaPsnService.deleteTahun(deleteId);
+      toast.success("Periode berhasil dihapus");
+      setDeleteId(null);
+      setDeleteTahun("");
+      fetchPeriodes();
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Gagal menghapus data");
     }
   };
 
@@ -171,7 +179,7 @@ export default function PeriodeTab({ onSelectPeriode }) {
                       )}
                       {can('desa_psn:delete') && (
                         <button
-                          onClick={() => handleDelete(item.id, item.tahun)}
+                          onClick={() => confirmDelete(item.id, item.tahun)}
                           className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors cursor-pointer"
                           title="Hapus"
                         >
@@ -253,6 +261,42 @@ export default function PeriodeTab({ onSelectPeriode }) {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+      {/* MODAL CONFIRMATION DELETE */}
+      {deleteId && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Periode</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans">
+                Apakah Anda yakin ingin menghapus periode tahun {deleteTahun}? Semua data desa terkait periode ini akan ikut terhapus.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDeleteId(null);
+                    setDeleteTahun("");
+                  }}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

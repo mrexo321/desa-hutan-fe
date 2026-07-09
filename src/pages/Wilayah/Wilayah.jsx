@@ -72,7 +72,7 @@ const TabWilayahHutan = () => {
               {row.nama === "-" ? "Tanpa Nama" : row.nama}
             </span>
             <span className="text-[11px] text-slate-400 font-mono italic">
-              SK: {row.no_sk_penetapan || "-"}
+              SK: {row.noSkKawasan || "-"}
             </span>
           </div>
         ),
@@ -82,71 +82,71 @@ const TabWilayahHutan = () => {
         render: (row) => (
           <div className="flex flex-col">
             <span className="text-slate-700 font-semibold">
-              {row.klasifikasi_hutan || "N/A"}
+              {row.klasifikasiHutan.nama || "N/A"}
             </span>
             <span className="text-[11px] text-slate-400 uppercase tracking-tighter">
-              ID: {row.fungsi_kawasan_hutan_kode || "-"}
+              KODE: {row.klasifikasiHutan.kode || "-"}
             </span>
           </div>
         ),
       },
-      {
-        header: "Sumber Spasial",
-        render: (row) =>
-          row.wilayah_hutan_geom ? (
-            <div className="flex flex-col items-start gap-1">
-              <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-100 uppercase">
-                {row.wilayah_hutan_geom.sumber}
-              </span>
-              <span className="text-[10px] text-slate-400 truncate max-w-[150px]">
-                {row.wilayah_hutan_geom.file_name}
-              </span>
-            </div>
-          ) : (
-            <span className="text-slate-300 italic text-xs font-medium">
-              Tanpa Spasial
-            </span>
-          ),
-      },
+      // {
+      //   header: "Sumber Spasial",
+      //   render: (row) =>
+      //     row.wilayah_hutan_geom ? (
+      //       <div className="flex flex-col items-start gap-1">
+      //         <span className="bg-blue-50 text-blue-600 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-100 uppercase">
+      //           {row.wilayah_hutan_geom.sumber}
+      //         </span>
+      //         <span className="text-[10px] text-slate-400 truncate max-w-[150px]">
+      //           {row.wilayah_hutan_geom.file_name}
+      //         </span>
+      //       </div>
+      //     ) : (
+      //       <span className="text-slate-300 italic text-xs font-medium">
+      //         Tanpa Spasial
+      //       </span>
+      //     ),
+      // },
       {
         header: "Luas (Ha)",
         className: "text-right",
         render: (row) => (
           <div className="text-right font-mono text-slate-800 font-bold">
-            {new Intl.NumberFormat("id-ID").format(row.luas_ha || 0)}
+            {new Intl.NumberFormat("id-ID").format(row.luasHa || 0)}
           </div>
         ),
       },
-      {
-        header: "Aksi",
-        className: "text-center w-36",
-        render: (row) => (
-          <div className="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
-            <button
-              className="p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
-              title="Peta"
-            >
-              <MapPin size={16} strokeWidth={2.5} />
-            </button>
-            {can('wilayah_hutan:update') && (
-              <button
-                className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-[#2D7344] rounded-lg transition-colors"
-                title="Edit"
-              >
-                <Edit2 size={16} strokeWidth={2.5} />
-              </button>
-            )}
-            {can('wilayah_hutan:delete') && (
-              <button
-                className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
-                title="Hapus"
-              >
-                <Trash2 size={16} strokeWidth={2.5} />
-              </button>
-            )}
-          </div>
-        ),
-      },
+      // {
+      //   header: "Aksi",
+      //   className: "text-center w-36",
+      //   render: (row) => (
+      //     <div className="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
+      //       <button
+      //         className="p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+      //         title="Peta"
+      //       >
+      //         <MapPin size={16} strokeWidth={2.5} />
+      //       </button>
+      //       {can('wilayah_hutan:update') && (
+      //         <button
+      //           className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-[#2D7344] rounded-lg transition-colors"
+      //           title="Edit"
+      //         >
+      //           <Edit2 size={16} strokeWidth={2.5} />
+      //         </button>
+      //       )}
+      //       {can('wilayah_hutan:delete') && (
+      //         <button
+      //           className="p-2 text-slate-400 hover:bg-red-50 hover:text-red-600 rounded-lg transition-colors"
+      //           title="Hapus"
+      //         >
+      //           <Trash2 size={16} strokeWidth={2.5} />
+      //         </button>
+      //       )}
+      //     </div>
+      //   ),
+      // },
     ],
     [],
   );

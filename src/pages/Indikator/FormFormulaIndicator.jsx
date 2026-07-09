@@ -618,40 +618,40 @@ const FormFormulaIndicator = () => {
             </div>
           </div>
         </div>
-        )}
-      {/* MODAL CONFIRMATION CLEAR FORMULA */}
-      {showClearConfirm && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
-            <div className="h-1 bg-red-500" />
-            <div className="p-6 text-left">
-              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
-                <Eraser size={24} />
-                <h3 className="text-lg font-bold text-gray-800">Bersihkan Formula</h3>
-              </div>
-              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans">
-                Apakah Anda yakin ingin menghapus seluruh isi formula? Tindakan ini akan mengosongkan editor logika.
-              </p>
-              <div className="flex justify-end gap-3 font-sans">
-                <button
-                  type="button"
-                  onClick={() => setShowClearConfirm(false)}
-                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  type="button"
-                  onClick={handleClearFormula}
-                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
-                >
-                  Ya, Hapus
-                </button>
+
+        {/* MODAL CONFIRMATION CLEAR FORMULA */}
+        {showClearConfirm && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+              <div className="h-1 bg-red-500" />
+              <div className="p-6 text-left">
+                <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                  <Eraser size={24} />
+                  <h3 className="text-lg font-bold text-gray-800">Bersihkan Formula</h3>
+                </div>
+                <p className="text-xs text-gray-500 font-semibold mb-6 font-sans">
+                  Apakah Anda yakin ingin menghapus seluruh isi formula? Tindakan ini akan mengosongkan editor logika.
+                </p>
+                <div className="flex justify-end gap-3 font-sans">
+                  <button
+                    type="button"
+                    onClick={() => setShowClearConfirm(false)}
+                    className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleClearFormula}
+                    className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                  >
+                    Ya, Hapus
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </main>
     </DashboardLayout>
   );

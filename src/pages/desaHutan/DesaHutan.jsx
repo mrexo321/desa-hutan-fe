@@ -88,16 +88,22 @@ const SearchableDropdown = ({
       {/* Trigger Button */}
       <div
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${isOpen ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm" : "border-gray-200 shadow-sm"
-          }`}
+        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${
+          isOpen
+            ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm"
+            : "border-gray-250 shadow-sm"
+        }`}
       >
-        <span className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}>
+        <span
+          className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}
+        >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
           size={14}
-          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? "transform rotate-180 text-[#2D7344]" : ""
-            }`}
+          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
+            isOpen ? "transform rotate-180 text-[#2D7344]" : ""
+          }`}
         />
       </div>
 
@@ -143,10 +149,11 @@ const SearchableDropdown = ({
                       onChange(opt.value);
                       setIsOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${isActive
-                      ? "bg-green-50 text-[#2D7344] font-extrabold"
-                      : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
-                      }`}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${
+                      isActive
+                        ? "bg-green-50 text-[#2D7344] font-extrabold"
+                        : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
+                    }`}
                   >
                     <span className="truncate">{opt.label}</span>
                     {isActive && (
@@ -167,11 +174,23 @@ export default function DesaHutan() {
   const [selectedFormulaId, setSelectedFormulaId] = useState("");
   const [selectedTahun, setSelectedTahun] = useState("");
   const [selectedProvinsi, setSelectedProvinsi] = useState("");
+  const [selectedKabupaten, setSelectedKabupaten] = useState("");
+  const [selectedKecamatan, setSelectedKecamatan] = useState("");
   const [selectedIndexDesaHutanId, setSelectedIndexDesaHutanId] = useState("");
   const [selectedFungsiKawasanIds, setSelectedFungsiKawasanIds] = useState([]);
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // Reset downstream filters
+  useEffect(() => {
+    setSelectedKabupaten("");
+    setSelectedKecamatan("");
+  }, [selectedProvinsi]);
+
+  useEffect(() => {
+    setSelectedKecamatan("");
+  }, [selectedKabupaten]);
 
   // ── FETCH FORMULA LIST (Wajib) ──
   const { data: formulaRes } = useQuery({
@@ -192,6 +211,40 @@ export default function DesaHutan() {
     queryKey: ["provinsi-list"],
     queryFn: () => masterWilayahService.getAllProvinsi(),
   });
+
+  const selectedProvinsiObj = useMemo(() => {
+    return provinsiList.find((prov) => {
+      const name = prov.name || prov.nama || prov.provinsi || "-";
+      return name === selectedProvinsi;
+    });
+  }, [provinsiList, selectedProvinsi]);
+
+  const selectedProvinsiId = selectedProvinsiObj?.id || null;
+
+  // ── FETCH KABUPATEN LIST (Opsional) ──
+  const { data: kabupatenListRaw = [] } = useQuery({
+    queryKey: ["kabupaten-list", selectedProvinsiId],
+    queryFn: () => masterWilayahService.getAllKabupaten(null, null, "", selectedProvinsiId),
+    enabled: !!selectedProvinsiId,
+  });
+  const kabupatenList = useMemo(() => getArrayData(kabupatenListRaw), [kabupatenListRaw]);
+
+  const selectedKabupatenObj = useMemo(() => {
+    return kabupatenList.find((kab) => {
+      const name = kab.name || kab.nama || kab.kabupaten || "-";
+      return name === selectedKabupaten;
+    });
+  }, [kabupatenList, selectedKabupaten]);
+
+  const selectedKabupatenId = selectedKabupatenObj?.id || null;
+
+  // ── FETCH KECAMATAN LIST (Opsional) ──
+  const { data: kecamatanListRaw = [] } = useQuery({
+    queryKey: ["kecamatan-list", selectedKabupatenId],
+    queryFn: () => masterWilayahService.getAllKecamatan(null, null, "", selectedKabupatenId),
+    enabled: !!selectedKabupatenId,
+  });
+  const kecamatanList = useMemo(() => getArrayData(kecamatanListRaw), [kecamatanListRaw]);
 
   // ── FETCH INDEKS DESA HUTAN LIST (Opsional) ──
   const { data: indexDesaRes } = useQuery({
@@ -272,6 +325,8 @@ export default function DesaHutan() {
       selectedFormulaId,
       selectedTahun,
       selectedProvinsi,
+      selectedKabupaten,
+      selectedKecamatan,
       selectedIndexDesaHutanId,
       selectedFungsiKawasanIds,
     ],
@@ -282,6 +337,8 @@ export default function DesaHutan() {
         formulaId: selectedFormulaId,
         tahun: selectedTahun,
         provinsi: selectedProvinsi || undefined,
+        kabupaten: selectedKabupaten || undefined,
+        kecamatan: selectedKecamatan || undefined,
         indexDesaHutanId: selectedIndexDesaHutanId || undefined,
         fungsiKawasanId: selectedFungsiKawasanIds.length > 0 ? selectedFungsiKawasanIds : undefined,
       }),
@@ -319,6 +376,28 @@ export default function DesaHutan() {
       };
     });
   }, [provinsiList]);
+
+  const kabupatenOptions = useMemo(() => {
+    return kabupatenList.map((kab) => {
+      const name = kab.name || kab.nama || kab.kabupaten || "-";
+      return {
+        value: name,
+        label: name,
+        key: kab.id,
+      };
+    });
+  }, [kabupatenList]);
+
+  const kecamatanOptions = useMemo(() => {
+    return kecamatanList.map((kec) => {
+      const name = kec.name || kec.nama || kec.kecamatan || "-";
+      return {
+        value: name,
+        label: name,
+        key: kec.id,
+      };
+    });
+  }, [kecamatanList]);
 
   const indexDesaOptions = useMemo(() => {
     return indexDesaList.map((idx) => ({
@@ -377,6 +456,8 @@ export default function DesaHutan() {
 
   const handleResetFilters = () => {
     setSelectedProvinsi("");
+    setSelectedKabupaten("");
+    setSelectedKecamatan("");
     setSelectedIndexDesaHutanId("");
     setSelectedFungsiKawasanIds([]);
     setPage(1);
@@ -384,7 +465,7 @@ export default function DesaHutan() {
 
   return (
     <DashboardLayout activeMenu="Desa Hutan">
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col min-h-[calc(100vh-120px)]">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col min-h-[calc(100vh-120px)] animate-in fade-in duration-300">
 
         {/* JUDUL HALAMAN & GARIS */}
         <div className="flex flex-col items-center mb-6">
@@ -398,9 +479,8 @@ export default function DesaHutan() {
           <div className="w-full h-[2px] bg-[#2D7344]"></div>
         </div>
 
-        {/* FILTER BAR (Menggunakan z-index agar dropdown tidak terpotong konten di bawahnya) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-30">
-
+        {/* PRIMARY FILTER BAR (Formula, Tahun, Indeks Desa Hutan) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-30">
           {/* Formula Filter (Wajib, Searchable) */}
           <SearchableDropdown
             label="Formula"
@@ -427,6 +507,21 @@ export default function DesaHutan() {
             required={true}
           />
 
+          {/* Indeks Desa Hutan Filter (Opsional, Searchable) */}
+          <SearchableDropdown
+            label="Indeks Desa Hutan"
+            value={selectedIndexDesaHutanId}
+            onChange={(val) => {
+              setSelectedIndexDesaHutanId(val);
+              setPage(1);
+            }}
+            options={indexDesaOptions}
+            placeholder="Semua Indeks"
+          />
+        </div>
+
+        {/* WILAYAH FILTER BAR (Provinsi, Kabupaten, Kecamatan - Opsional) */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-20">
           {/* Provinsi Filter (Opsional, Searchable) */}
           <SearchableDropdown
             label="Provinsi"
@@ -439,18 +534,35 @@ export default function DesaHutan() {
             placeholder="Semua Provinsi"
           />
 
-          {/* Indeks Desa Hutan Filter (Opsional, Searchable) */}
+          {/* Kabupaten Filter (Opsional, Searchable) */}
           <SearchableDropdown
-            label="Indeks Desa Hutan"
-            value={selectedIndexDesaHutanId}
+            label="Kabupaten"
+            value={selectedKabupaten}
             onChange={(val) => {
-              setSelectedIndexDesaHutanId(val);
+              setSelectedKabupaten(val);
               setPage(1);
             }}
-            options={indexDesaOptions}
-            placeholder="Semua Indeks"
+            options={kabupatenOptions}
+            placeholder="Semua Kabupaten"
+            emptyMessage={
+              !selectedProvinsi ? "Pilih Provinsi Terlebih Dahulu" : "Tidak ada kabupaten ditemukan"
+            }
           />
 
+          {/* Kecamatan Filter (Opsional, Searchable) */}
+          <SearchableDropdown
+            label="Kecamatan"
+            value={selectedKecamatan}
+            onChange={(val) => {
+              setSelectedKecamatan(val);
+              setPage(1);
+            }}
+            options={kecamatanOptions}
+            placeholder="Semua Kecamatan"
+            emptyMessage={
+              !selectedKabupaten ? "Pilih Kabupaten Terlebih Dahulu" : "Tidak ada kecamatan ditemukan"
+            }
+          />
         </div>
 
         {/* FUNGSI KAWASAN INLINE CHECKBOXES */}
@@ -477,17 +589,20 @@ export default function DesaHutan() {
                       return (
                         <label
                           key={fk.id}
-                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
-                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
-                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-                            }`}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${
+                            isChecked
+                              ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                              : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                          }`}
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => {
                               if (isChecked) {
-                                setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
+                                setSelectedFungsiKawasanIds((prev) =>
+                                  prev.filter((id) => id !== fk.id)
+                                );
                               } else {
                                 setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
                               }
@@ -518,17 +633,20 @@ export default function DesaHutan() {
                       return (
                         <label
                           key={fk.id}
-                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
-                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
-                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-                            }`}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${
+                            isChecked
+                              ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                              : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                          }`}
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => {
                               if (isChecked) {
-                                setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
+                                setSelectedFungsiKawasanIds((prev) =>
+                                  prev.filter((id) => id !== fk.id)
+                                );
                               } else {
                                 setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
                               }
@@ -559,17 +677,20 @@ export default function DesaHutan() {
                       return (
                         <label
                           key={fk.id}
-                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
-                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
-                            : "bg-white border-gray-200 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-                            }`}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${
+                            isChecked
+                              ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                              : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                          }`}
                         >
                           <input
                             type="checkbox"
                             checked={isChecked}
                             onChange={() => {
                               if (isChecked) {
-                                setSelectedFungsiKawasanIds((prev) => prev.filter((id) => id !== fk.id));
+                                setSelectedFungsiKawasanIds((prev) =>
+                                  prev.filter((id) => id !== fk.id)
+                                );
                               } else {
                                 setSelectedFungsiKawasanIds((prev) => [...prev, fk.id]);
                               }
@@ -589,7 +710,11 @@ export default function DesaHutan() {
         </div>
 
         {/* RESET ACTION BAR */}
-        {(selectedProvinsi || selectedIndexDesaHutanId || selectedFungsiKawasanIds.length > 0) && (
+        {(selectedProvinsi ||
+          selectedKabupaten ||
+          selectedKecamatan ||
+          selectedIndexDesaHutanId ||
+          selectedFungsiKawasanIds.length > 0) && (
           <div className="flex justify-end gap-3 mb-6 animate-in fade-in duration-200">
             <button
               onClick={handleResetFilters}
@@ -609,7 +734,9 @@ export default function DesaHutan() {
             </h3>
             {selectedFormulaId && (
               <span className="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1 rounded-lg">
-                Formula: {formulaList.find((f) => String(f.id) === String(selectedFormulaId))?.nama || "-"}
+                Formula:{" "}
+                {formulaList.find((f) => String(f.id) === String(selectedFormulaId))?.nama ||
+                  "-"}
               </span>
             )}
           </div>

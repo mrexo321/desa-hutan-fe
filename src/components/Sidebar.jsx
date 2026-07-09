@@ -157,6 +157,47 @@ export default function Sidebar({ activeMenu }) {
     });
   };
 
+  const checkIsActive = (itemName, itemPath) => {
+    if (activeMenu === itemName) return true;
+
+    const currentPath = window.location.pathname;
+
+    // Special case: Dashboard is only active on exact dashboard root path
+    if (itemName === "Dashboard") {
+      return currentPath === "/dashboard" || activeMenu === "Dashboard";
+    }
+
+    if (currentPath === itemPath || currentPath.startsWith(itemPath + "/")) {
+      return true;
+    }
+
+    // Custom alias mappings for nested pages and sub-modules
+    if (itemName === "Rumus Indeks") {
+      return (
+        activeMenu === "Tahun Indikator Perhitungan" ||
+        activeMenu === "Indikator Perhitungan" ||
+        currentPath.includes("indikator-perhitungan") ||
+        currentPath.includes("tahun-indikator-perhitungan")
+      );
+    }
+
+    if (itemName === "Perhitungan Indeks") {
+      return (
+        activeMenu === "Performa Desa" ||
+        currentPath.includes("performa-desa")
+      );
+    }
+
+    if (itemName === "Indeks Desa Hutan") {
+      return (
+        activeMenu === "Desa Hutan" ||
+        currentPath.includes("desa-hutan")
+      );
+    }
+
+    return false;
+  };
+
   const visibleHomeMenus = filterMenuByPermission(homeMenus);
   const visibleCalculationMenus = filterMenuByPermission(calculationMenus);
   const visibleMetadataMenus = filterMenuByPermission(metadataMenus);
@@ -244,7 +285,7 @@ export default function Sidebar({ activeMenu }) {
               </div>
               <ul className="space-y-2">
                 {visibleHomeMenus.map((item, idx) => {
-                  const isActive = activeMenu === item.name;
+                  const isActive = checkIsActive(item.name, item.path);
                   return (
                     <li key={idx}>
                       <Link
@@ -293,7 +334,7 @@ export default function Sidebar({ activeMenu }) {
               </div>
               <ul className="space-y-2">
                 {visibleCalculationMenus.map((item, idx) => {
-                  const isActive = activeMenu === item.name;
+                  const isActive = checkIsActive(item.name, item.path);
                   return (
                     <li key={idx}>
                       <Link
@@ -336,7 +377,7 @@ export default function Sidebar({ activeMenu }) {
               </div>
               <ul className="space-y-2">
                 {visibleMetadataMenus.map((item, idx) => {
-                  const isActive = activeMenu === item.name;
+                  const isActive = checkIsActive(item.name, item.path);
                   return (
                     <li key={idx}>
                       <Link

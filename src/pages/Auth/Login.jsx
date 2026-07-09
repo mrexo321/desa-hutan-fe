@@ -12,6 +12,7 @@ import {
   Loader2,
   Leaf,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
 } from "lucide-react";
 
@@ -76,6 +77,15 @@ const Login = () => {
   return (
     <div className="min-h-screen flex w-full bg-white font-sans overflow-hidden">
       <div className="w-full lg:w-[45%] flex flex-col justify-center px-8 sm:px-16 md:px-24 z-10 shadow-[20px_0_40px_rgba(0,0,0,0.04)] relative">
+        {/* Floating Back Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="absolute top-8 left-8 sm:left-12 flex items-center gap-2 text-sm text-gray-500 hover:text-[#2D7344] transition-colors font-bold group cursor-pointer"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          Kembali ke Beranda
+        </button>
+
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
           <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-green-50 rounded-full blur-3xl opacity-50"></div>
         </div>

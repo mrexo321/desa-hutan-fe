@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
-import { Plus, Search, Edit2, Trash2, Map, MapPin, UploadCloud, RefreshCw } from "lucide-react";
+import { Plus, Search, Edit2, Trash2, Map, MapPin, Eye, UploadCloud, RefreshCw } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { wilayahDesaService } from "../../services/master/wilayahDesaService";
@@ -347,10 +347,11 @@ const TabWilayahDesa = () => {
         render: (row) => (
           <div className="flex items-center justify-center gap-2 opacity-50 group-hover:opacity-100 transition-opacity">
             <button
+              onClick={() => navigate(`/dashboard/desa-detail/${row.id}`)}
               className="p-2 text-slate-400 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
-              title="Peta"
+              title="Lihat Detail"
             >
-              <MapPin size={16} strokeWidth={2.5} />
+              <Eye size={16} strokeWidth={2.5} />
             </button>
             {can('wilayah_desa:update') && (
               <button

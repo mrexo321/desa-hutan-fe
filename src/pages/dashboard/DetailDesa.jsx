@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { analystSpatialService } from "../../services/master/analystSpatialService";
 import { useAuthReady } from "../../hooks/useAuthReady";
 import { Loading } from "../../components/Loading";
 import DashboardLayout from "../../components/DashboardLayout";
+import DataTable from "../../components/DataTable";
 import {
   ChevronLeft,
   MapPin,
@@ -19,6 +20,9 @@ import {
   Tag,
   Info,
   CheckCircle,
+  Eye,
+  X,
+  BookOpen,
 } from "lucide-react";
 
 // Helper formatting dipindah keluar dari komponen agar tidak di-recreate setiap kali render
@@ -36,12 +40,21 @@ const DesaDetail = () => {
   const navigate = useNavigate();
 
   const isAuthReady = useAuthReady();
+  const [selectedDetailYear, setSelectedDetailYear] = useState(null);
 
   const { data: desaResponse, isLoading, isError, error } = useQuery({
     queryKey: ["desaDetail", desaId],
     queryFn: () => analystSpatialService.getDesaDetail(desaId),
     enabled: isAuthReady && !!desaId,
   });
+
+  const { data: dimensiDesaData, isLoading: isLoadingDimensi, isError: isErrorDimensi } = useQuery({
+    queryKey: ["dimensiDesa", desaId],
+    queryFn: () => analystSpatialService.getDimensiDesa(desaId),
+    enabled: isAuthReady && !!desaId,
+  });
+
+  const selectedDetail = dimensiDesaData?.detail?.find(d => d.tahun === selectedDetailYear);
 
   const desa = desaResponse;
   const provinceName = location.state?.provinceName || desa?.provinsi || "Provinsi";
@@ -386,8 +399,243 @@ const DesaDetail = () => {
             </div>
           </div>
 
+          {/* --- DIMENSI DESA DATA --- */}
+          <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden mb-10">
+            <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <div className="bg-emerald-50 p-3 rounded-2xl">
+                  <BookOpen size={24} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900">
+                    Data Dimensi Desa
+                  </h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Rekapitulasi skor, status, dan rincian indeks dimensi pembangunan desa per tahun.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 md:p-8 bg-[#FAFAFA]">
+              <DataTable
+                columns={[
+                  {
+                    header: "Tahun",
+                    render: (row) => <span className="font-bold text-slate-900">Tahun {row.tahun}</span>,
+                  },
+                  {
+                    header: "Skor",
+                    render: (row) => (
+                      <span className="font-bold text-slate-700">
+                        {row.skor !== null && row.skor !== undefined 
+                          ? (typeof row.skor === 'number' ? row.skor.toFixed(2) : row.skor) 
+                          : "-"}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: "Status",
+                    render: (row) => (
+                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
+                        row.status ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-100 text-slate-600 border-slate-200"
+                      }`}>
+                        {row.status || "-"}
+                      </span>
+                    ),
+                  },
+                  {
+                    header: "Aksi",
+                    className: "text-center w-24",
+                    render: (row) => (
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => setSelectedDetailYear(row.tahun)}
+                          className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors cursor-pointer"
+                          title="Lihat Detail Dimensi"
+                        >
+                          <Eye size={16} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    ),
+                  },
+                ]}
+                data={dimensiDesaData?.metadata || []}
+                isLoading={isLoadingDimensi}
+                isError={isErrorDimensi}
+                emptyMessage="Tidak ada data dimensi desa."
+              />
+            </div>
+          </div>
+
         </div>
       </main>
+
+      {/* MODAL DETAIL DIMENSI DESA */}
+      {selectedDetailYear && (() => {
+        // Helper to extract highlight indicators
+        const idmStatus = selectedDetail?.dimensi?.find(d => d.kode === "IDM (Status)") || selectedDetail?.dimensi?.[0];
+        const idmNilai = selectedDetail?.dimensi?.find(d => d.kode === "IDM (Nilai)") || selectedDetail?.dimensi?.[1];
+        
+        // The rest of the indicators to show in the list/grid
+        const remainingDims = selectedDetail?.dimensi?.filter(d => 
+          d.kategoriIndikatorId !== idmStatus?.kategoriIndikatorId && 
+          d.kategoriIndikatorId !== idmNilai?.kategoriIndikatorId
+        ) || [];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-[#F8FAFC] rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200/50 animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+              {/* Emerald Header Accent */}
+              <div className="h-1.5 bg-gradient-to-r from-emerald-600 to-[#10B981]" />
+              
+              {/* Header */}
+              <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+                <div>
+                  <span className="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg uppercase tracking-wider">
+                    Rincian Dimensi Pembangunan
+                  </span>
+                  <h3 className="text-xl font-bold text-slate-800 mt-1.5">
+                    Detail Indeks Desa - Tahun {selectedDetailYear}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setSelectedDetailYear(null)}
+                  className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
+                >
+                  <X size={20} />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
+                {selectedDetail && selectedDetail.dimensi && selectedDetail.dimensi.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                    
+                    {/* Left Column: Highlight Cards */}
+                    <div className="lg:col-span-5 space-y-6">
+                      {/* Main Banner Card */}
+                      <div className="bg-gradient-to-tr from-[#0C2A18] to-[#164E2A] rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
+                        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]" />
+                        <span className="text-[9px] font-bold text-emerald-300 uppercase tracking-widest bg-emerald-950/40 border border-emerald-700/30 px-2.5 py-1 rounded-md inline-block mb-3 leading-none">
+                          Fokus Utama
+                        </span>
+                        <h4 className="text-base font-bold text-emerald-100">Evaluasi Pembangunan</h4>
+                        <p className="text-[11px] text-emerald-200/70 mt-1 leading-relaxed">
+                          Data ini mencerminkan kondisi sosial ekonomi berdasarkan klasifikasi IDM Kementerian Desa.
+                        </p>
+                      </div>
+
+                      {/* Highlight Card: IDM Status */}
+                      {idmStatus && (
+                        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+                          <div className="absolute -right-6 -top-6 w-24 h-24 bg-emerald-50 rounded-full blur-2xl group-hover:bg-emerald-100 transition-colors" />
+                          <div className="flex items-center gap-2.5 text-slate-400 mb-3 relative z-10">
+                            <CheckCircle size={16} className="text-emerald-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{idmStatus.nama}</span>
+                          </div>
+                          <div className="text-2xl font-black text-emerald-800 relative z-10 uppercase tracking-tight">
+                            {idmStatus.nilai}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Highlight Card: IDM Nilai */}
+                      {idmNilai && (
+                        <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-sm flex flex-col justify-center relative overflow-hidden group">
+                          <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-50 rounded-full blur-2xl group-hover:bg-blue-100 transition-colors" />
+                          <div className="flex items-center gap-2.5 text-slate-400 mb-3 relative z-10">
+                            <Activity size={16} className="text-blue-600" />
+                            <span className="text-[10px] font-bold uppercase tracking-wider">{idmNilai.nama}</span>
+                          </div>
+                           <div className="text-4xl font-black text-slate-800 relative z-10 flex items-baseline">
+                            {typeof idmNilai.nilai === 'number' ? idmNilai.nilai.toFixed(2) : idmNilai.nilai}
+                            <span className="text-xs text-slate-400 font-bold ml-1">Poin</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Right Column: Other Dimensions Grid */}
+                    <div className="lg:col-span-7 space-y-4">
+                      <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                        Dimensi Pendukung Lainnya ({remainingDims.length})
+                      </h4>
+
+                      {remainingDims.length > 0 ? (
+                        <div className="grid grid-cols-1 gap-4">
+                          {remainingDims.map((dim, idx) => {
+                            const isNumeric = typeof dim.nilai === 'number';
+                            return (
+                              <div 
+                                key={idx} 
+                                className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4 hover:border-emerald-200 transition-colors duration-300"
+                              >
+                                <div className="space-y-1">
+                                  <span className="text-[9px] font-bold text-slate-400 font-mono tracking-widest block uppercase">
+                                    {dim.kode}
+                                  </span>
+                                  <span className="text-sm font-bold text-slate-700 leading-tight block">
+                                    {dim.nama}
+                                  </span>
+                                </div>
+                                
+                                <div className="text-right shrink-0">
+                                  {isNumeric ? (
+                                    <div className="flex flex-col items-end gap-1">
+                                      <span className="text-sm font-black text-slate-800 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
+                                        {dim.nilai.toFixed(2)}
+                                      </span>
+                                      {/* Simple progress bar */}
+                                      <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1">
+                                        <div 
+                                          className="h-full bg-emerald-500 rounded-full" 
+                                          style={{ width: `${Math.min(dim.nilai * 100, 100)}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="text-xs font-bold px-3 py-1.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-xl uppercase tracking-wider">
+                                      {dim.nilai}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400 bg-white rounded-3xl border border-dashed border-slate-200">
+                          <Info size={28} className="mb-2 text-slate-300" />
+                          <p className="text-sm font-bold">Hanya data IDM utama yang tersedia</p>
+                          <p className="text-xs mt-0.5">Tidak ada dimensi pendukung tambahan untuk tahun ini.</p>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+                ) : (
+                  <div className="py-20 flex flex-col items-center justify-center text-center text-slate-400 bg-white rounded-[32px] border border-dashed border-slate-200">
+                    <Info size={40} className="mb-4 text-slate-300 animate-pulse" />
+                    <h4 className="text-lg font-bold text-slate-700">Tidak ada rincian data</h4>
+                    <p className="text-sm text-slate-500 max-w-xs mt-1">Rincian dimensi pembangunan desa untuk tahun ini belum diunggah ke server.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="px-8 py-5 border-t border-slate-100 flex justify-end bg-white">
+                <button
+                  onClick={() => setSelectedDetailYear(null)}
+                  className="px-6 py-2.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition-colors cursor-pointer"
+                >
+                  Tutup Rincian
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </DashboardLayout>
   );
 };

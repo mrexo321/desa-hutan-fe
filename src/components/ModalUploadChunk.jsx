@@ -515,7 +515,7 @@ export default function ModalUploadChunked({
                                 </button>
                                 <button
                                     onClick={handleSubmit}
-                                    disabled={!file || isUploading}
+                                    disabled={!file || isUploading || (replaceMode === 'provinsi' && !selectedProvinsi)}
                                     className="flex items-center gap-2 px-5 py-2 bg-[#2D7344] text-white rounded-lg text-sm font-semibold hover:bg-[#1E5230] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
                                 >
                                     {isUploading ? (

@@ -85,48 +85,6 @@ export function useChunkedUpload() {
                 { uploadId }
             );
 
-            // Jika BE mengembalikan status PROCESSING (proses dijalankan async di background)
-            if (finalData.status === "PROCESSING") {
-                let isFinished = false;
-                let finalResultData = null;
-
-                while (!isFinished) {
-                    if (abortRef.current) throw new Error("Upload dibatalkan");
-                    await new Promise((r) => setTimeout(r, 3000)); // Poll tiap 3 detik
-
-                    try {
-                        const { data: statusRes } = await masterInstance.get(
-                            `/upload/status/${uploadId}`
-                        );
-
-                        if (statusRes.status === "COMPLETED") {
-                            finalResultData = { success: true, data: statusRes.result };
-                            isFinished = true;
-                        } else if (statusRes.status === "FAILED") {
-                            const msg = statusRes.error || "Gagal memproses data shapefile";
-                            setError(msg);
-                            setStatus("error");
-                            throw new Error(msg);
-                        }
-                    } catch (pollErr) {
-                        if (pollErr.response?.status === 404) {
-                            const msg = "Session upload tidak ditemukan atau sudah expired";
-                            setError(msg);
-                            setStatus("error");
-                            throw pollErr;
-                        }
-                        if (pollErr.message === "Upload dibatalkan") throw pollErr;
-                        // Jaringan flaky saat poll, retry di iterasi berikutnya
-                    }
-                }
-
-                setProgress(100);
-                setStatus("done");
-                setResult(finalResultData);
-                return finalResultData;
-            }
-
-            // Fallback jika BE merespons langsung (sync)
             setProgress(100);
             setStatus("done");
             setResult(finalData);

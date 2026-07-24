@@ -1,4 +1,3 @@
-// src/components/ModalUploadChunked.jsx
 import React, { useState, useRef, useCallback } from "react";
 import {
     X,
@@ -11,6 +10,7 @@ import {
     MapPin,
     Info,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { useChunkedUpload } from "../hooks/useChunkedUpload";
 import { masterWilayahService } from "../services/master/masterWilayahService";
@@ -95,7 +95,11 @@ export default function ModalUploadChunked({
             }
 
             const res = await upload(file, effectiveType, meta);
+            toast.success(
+                res?.message || "Upload file selesai. Pemrosesan data sedang berjalan di background."
+            );
             onSuccess?.(res);
+            handleClose();
         } catch {
             // error sudah di-handle di hook, tidak perlu re-throw
         }

@@ -32,6 +32,7 @@ export default function ModalUploadChunked({
 }) {
     const [file, setFile] = useState(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [replaceMode, setReplaceMode] = useState("");       // "" | "provinsi" | "auto"
     const [selectedProvinsi, setSelectedProvinsi] = useState("");
 
     const fileInputRef = useRef(null);
@@ -79,12 +80,21 @@ export default function ModalUploadChunked({
     const handleSubmit = async () => {
         if (!file || isUploading) return;
         try {
-            // Build meta — include provinsi for Desa SHP if selected (triggers replace mode)
             const meta = {};
-            if (isDesaUpload && selectedProvinsi) {
-                meta.provinsi = selectedProvinsi;
+            let effectiveType = uploadType;
+
+            // Build replaceRegion based on selected mode
+            if (isDesaUpload && replaceMode) {
+                if (replaceMode === 'auto') {
+                    meta.replaceRegion = { by: 'auto' };
+                    effectiveType = 'shpWilayahDesaReplaceRegion';
+                } else if (replaceMode === 'provinsi' && selectedProvinsi) {
+                    meta.replaceRegion = { by: 'provinsi', value: selectedProvinsi };
+                    effectiveType = 'shpWilayahDesaReplaceRegion';
+                }
             }
-            const res = await upload(file, uploadType, meta);
+
+            const res = await upload(file, effectiveType, meta);
             onSuccess?.(res);
         } catch {
             // error sudah di-handle di hook, tidak perlu re-throw
@@ -96,6 +106,7 @@ export default function ModalUploadChunked({
         if (isUploading) return;
         reset();
         setFile(null);
+        setReplaceMode("");
         setSelectedProvinsi("");
         onClose();
     };
@@ -229,46 +240,86 @@ export default function ModalUploadChunked({
                             </div>
                         )}
 
-                        {/* ── Provinsi dropdown (hanya untuk Desa SHP) ────────────────── */}
+                        {/* ── Mode Replace (hanya untuk Desa SHP) ──────────────────── */}
                         {isDesaUpload && !isDone && (
-                            <div className="flex flex-col gap-2">
-                                <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
-                                    <MapPin size={14} className="text-gray-400" />
-                                    Provinsi
-                                    <span className="text-[10px] font-normal text-gray-400 ml-1">(opsional)</span>
-                                </label>
-                                <div className="relative">
-                                    <select
-                                        value={selectedProvinsi}
-                                        onChange={(e) => setSelectedProvinsi(e.target.value)}
-                                        disabled={isUploading || isLoadingProvinsi}
-                                        className="w-full px-3.5 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-medium focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <option value="">— Tidak pilih (Append / Upsert) —</option>
-                                        {Array.isArray(provinsiList) && provinsiList.map((prov) => (
-                                            <option key={prov.id} value={prov.name}>
-                                                {prov.name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                                        {isLoadingProvinsi ? (
-                                            <Loader2 size={14} className="animate-spin" />
-                                        ) : (
+                            <div className="flex flex-col gap-3">
+                                {/* Mode selector */}
+                                <div className="flex flex-col gap-2">
+                                    <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+                                        <MapPin size={14} className="text-gray-400" />
+                                        Mode Import
+                                    </label>
+                                    <div className="relative">
+                                        <select
+                                            value={replaceMode}
+                                            onChange={(e) => {
+                                                setReplaceMode(e.target.value);
+                                                if (e.target.value !== 'provinsi') setSelectedProvinsi("");
+                                            }}
+                                            disabled={isUploading}
+                                            className="w-full px-3.5 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-medium focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                        >
+                                            <option value="">Append / Upsert (tanpa hapus data lama)</option>
+                                            <option value="provinsi">Replace by Provinsi tertentu</option>
+                                            <option value="auto">Auto-detect Provinsi dari SHP</option>
+                                        </select>
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
                                             <ChevronDown size={16} />
-                                        )}
+                                        </div>
                                     </div>
                                 </div>
 
+                                {/* Provinsi dropdown — muncul hanya kalau mode = 'provinsi' */}
+                                {replaceMode === 'provinsi' && (
+                                    <div className="flex flex-col gap-2">
+                                        <label className="flex items-center gap-1.5 text-sm font-semibold text-gray-700">
+                                            <MapPin size={14} className="text-gray-400" />
+                                            Pilih Provinsi
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                value={selectedProvinsi}
+                                                onChange={(e) => setSelectedProvinsi(e.target.value)}
+                                                disabled={isUploading || isLoadingProvinsi}
+                                                className="w-full px-3.5 py-2.5 pr-10 bg-white border border-gray-200 rounded-xl text-sm text-gray-700 font-medium focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                            >
+                                                <option value="">— Pilih provinsi —</option>
+                                                {Array.isArray(provinsiList) && provinsiList.map((prov) => (
+                                                    <option key={prov.id} value={prov.name}>
+                                                        {prov.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                                                {isLoadingProvinsi ? (
+                                                    <Loader2 size={14} className="animate-spin" />
+                                                ) : (
+                                                    <ChevronDown size={16} />
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* Info box: behavior explanation */}
-                                <div className={`flex items-start gap-2 px-3 py-2.5 rounded-lg text-xs leading-relaxed transition-colors ${selectedProvinsi
-                                    ? "bg-amber-50 border border-amber-100 text-amber-700"
-                                    : "bg-gray-50 border border-gray-100 text-gray-500"
-                                    }`}>
+                                <div className={`flex items-start gap-2 px-3 py-2.5 rounded-lg text-xs leading-relaxed transition-colors ${
+                                    replaceMode === 'auto'
+                                        ? "bg-blue-50 border border-blue-100 text-blue-700"
+                                        : replaceMode === 'provinsi'
+                                            ? "bg-amber-50 border border-amber-100 text-amber-700"
+                                            : "bg-gray-50 border border-gray-100 text-gray-500"
+                                }`}>
                                     <Info size={14} className="shrink-0 mt-0.5" />
-                                    {selectedProvinsi ? (
+                                    {replaceMode === 'auto' ? (
                                         <span>
-                                            Mode <strong>Replace</strong>: Data desa di provinsi <strong>{selectedProvinsi}</strong> akan dihapus dan diganti dengan data dari file SHP yang diupload.
+                                            Mode <strong>Auto-detect</strong>: Provinsi akan dibaca otomatis dari data SHP (kolom WADMPR). Semua data desa di provinsi yang terdeteksi akan dihapus lalu diganti dengan data baru. Cocok untuk SHP <strong>per-pulau</strong>.
+                                        </span>
+                                    ) : replaceMode === 'provinsi' ? (
+                                        <span>
+                                            Mode <strong>Replace</strong>: {selectedProvinsi
+                                                ? <>Data desa di provinsi <strong>{selectedProvinsi}</strong> akan dihapus dan diganti dengan data dari file SHP.</>
+                                                : 'Pilih provinsi yang datanya akan dihapus dan diganti.'
+                                            }
                                         </span>
                                     ) : (
                                         <span>

@@ -353,7 +353,7 @@ const TabWilayahDesa = () => {
             >
               <Eye size={16} strokeWidth={2.5} />
             </button>
-            {can('wilayah_desa:update') && (
+            {/* {can('wilayah_desa:update') && (
               <button
                 className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-[#2D7344] rounded-lg transition-colors"
                 title="Edit"
@@ -368,7 +368,7 @@ const TabWilayahDesa = () => {
               >
                 <Trash2 size={16} strokeWidth={2.5} />
               </button>
-            )}
+            )} */}
           </div>
         ),
       },

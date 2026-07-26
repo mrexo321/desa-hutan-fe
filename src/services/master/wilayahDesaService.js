@@ -1,13 +1,26 @@
 import masterInstance from "../../api/masterInstance";
 
 export const wilayahDesaService = {
-  async getAllDesa(page, size) {
-    const response = await masterInstance.get("/wilayah-desa", {
-      params: {
-        page: page,
-        size: size,
-      },
-    });
+  async getAllDesa(page, size, search = "", provinsi = "", kabupaten = "", kecamatan = "") {
+    let params = {};
+    if (typeof page === "object" && page !== null) {
+      const opts = page;
+      if (opts.page != null) params.page = opts.page;
+      if (opts.size != null) params.size = opts.size;
+      if (opts.search) params.search = opts.search;
+      if (opts.provinsi) params.provinsi = opts.provinsi;
+      if (opts.kabupaten) params.kabupaten = opts.kabupaten;
+      if (opts.kecamatan) params.kecamatan = opts.kecamatan;
+    } else {
+      if (page != null) params.page = page;
+      if (size != null) params.size = size;
+      if (search) params.search = search;
+      if (provinsi) params.provinsi = provinsi;
+      if (kabupaten) params.kabupaten = kabupaten;
+      if (kecamatan) params.kecamatan = kecamatan;
+    }
+
+    const response = await masterInstance.get("/wilayah-desa", { params });
     return response.data.data;
   },
 

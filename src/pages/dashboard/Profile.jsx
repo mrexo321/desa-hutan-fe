@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import DashboardLayout from "../../components/DashboardLayout";
 import { userService } from "../../services/auth/userService";
@@ -38,20 +38,25 @@ export default function Profile() {
   const [showNew, setShowNew] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
-  // Initialize profile fields with Redux user state
+  // Query to fetch self profile
+  const { data: profileData } = useQuery({
+    queryKey: ["userProfileMe"],
+    queryFn: () => userService.getProfile(),
+  });
+
+  // Initialize profile fields with API or Redux user state
   useEffect(() => {
-    if (user?.username) {
+    if (profileData?.username) {
+      setUsername(profileData.username);
+    } else if (user?.username) {
       setUsername(user.username);
     }
-  }, [user]);
+  }, [profileData, user]);
 
-  // Mutation for updating username
+  // Mutation for updating username (self-update PATCH /v1/users/me)
   const updateUsernameMutation = useMutation({
     mutationFn: async (newUsername) => {
-      if (!user.userId) {
-        throw new Error("User ID tidak ditemukan. Sesi mungkin kedaluwarsa.");
-      }
-      return await userService.updateUser(user.userId, { username: newUsername });
+      return await userService.updateProfile({ username: newUsername });
     },
     onSuccess: (res, newUsername) => {
       toast.success("Username berhasil diperbarui!");
@@ -76,10 +81,13 @@ export default function Profile() {
     },
   });
 
-  // Mutation for updating password
+  // Mutation for updating password (self-update PATCH /v1/users/me)
   const changePasswordMutation = useMutation({
-    mutationFn: async (payload) => {
-      return await userService.changePassword(payload);
+    mutationFn: async ({ currentPassword, password }) => {
+      return await userService.updateProfile({
+        currentPassword,
+        newPassword: password,
+      });
     },
     onSuccess: () => {
       toast.success("Password berhasil diubah!");
@@ -120,8 +128,8 @@ export default function Profile() {
       toast.warning("Password baru wajib diisi!");
       return;
     }
-    if (password.length < 8) {
-      toast.warning("Password baru minimal harus 8 karakter!");
+    if (password.length < 6) {
+      toast.warning("Password baru minimal harus 6 karakter!");
       return;
     }
     if (password !== confirmPassword) {
@@ -130,9 +138,8 @@ export default function Profile() {
     }
 
     changePasswordMutation.mutate({
-      current_password: currentPassword,
+      currentPassword: currentPassword,
       password: password,
-      password_confirmation: confirmPassword,
     });
   };
 

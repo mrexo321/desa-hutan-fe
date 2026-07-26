@@ -1086,17 +1086,7 @@ const Dashboard = () => {
         {/* FILTER & SEARCH */}
         {activeTab === "Ringkasan" && (
           <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">
-            <div className="relative w-full lg:w-96 flex-1 group">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Cari direktori data provinsi..."
-                className="w-full bg-[#F8FAFC] border-none text-gray-700 py-3.5 pl-11 pr-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
-              />
-            </div>
+
             <div className="flex gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
               <select
                 value={filters.provinsi || ""}
@@ -1375,7 +1365,7 @@ const Dashboard = () => {
 
             {/* TABEL DATA */}
             <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-extrabold text-gray-800">
                     Direktori Desa Hutan
@@ -1384,9 +1374,6 @@ const Dashboard = () => {
                     Total 268 Data
                   </span>
                 </div>
-                <button className="bg-white border-2 border-gray-200 hover:border-[#00B67A] hover:text-[#00B67A] text-gray-700 px-5 py-2.5 rounded-[12px] text-sm font-bold transition-colors">
-                  Export CSV
-                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[1000px]">

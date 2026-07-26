@@ -44,6 +44,16 @@ export const userService = {
     const response = await authInstance.post("/profile/change-password", payload);
     return response.data;
   },
+
+  async getProfile() {
+    const response = await authInstance.get("/users/me");
+    return response.data.data;
+  },
+
+  async updateProfile(payload) {
+    const response = await authInstance.patch("/users/me", payload);
+    return response.data;
+  },
 };
 
 export default userService;

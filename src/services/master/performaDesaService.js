@@ -143,6 +143,11 @@ export const performaDesaService = {
       const response = await masterInstance.post("/public/performa-desa-hutan/request-excel", payload);
       return response.data;
     } catch (error) {
+      // Jika backend merespon dengan HTTP Error (misal 400 Bad Request, 422 Error, 500 Server Error),
+      // lempar error asli ke komponen agar toast.error ditampilkan dan bukan toast.success
+      if (error.response) {
+        throw error;
+      }
       console.warn("Using localStorage fallback for performa request-excel creation", error);
       const local = getLocalPerformaRequests();
       const newRequest = {

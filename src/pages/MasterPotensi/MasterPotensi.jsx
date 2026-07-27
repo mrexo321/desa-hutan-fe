@@ -5,6 +5,7 @@ import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable";
 import { potensiDesaService } from "../../services/master/potensiDesaService";
 import { wilayahDesaService } from "../../services/master/wilayahDesaService";
+import { masterWilayahService } from "../../services/master/masterWilayahService";
 import {
   Search,
   Edit2,
@@ -39,6 +40,12 @@ const MasterPotensi = () => {
   const [selectedDesaId, setSelectedDesaId] = useState(null);
   const [addPotensi, setAddPotensi] = useState([{ kategori: "Kategori Baru", sub: [] }]);
   const [searchDesa, setSearchDesa] = useState("");
+  const [debouncedSearchDesa, setDebouncedSearchDesa] = useState("");
+
+  // States for Wilayah Filters in Modal
+  const [filterProvinsi, setFilterProvinsi] = useState("");
+  const [filterKabupaten, setFilterKabupaten] = useState("");
+  const [filterKecamatan, setFilterKecamatan] = useState("");
 
   // Fetch list of potensi
   const {
@@ -110,20 +117,61 @@ const MasterPotensi = () => {
     },
   });
 
-  // Fetch Desa List for selection
-  const { data: desaData, isLoading: isLoadingDesa } = useQuery({
-    queryKey: ["allDesaForSelect"],
-    queryFn: () => wilayahDesaService.getAllDesa(1, 1000),
+  // Debounce search query
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchDesa(searchDesa);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchDesa]);
+
+  // Fetch region options for dropdowns in modal
+  const { data: provincesList = [] } = useQuery({
+    queryKey: ["allProvincesForModal"],
+    queryFn: () => masterWilayahService.getAllProvinsi(),
     enabled: isAddPotensiModalOpen,
   });
-  const desaList = desaData?.items || desaData || [];
+
+  const { data: kabupatensList = [] } = useQuery({
+    queryKey: ["allKabupatensForModal", filterProvinsi],
+    queryFn: () => masterWilayahService.getAllKabupaten(null, null, "", filterProvinsi),
+    enabled: isAddPotensiModalOpen && !!filterProvinsi,
+  });
+
+  const { data: kecamatansList = [] } = useQuery({
+    queryKey: ["allKecamatansForModal", filterKabupaten],
+    queryFn: () => masterWilayahService.getAllKecamatan(null, null, "", filterKabupaten),
+    enabled: isAddPotensiModalOpen && !!filterKabupaten,
+  });
+
+  // Fetch Desa List for selection (queries backend based on filters & search)
+  const { data: searchDesaData, isLoading: isLoadingDesa } = useQuery({
+    queryKey: ["searchDesaForSelect", debouncedSearchDesa, filterProvinsi, filterKabupaten, filterKecamatan],
+    queryFn: () => {
+      const hasRegionFilters = filterProvinsi || filterKabupaten || filterKecamatan;
+      if (debouncedSearchDesa.trim().length >= 2 && !hasRegionFilters) {
+        return wilayahDesaService.searchMap(debouncedSearchDesa, 50);
+      }
+      return wilayahDesaService.getAllDesa({
+        page: 1,
+        size: 150,
+        search: debouncedSearchDesa,
+        provinsiId: filterProvinsi || null,
+        kabupatenId: filterKabupaten || null,
+        kecamatanId: filterKecamatan || null,
+      });
+    },
+    enabled: isAddPotensiModalOpen,
+  });
 
   const filteredDesa = React.useMemo(() => {
-    if (!searchDesa) return desaList;
-    return desaList.filter((d) =>
-      (d.nama || "").toLowerCase().includes(searchDesa.toLowerCase())
-    );
-  }, [desaList, searchDesa]);
+    if (!searchDesaData) return [];
+    const hasRegionFilters = filterProvinsi || filterKabupaten || filterKecamatan;
+    if (debouncedSearchDesa.trim().length >= 2 && !hasRegionFilters) {
+      return searchDesaData?.data || searchDesaData || [];
+    }
+    return searchDesaData?.items || searchDesaData?.data || searchDesaData || [];
+  }, [searchDesaData, debouncedSearchDesa, filterProvinsi, filterKabupaten, filterKecamatan]);
 
   // Mutation to add new Potensi
   const createPotensiMutation = useMutation({
@@ -135,6 +183,9 @@ const MasterPotensi = () => {
       setSelectedDesaId(null);
       setAddPotensi([{ kategori: "Kategori Baru", sub: [] }]);
       setSearchDesa("");
+      setFilterProvinsi("");
+      setFilterKabupaten("");
+      setFilterKecamatan("");
     },
     onError: (err) => {
       console.error(err);
@@ -786,6 +837,9 @@ const MasterPotensi = () => {
                   setIsAddPotensiModalOpen(false);
                   setSelectedDesaId(null);
                   setSearchDesa("");
+                  setFilterProvinsi("");
+                  setFilterKabupaten("");
+                  setFilterKecamatan("");
                   setAddPotensi([{ kategori: "Kategori Baru", sub: [] }]);
                 }}
                 className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
@@ -803,6 +857,76 @@ const MasterPotensi = () => {
                   <label className="block text-sm font-bold text-slate-700">
                     Langkah 1: Pilih Desa Hutan
                   </label>
+
+                  {/* Filter Wilayah Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-100/50">
+                    {/* Provinsi select */}
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                        Provinsi
+                      </label>
+                      <select
+                        value={filterProvinsi}
+                        onChange={(e) => {
+                          setFilterProvinsi(e.target.value);
+                          setFilterKabupaten("");
+                          setFilterKecamatan("");
+                        }}
+                        className="w-full bg-white border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700 cursor-pointer"
+                      >
+                        <option value="">-- Semua Provinsi --</option>
+                        {provincesList.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name || p.nama}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Kabupaten select */}
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                        Kabupaten
+                      </label>
+                      <select
+                        value={filterKabupaten}
+                        onChange={(e) => {
+                          setFilterKabupaten(e.target.value);
+                          setFilterKecamatan("");
+                        }}
+                        disabled={!filterProvinsi}
+                        className="w-full bg-white border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <option value="">-- Semua Kabupaten --</option>
+                        {kabupatensList.map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {k.name || k.nama}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Kecamatan select */}
+                    <div className="space-y-1">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                        Kecamatan
+                      </label>
+                      <select
+                        value={filterKecamatan}
+                        onChange={(e) => setFilterKecamatan(e.target.value)}
+                        disabled={!filterKabupaten}
+                        className="w-full bg-white border border-slate-200/80 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 text-slate-700 cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <option value="">-- Semua Kecamatan --</option>
+                        {kecamatansList.map((k) => (
+                          <option key={k.id} value={k.id}>
+                            {k.name || k.nama}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="relative">
                     <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                     <input
@@ -855,10 +979,10 @@ const MasterPotensi = () => {
                     <div>
                       <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-widest font-mono">Desa Hutan Terpilih</span>
                       <h4 className="font-bold text-slate-800 text-base mt-1">
-                        {desaList.find(d => d.id === selectedDesaId)?.nama || "Desa Terpilih"}
+                        {filteredDesa.find(d => d.id === selectedDesaId)?.nama || "Desa Terpilih"}
                       </h4>
                       <p className="text-xs text-slate-500 mt-0.5 font-semibold">
-                        Kec. {desaList.find(d => d.id === selectedDesaId)?.kecamatan || "-"} • Kab. {desaList.find(d => d.id === selectedDesaId)?.kabupaten || "-"}
+                        Kec. {filteredDesa.find(d => d.id === selectedDesaId)?.kecamatan || "-"} • Kab. {filteredDesa.find(d => d.id === selectedDesaId)?.kabupaten || "-"}
                       </p>
                     </div>
                     <button
@@ -1006,6 +1130,9 @@ const MasterPotensi = () => {
                   setIsAddPotensiModalOpen(false);
                   setSelectedDesaId(null);
                   setSearchDesa("");
+                  setFilterProvinsi("");
+                  setFilterKabupaten("");
+                  setFilterKecamatan("");
                   setAddPotensi([{ kategori: "Kategori Baru", sub: [] }]);
                 }}
                 className="px-5 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"

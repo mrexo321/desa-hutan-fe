@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { 
-  Database, 
-  Mail, 
-  Calendar, 
-  MapPin, 
-  Globe, 
-  Loader2, 
-  CheckCircle2, 
-  ChevronDown, 
+import {
+  Database,
+  Mail,
+  Calendar,
+  MapPin,
+  Globe,
+  Loader2,
+  CheckCircle2,
+  ChevronDown,
   ArrowRight,
   Info,
   Layers,
@@ -19,6 +19,7 @@ import HomeLayout from "../../components/HomeLayout";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { performaDesaService } from "../../services/master/performaDesaService";
+import AltchaCaptcha from "../../components/AltchaCaptcha";
 
 const WILAYAH_LEVELS = [
   { value: "nasional", label: "Nasional" },
@@ -36,6 +37,10 @@ export default function DataDesaPublic() {
   const [selectedKecamatanId, setSelectedKecamatanId] = useState("");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Captcha State & Ref
+  const [altchaPayload, setAltchaPayload] = useState("");
+  const altchaRef = React.useRef(null);
 
   // Derived flags for which sub-fields to show
   const showProvinsi = ["provinsi", "kabupaten", "kecamatan"].includes(selectedWilayahLevel);
@@ -163,6 +168,11 @@ export default function DataDesaPublic() {
       return;
     }
 
+    if (!altchaPayload) {
+      toast.warning("Harap selesaikan verifikasi captcha terlebih dahulu!");
+      return;
+    }
+
     setIsSubmitting(true);
 
     // Get names for payload
@@ -177,11 +187,21 @@ export default function DataDesaPublic() {
       provinsi: selectedWilayahLevel === "nasional" ? "Nasional" : (selectedProvObj?.name || selectedProvObj?.nama || selectedProvObj?.provinsi || ""),
       kabupaten: ["kabupaten", "kecamatan"].includes(selectedWilayahLevel) ? (selectedKabObj?.name || selectedKabObj?.nama || selectedKabObj?.kabupaten || null) : null,
       kecamatan: selectedWilayahLevel === "kecamatan" ? (selectedKecObj?.name || selectedKecObj?.nama || selectedKecObj?.kecamatan || null) : null,
+    //   altchaPayload,
+      altcha: altchaPayload,
     };
 
     try {
       const response = await performaDesaService.createRequestExcel(payload);
-      if (response.success || response.id || response.data) {
+
+      if (response?.success === false) {
+        toast.error(response?.message || "Gagal mengirim permohonan data.");
+        setAltchaPayload("");
+        altchaRef.current?.reset();
+        return;
+      }
+
+      if (response?.success || response?.id || response?.data) {
         toast.success("Permintaan ekspor Excel performa berhasil dikirim!", {
           description: "Anda dapat memantau status permohonan ini di dashboard dengan email tersebut.",
         });
@@ -192,10 +212,14 @@ export default function DataDesaPublic() {
         setSelectedKabupatenId("");
         setSelectedKecamatanId("");
         setEmail("");
+        setAltchaPayload("");
+        altchaRef.current?.reset();
       }
     } catch (err) {
       console.error("Gagal mengirim permintaan:", err);
-      toast.error(err.response?.data?.message || "Gagal mengirim permohonan data.");
+      toast.error(err.response?.data?.message || err?.message || "Gagal mengirim permohonan data.");
+      setAltchaPayload("");
+      altchaRef.current?.reset();
     } finally {
       setIsSubmitting(false);
     }
@@ -204,7 +228,7 @@ export default function DataDesaPublic() {
   return (
     <HomeLayout>
       <div className="bg-slate-50/50 font-sans text-slate-800 min-h-screen pb-20">
-        
+
         {/* Banner Hero */}
         <section className="bg-gradient-to-tr from-[#0C2A18] to-[#164E2A] py-16 px-6 text-white text-center relative overflow-hidden shadow-md">
           <div className="absolute inset-0 bg-black/10"></div>
@@ -497,12 +521,23 @@ export default function DataDesaPublic() {
                   </div>
                 </div>
 
+                {/* ALTCHA CAPTCHA */}
+                <AltchaCaptcha
+                  ref={altchaRef}
+                  onVerify={(payload) => setAltchaPayload(payload)}
+                  onExpire={() => setAltchaPayload("")}
+                />
+
                 {/* SUBMIT BUTTON */}
                 <button
                   type="submit"
                   id="submit-request"
-                  disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 text-white bg-gradient-to-r from-emerald-600 to-[#10B981] hover:from-emerald-700 hover:to-emerald-600 text-sm font-extrabold py-4 rounded-2xl transition-all shadow-md shadow-emerald-900/10 hover:shadow-emerald-900/20 hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer mt-6"
+                  disabled={isSubmitting || !altchaPayload}
+                  className={`w-full flex items-center justify-center gap-2 text-white text-sm font-extrabold py-4 rounded-2xl transition-all shadow-md ${
+                    isSubmitting || !altchaPayload
+                      ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
+                      : "bg-gradient-to-r from-emerald-600 to-[#10B981] hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-900/10 hover:shadow-emerald-900/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                  } mt-6`}
                 >
                   {isSubmitting ? (
                     <>

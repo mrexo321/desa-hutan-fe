@@ -17,11 +17,16 @@ import {
 } from "lucide-react";
 
 import { authService } from "../../services/auth/authService";
+import AltchaCaptcha from "../../components/AltchaCaptcha";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Captcha State & Ref
+  const [altchaPayload, setAltchaPayload] = useState("");
+  const altchaRef = React.useRef(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -61,6 +66,9 @@ const Login = () => {
       toast.error(
         error?.response?.data?.message || "Username atau password salah.",
       );
+      // Reset widget jika login gagal
+      setAltchaPayload("");
+      altchaRef.current?.reset();
     },
   });
 
@@ -71,7 +79,18 @@ const Login = () => {
       toast.warning("Username dan Password wajib diisi!");
       return;
     }
-    loginMutation.mutate({ username, password });
+
+    if (!altchaPayload) {
+      toast.warning("Harap selesaikan verifikasi captcha terlebih dahulu!");
+      return;
+    }
+
+    loginMutation.mutate({
+      username,
+      password,
+    //   altchaPayload,
+      altcha: altchaPayload,
+    });
   };
 
   return (
@@ -151,7 +170,7 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 pb-4">
+            <div className="flex items-center justify-between pt-1 pb-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -169,13 +188,20 @@ const Login = () => {
               </a>
             </div>
 
+            {/* ALTCHA CAPTCHA */}
+            <AltchaCaptcha
+              ref={altchaRef}
+              onVerify={(payload) => setAltchaPayload(payload)}
+              onExpire={() => setAltchaPayload("")}
+            />
+
             <button
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={loginMutation.isPending || !altchaPayload}
               className={`w-full flex items-center justify-center gap-2 text-white text-sm font-bold py-3.5 rounded-xl transition-all ${
-                loginMutation.isPending
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-[#2D7344] hover:bg-[#1f5631] hover:shadow-[0_8px_25px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0"
+                loginMutation.isPending || !altchaPayload
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                  : "bg-[#2D7344] hover:bg-[#1f5631] hover:shadow-[0_8px_25px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               }`}
             >
               {loginMutation.isPending ? (

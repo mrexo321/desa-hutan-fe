@@ -78,11 +78,10 @@ const SearchableDropdown = ({
       {/* Trigger Button */}
       <div
         onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${
-          isOpen
+        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${isOpen
             ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm"
             : "border-gray-250 shadow-sm"
-        }`}
+          }`}
       >
         <span
           className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}
@@ -91,9 +90,8 @@ const SearchableDropdown = ({
         </span>
         <ChevronDown
           size={14}
-          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
-            isOpen ? "transform rotate-180 text-[#2D7344]" : ""
-          }`}
+          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? "transform rotate-180 text-[#2D7344]" : ""
+            }`}
         />
       </div>
 
@@ -139,11 +137,10 @@ const SearchableDropdown = ({
                       onChange(opt.value);
                       setIsOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${
-                      isActive
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${isActive
                         ? "bg-green-50 text-[#2D7344] font-extrabold"
                         : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
-                    }`}
+                      }`}
                   >
                     <span className="truncate">{opt.label}</span>
                     {isActive && (
@@ -305,15 +302,13 @@ export default function PerformaDesa() {
 
         {/* HEADER */}
         <div className="flex flex-col items-center mb-6">
-          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest mb-3 uppercase">
-            Performa Desa Hutan
-          </h2>
+          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest mb-3">Perhitungan Indeks</h2>
           <div className="w-full h-[2px] bg-[#2D7344]"></div>
         </div>
 
         {/* FILTER BAR (Menggunakan grid & z-index agar dropdown melayang dengan indah) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-30 font-sans">
-          
+
           {/* Formula Filter */}
           <SearchableDropdown
             label="Formula"

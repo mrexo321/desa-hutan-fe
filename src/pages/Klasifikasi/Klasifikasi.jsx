@@ -124,7 +124,7 @@ const Klasifikasi = () => {
       queryClient.invalidateQueries({ queryKey: ["klasifikasi-hutan"] });
       toast.success("Data klasifikasi berhasil ditambahkan!");
       setIsAddModalOpen(false);
-      setAddForm({ nama: "", warna: "#2D7344", isActive: true });
+      setAddForm({ kode: "", nama: "", warna: "#2D7344", isActive: true });
     },
     onError: (error) => {
       toast.error(
@@ -171,7 +171,7 @@ const Klasifikasi = () => {
       queryClient.invalidateQueries({ queryKey: ["klasifikasi-desa"] });
       toast.success("Data klasifikasi desa berhasil ditambahkan!");
       setIsAddModalOpen(false);
-      setAddForm({ nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100 });
+      setAddForm({ kode: "", nama: "", warna: "#2D7344", nilaiMin: 0, nilaiMax: 100 });
     },
     onError: (e) => toast.error(e.response?.data?.message || "Gagal menyimpan data."),
   });
@@ -227,6 +227,7 @@ const Klasifikasi = () => {
     if (!addForm.nama || !addForm.warna) return toast.warning("Nama dan Warna wajib diisi!");
     if (activeTab === "desa") {
       createDesaMutation.mutate({
+        kode: addForm.kode,
         nama: addForm.nama,
         warna: addForm.warna,
         nilaiMin: Number(addForm.nilaiMin),
@@ -235,7 +236,7 @@ const Klasifikasi = () => {
         nilai_max: Number(addForm.nilaiMax),
       });
     } else {
-      createMutation.mutate({ nama: addForm.nama, warna: addForm.warna, isActive: addForm.isActive ?? true });
+      createMutation.mutate({ kode: addForm.kode, nama: addForm.nama, warna: addForm.warna, isActive: addForm.isActive ?? true });
     }
   };
 
@@ -261,6 +262,7 @@ const Klasifikasi = () => {
       updateDesaMutation.mutate({
         id: editForm.id,
         payload: {
+          kode: editForm.kode,
           nama: editForm.nama,
           warna: editForm.warna,
           nilaiMin: Number(editForm.nilaiMin),
@@ -273,13 +275,15 @@ const Klasifikasi = () => {
       if (
         editForm.nama === editForm.originalNama &&
         editForm.warna === editForm.originalWarna &&
-        editForm.isActive === editForm.originalIsActive
+        editForm.isActive === editForm.originalIsActive &&
+        editForm.kode === editForm.originalKode
       ) {
         toast.info("Tidak ada perubahan data."); setIsEditModalOpen(false); return;
       }
       updateMutation.mutate({
         id: editForm.id,
         payload: {
+          kode: editForm.kode,
           nama: editForm.nama,
           warna: editForm.warna,
           isActive: editForm.isActive,
@@ -713,6 +717,16 @@ const Klasifikasi = () => {
               ) : previewData ? (
                 // TAMPILAN DATA PREVIEW
                 <div className="space-y-6">
+                  {/* Blok Kode */}
+                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Kode Klasifikasi
+                    </p>
+                    <p className="text-lg font-mono font-bold text-slate-900">
+                      {previewData.kode || "-"}
+                    </p>
+                  </div>
+
                   {/* Blok Nama */}
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
@@ -804,6 +818,14 @@ const Klasifikasi = () => {
 
             <form onSubmit={handleAddSubmit} className="p-6">
               <div className="space-y-5">
+                {/* Kode */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kode Klasifikasi</label>
+                  <input type="text" value={addForm.kode} onChange={(e) => setAddForm({ ...addForm, kode: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
+                    placeholder={`Masukkan kode klasifikasi ${activeTab}...`} />
+                </div>
+
                 {/* Nama */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Klasifikasi</label>
@@ -892,6 +914,14 @@ const Klasifikasi = () => {
 
             <form onSubmit={handleUpdateSubmit} className="p-6">
               <div className="space-y-5">
+                {/* Kode */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kode Klasifikasi</label>
+                  <input type="text" value={editForm.kode} onChange={(e) => setEditForm({ ...editForm, kode: e.target.value })}
+                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
+                    placeholder={`Masukkan kode klasifikasi ${activeTab}...`} />
+                </div>
+
                 {/* Nama */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1.5">Nama Klasifikasi</label>

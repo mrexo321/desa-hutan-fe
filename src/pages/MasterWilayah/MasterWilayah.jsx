@@ -227,14 +227,14 @@ const MasterWilayah = () => {
   };
 
   return (
-    <DashboardLayout activeMenu="Master Wilayah">
+    <DashboardLayout activeMenu="Wilayah Administrasi">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
         {/* SCROLLABLE KONTEN */}
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
 
           {/* HEADER HALAMAN */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Manajemen Master Wilayah</h1>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Manajemen Wilayah Administratif</h1>
             <p className="text-sm text-gray-500 mt-1">Kelola data hierarki administratif wilayah (Provinsi {">"} Kabupaten/Kota {">"} Kecamatan) dalam satu tabel tunggal.</p>
           </div>
 

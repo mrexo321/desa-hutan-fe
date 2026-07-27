@@ -119,7 +119,7 @@ export default function Sidebar({ activeMenu }) {
       permission: "role:read",
     },
     {
-      name: "Master Wilayah",
+      name: "Wilayah Administrasi",
       path: "/dashboard/master-wilayah",
       icon: <MapPinned {...iconProps} />,
       permission: "wilayah_desa:read",
@@ -172,6 +172,14 @@ export default function Sidebar({ activeMenu }) {
     }
 
     // Custom alias mappings for nested pages and sub-modules
+    if (itemName === "Wilayah Administrasi") {
+      return (
+        activeMenu === "Wilayah Administrasi" ||
+        activeMenu === "Master Wilayah" ||
+        currentPath.includes("master-wilayah")
+      );
+    }
+
     if (itemName === "Rumus Indeks") {
       return (
         activeMenu === "Tahun Indikator Perhitungan" ||
@@ -293,11 +301,11 @@ export default function Sidebar({ activeMenu }) {
                         title={isCollapsed ? item.name : ""}
                         className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
                           ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          : "text-[#7B9E8D] hover:bg-[#00C47C]/15 hover:text-white"
                           }`}
                       >
                         <div
-                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
+                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110 group-hover:text-[#00C47C]"}`}
                         >
                           {item.icon}
                         </div>
@@ -342,11 +350,11 @@ export default function Sidebar({ activeMenu }) {
                         title={isCollapsed ? item.name : ""}
                         className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
                           ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          : "text-[#7B9E8D] hover:bg-[#00C47C]/15 hover:text-white"
                           }`}
                       >
                         <div
-                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
+                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110 group-hover:text-[#00C47C]"}`}
                         >
                           {item.icon}
                         </div>
@@ -385,11 +393,11 @@ export default function Sidebar({ activeMenu }) {
                         title={isCollapsed ? item.name : ""}
                         className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
                           ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
-                          : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
+                          : "text-[#7B9E8D] hover:bg-[#00C47C]/15 hover:text-white"
                           }`}
                       >
                         <div
-                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
+                          className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110 group-hover:text-[#00C47C]"}`}
                         >
                           {item.icon}
                         </div>

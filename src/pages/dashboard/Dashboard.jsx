@@ -1086,17 +1086,7 @@ const Dashboard = () => {
         {/* FILTER & SEARCH */}
         {activeTab === "Ringkasan" && (
           <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">
-            <div className="relative w-full lg:w-96 flex-1 group">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Cari direktori data provinsi..."
-                className="w-full bg-[#F8FAFC] border-none text-gray-700 py-3.5 pl-11 pr-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
-              />
-            </div>
+
             <div className="flex gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
               <select
                 value={filters.provinsi || ""}
@@ -1375,7 +1365,7 @@ const Dashboard = () => {
 
             {/* TABEL DATA */}
             <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-extrabold text-gray-800">
                     Direktori Desa Hutan
@@ -1384,9 +1374,6 @@ const Dashboard = () => {
                     Total 268 Data
                   </span>
                 </div>
-                <button className="bg-white border-2 border-gray-200 hover:border-[#00B67A] hover:text-[#00B67A] text-gray-700 px-5 py-2.5 rounded-[12px] text-sm font-bold transition-colors">
-                  Export CSV
-                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[1000px]">
@@ -1630,118 +1617,125 @@ const Dashboard = () => {
                   <div className="h-80 flex items-center justify-center">
                     <Loading />
                   </div>
-                ) : !matrixData?.daftarMatriks?.[0]?.dataChart?.length ? (
-                  <div className="h-80 flex items-center justify-center text-gray-500 text-xs font-bold">
-                    Tidak ada data chart yang tersedia.
-                  </div>
-                ) : (
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-6 h-full">
-                    {/* Responsive Pie Chart Container */}
-                    <div className="w-full md:w-1/2 h-80 relative">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={matrixData.daftarMatriks[0].dataChart}
-                            nameKey="label"
-                            dataKey="jumlah"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={75}
-                            outerRadius={110}
-                            paddingAngle={3}
-                            fill="#8884d8"
-                            onClick={(data) => {
-                              if (data && data.label) {
-                                setModalFilter({ status: data.label, kawasan: null });
+                ) : (() => {
+                  const idmStatusMatrix = matrixData?.daftarMatriks?.find(m => m.kode === "IDM (Status)");
+                  const chartData = idmStatusMatrix?.dataChart || [];
+                  if (!chartData.length) {
+                    return (
+                      <div className="h-80 flex items-center justify-center text-gray-500 text-xs font-bold">
+                        Tidak ada data chart yang tersedia.
+                      </div>
+                    );
+                  }
+                  const totalDesaChart = chartData.reduce((acc, curr) => acc + (curr.jumlah || 0), 0);
+                  return (
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 h-full">
+                      {/* Responsive Pie Chart Container */}
+                      <div className="w-full md:w-1/2 h-80 relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              nameKey="label"
+                              dataKey="jumlah"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={75}
+                              outerRadius={110}
+                              paddingAngle={3}
+                              fill="#8884d8"
+                              onClick={(data) => {
+                                if (data && data.label) {
+                                  setModalFilter({ status: data.label, kawasan: null });
+                                  setKawasanFilter("");
+                                  setIsModalOpen(true);
+                                }
+                              }}
+                              className="cursor-pointer"
+                            >
+                              {chartData.map((entry, idx) => (
+                                <Cell
+                                  key={`cell-${idx}`}
+                                  fill={COLORS[entry.label.toUpperCase()] || '#cbd5e1'}
+                                  className="transition-all duration-300 hover:opacity-85 focus:outline-none"
+                                />
+                              ))}
+                            </Pie>
+                            <ChartTooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
+                                      <div className="flex items-center gap-1.5 mb-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[data.label.toUpperCase()] }}></div>
+                                        <span className="font-extrabold text-sm">{data.label}</span>
+                                      </div>
+                                      <div className="flex flex-col gap-1 text-[11px] text-slate-300">
+                                        <div className="flex justify-between gap-4">
+                                          <span>Jumlah Desa:</span>
+                                          <span className="font-bold text-white">{data.jumlah} Desa</span>
+                                        </div>
+                                        <div className="w-full h-px bg-slate-700/50 my-1"></div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Dalam Kawasan:</span>
+                                          <span className="font-bold text-red-400">{data.breakdown?.dalamKawasan || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Beririsan Hutan:</span>
+                                          <span className="font-bold text-amber-400">{data.breakdown?.beririsan || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Luar Kawasan:</span>
+                                          <span className="font-bold text-emerald-400">{data.breakdown?.luarKawasan || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                          <div className="text-3xl font-extrabold text-gray-800">
+                            {totalDesaChart.toLocaleString('id-ID')}
+                          </div>
+                          <div className="text-xs text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
+                        </div>
+                      </div>
+
+                      {/* Legenda Chart */}
+                      <div className="w-full md:w-1/2 flex flex-col gap-2">
+                        {chartData.map((entry, idx) => {
+                          const percent = totalDesaChart ? ((entry.jumlah / totalDesaChart) * 100).toFixed(1) : 0;
+                          const color = COLORS[entry.label.toUpperCase()] || '#cbd5e1';
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setModalFilter({ status: entry.label, kawasan: null });
                                 setKawasanFilter("");
                                 setIsModalOpen(true);
-                              }
-                            }}
-                            className="cursor-pointer"
-                          >
-                            {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => (
-                              <Cell
-                                key={`cell-${idx}`}
-                                fill={COLORS[entry.label.toUpperCase()] || '#cbd5e1'}
-                                className="transition-all duration-300 hover:opacity-85 focus:outline-none"
-                              />
-                            ))}
-                          </Pie>
-                          <ChartTooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
-                                    <div className="flex items-center gap-1.5 mb-1.5">
-                                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[data.label.toUpperCase()] }}></div>
-                                      <span className="font-extrabold text-sm">{data.label}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1 text-[11px] text-slate-300">
-                                      <div className="flex justify-between gap-4">
-                                        <span>Jumlah Desa:</span>
-                                        <span className="font-bold text-white">{data.jumlah} Desa</span>
-                                      </div>
-                                      <div className="w-full h-px bg-slate-700/50 my-1"></div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Dalam Kawasan:</span>
-                                        <span className="font-bold text-red-400">{data.breakdown?.dalamKawasan || 0}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Beririsan Hutan:</span>
-                                        <span className="font-bold text-amber-400">{data.breakdown?.beririsan || 0}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Luar Kawasan:</span>
-                                        <span className="font-bold text-emerald-400">{data.breakdown?.luarKawasan || 0}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                        <div className="text-3xl font-extrabold text-gray-800">
-                          {matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0)}
-                        </div>
-                        <div className="text-xs text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
+                              }}
+                              className="flex items-center justify-between p-2.5 rounded-[12px] bg-[#F8FAFC] border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full shrink-0 group-hover:scale-110 transition-transform" style={{ backgroundColor: color }}></div>
+                                <span className="text-xs font-bold text-gray-700">{entry.label}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-extrabold text-gray-800">{entry.jumlah} <span className="text-[9px] text-gray-400 font-bold">Desa</span></span>
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 shrink-0">{percent}%</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-
-                    {/* Legenda Chart */}
-                    <div className="w-full md:w-1/2 flex flex-col gap-2">
-                      {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => {
-                        const total = matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0);
-                        const percent = total ? ((entry.jumlah / total) * 100).toFixed(1) : 0;
-                        const color = COLORS[entry.label.toUpperCase()] || '#cbd5e1';
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setModalFilter({ status: entry.label, kawasan: null });
-                              setKawasanFilter("");
-                              setIsModalOpen(true);
-                            }}
-                            className="flex items-center justify-between p-2.5 rounded-[12px] bg-[#F8FAFC] border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full shrink-0 group-hover:scale-110 transition-transform" style={{ backgroundColor: color }}></div>
-                              <span className="text-xs font-bold text-gray-700">{entry.label}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs font-extrabold text-gray-800">{entry.jumlah} <span className="text-[9px] text-gray-400 font-bold">Desa</span></span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 shrink-0">{percent}%</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </>
@@ -1906,12 +1900,12 @@ const Dashboard = () => {
                                   {spatialLabel}
                                 </span>
                                 {countKawasan > 0 && uniqueKawasan.length > 0 && (
-                                  <div className="relative group/tooltip inline-block shrink-0">
+                                  <div className="relative group/tooltip inline-block shrink-0 hover:z-50">
                                     <span className="cursor-help inline-flex items-center justify-center text-slate-500 hover:text-slate-600 transition-colors">
                                       <Info size={14} className="ml-0.5" />
                                     </span>
                                     {/* Beautiful Interactive Tooltip popup */}
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-xl p-3 shadow-xl z-[99] text-left">
+                                    <div className="absolute top-full right-0 mt-2 hidden group-hover/tooltip:block w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-xl p-3 shadow-xl z-[9999] text-left">
                                       <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 mb-1.5">
                                         Daftar Fungsi Kawasan Hutan ({uniqueKawasan.length}):
                                       </div>
@@ -1923,7 +1917,7 @@ const Dashboard = () => {
                                           </div>
                                         ))}
                                       </div>
-                                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-slate-900"></div>
+                                      <div className="absolute bottom-full right-[6px] border-[5px] border-transparent border-b-slate-900"></div>
                                     </div>
                                   </div>
                                 )}

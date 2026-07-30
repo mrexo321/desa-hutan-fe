@@ -15,14 +15,20 @@ import {
   HelpCircle,
   Info,
 } from "lucide-react";
-import { toast } from "sonner";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { usePermission } from "../../hooks/usePermission";
 import DataTable from "../../components/DataTable";
 
 export default function DomainDesaIndikatorPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const indicatorIdParam = searchParams.get("indicatorId");
+  const detailTahunParam = searchParams.get("detailTahun");
+  const tahunParam = searchParams.get("tahun") || detailTahunParam;
   const { can } = usePermission();
+
   // State Halaman
   const [selectedTahun, setSelectedTahun] = useState(null); // Menyimpan objek tahun terpilih
 
@@ -92,11 +98,16 @@ export default function DomainDesaIndikatorPage() {
   };
 
   // Fetch data dimensi desa (tabel dinamis)
-  const fetchDimensiDesa = async (tahun, page = 1, size = 10) => {
+  const fetchDimensiDesa = async (targetVal, page = 1, size = 10, isById = false) => {
     setLoadingDimensiDesa(true);
     setErrorDimensiDesa(false);
     try {
-      const res = await dimensiDesaService.getDimensiDesa({ tahun, page, size });
+      let res;
+      if (isById) {
+        res = await dimensiDesaService.getDimensiDesaById(targetVal, { page, size });
+      } else {
+        res = await dimensiDesaService.getDimensiDesa({ tahun: targetVal, page, size });
+      }
       setDimensiDesaData(res?.data || null);
     } catch (err) {
       setErrorDimensiDesa(true);
@@ -110,6 +121,32 @@ export default function DomainDesaIndikatorPage() {
     fetchTahunList();
     fetchMasterKategori();
   }, []);
+
+  useEffect(() => {
+    if (indicatorIdParam) {
+      const yearVal = tahunParam && !isNaN(parseInt(tahunParam)) ? parseInt(tahunParam) : null;
+      const item = { tahun: yearVal || "-", indicatorId: indicatorIdParam };
+      setSelectedTahun(item);
+      setDimensiDesaPage(1);
+      if (yearVal) fetchSchemaIndikator(yearVal);
+      fetchDimensiDesa(indicatorIdParam, 1, dimensiDesaSize, true);
+    } else if (detailTahunParam) {
+      const yearVal = parseInt(detailTahunParam);
+      if (!isNaN(yearVal)) {
+        const item = { tahun: yearVal };
+        setSelectedTahun(item);
+        setDimensiDesaPage(1);
+        fetchSchemaIndikator(yearVal);
+        fetchDimensiDesa(yearVal, 1, dimensiDesaSize, false);
+      }
+    }
+  }, [indicatorIdParam, detailTahunParam, tahunParam]);
+
+  // Switch ke Detail View (Arahkan ke /dashboard/indikator/:tahun)
+  const handleSelectTahun = (item) => {
+    navigate(`/dashboard/indikator/${item.tahun}`);
+  };
+
 
   // ==================== HANDLER TAHUN ====================
   const handleCreateTahun = async (e) => {
@@ -228,26 +265,28 @@ export default function DomainDesaIndikatorPage() {
     }
   };
 
-  // Switch ke Detail View
-  const handleSelectTahun = (item) => {
-    setSelectedTahun(item);
-    setDimensiDesaPage(1);
-    fetchSchemaIndikator(item.tahun);
-    fetchDimensiDesa(item.tahun, 1, dimensiDesaSize);
-  };
 
   // Handler pagination
   const handleDimensiDesaPageChange = (newPage) => {
     setDimensiDesaPage(newPage);
-    fetchDimensiDesa(selectedTahun.tahun, newPage, dimensiDesaSize);
+    if (selectedTahun?.indicatorId) {
+      fetchDimensiDesa(selectedTahun.indicatorId, newPage, dimensiDesaSize, true);
+    } else if (selectedTahun?.tahun) {
+      fetchDimensiDesa(selectedTahun.tahun, newPage, dimensiDesaSize, false);
+    }
   };
 
   const handleDimensiDesaSizeChange = (newSize) => {
     const size = parseInt(newSize);
     setDimensiDesaSize(size);
     setDimensiDesaPage(1);
-    fetchDimensiDesa(selectedTahun.tahun, 1, size);
+    if (selectedTahun?.indicatorId) {
+      fetchDimensiDesa(selectedTahun.indicatorId, 1, size, true);
+    } else if (selectedTahun?.tahun) {
+      fetchDimensiDesa(selectedTahun.tahun, 1, size, false);
+    }
   };
+
 
   // Build dynamic columns for dimensi desa table
   const dimensiDesaColumns = useMemo(() => {
@@ -454,9 +493,17 @@ export default function DomainDesaIndikatorPage() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
             <div className="flex items-center gap-4">
               <button
-                onClick={() => setSelectedTahun(null)}
+                onClick={() => {
+                  const targetYear = selectedTahun?.tahun;
+                  setSelectedTahun(null);
+                  if (targetYear) {
+                    navigate(`/dashboard/indikator/${targetYear}`);
+                  } else {
+                    navigate("/dashboard/indikator?tab=dimensi");
+                  }
+                }}
                 className="p-3 bg-white hover:bg-slate-50 border border-slate-200 text-slate-600 rounded-xl transition-all cursor-pointer shadow-sm"
-                title="Kembali ke Daftar Tahun"
+                title="Kembali"
               >
                 <ArrowLeft size={18} strokeWidth={2.5} />
               </button>

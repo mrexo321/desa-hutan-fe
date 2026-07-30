@@ -32,6 +32,8 @@ import MasterPotensi from "./pages/MasterPotensi/MasterPotensi";
 import ProvinceDetail from "./pages/dashboard/ProvinceDetail";
 import DetailMainIndikator from "./pages/Indikator/DetailMainIndikator";
 import FormMainIndikator from "./pages/Indikator/FormMainIndicator";
+import IndikatorDimensiTahun from "./pages/Indikator/IndikatorDimensiTahun";
+
 import DesaDetail from "./pages/dashboard/DetailDesa";
 import DetailFormulaIndicator from "./pages/Indikator/DetailFormulaIndicator";
 import FormFormulaIndicator from "./pages/Indikator/FormFormulaIndicator";
@@ -132,7 +134,16 @@ const App = () => {
           path="/dashboard/indikator/utama/edit/:id"
           element={<FormMainIndikator />}
         />
+        <Route
+          path="/dashboard/indikator/:tahun"
+          element={
+            <ProtectedRoute>
+              <IndikatorDimensiTahun />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/dashboard/desa-detail/:desaId" element={<DesaDetail />} />
+
 
       {/* --- INDIKATOR PERHITUNGAN (master_indikator_perhitungan) --- */}
       <Route

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { analystSpatialService } from "../../services/master/analystSpatialService";
+import { dimensiDesaService } from "../../services/master/dimensiDesaService";
 import { useAuthReady } from "../../hooks/useAuthReady";
 import { Loading } from "../../components/Loading";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -40,7 +41,9 @@ const DesaDetail = () => {
   const navigate = useNavigate();
 
   const isAuthReady = useAuthReady();
-  const [selectedDetailYear, setSelectedDetailYear] = useState(null);
+  const [selectedLabel, setSelectedLabel] = useState("");
+  const [indikatorPage, setIndikatorPage] = useState(1);
+  const [selectedIndikatorId, setSelectedIndikatorId] = useState(null);
 
   const { data: desaResponse, isLoading, isError, error } = useQuery({
     queryKey: ["desaDetail", desaId],
@@ -48,13 +51,42 @@ const DesaDetail = () => {
     enabled: isAuthReady && !!desaId,
   });
 
-  const { data: dimensiDesaData, isLoading: isLoadingDimensi, isError: isErrorDimensi } = useQuery({
-    queryKey: ["dimensiDesa", desaId],
-    queryFn: () => analystSpatialService.getDimensiDesa(desaId),
-    enabled: isAuthReady && !!desaId,
+  // 1. Fetch Labels (GET /v1/dimensi-desa/labels)
+  const { data: labelsResponse, isLoading: isLoadingLabels } = useQuery({
+    queryKey: ["dimensiDesaLabels"],
+    queryFn: () => dimensiDesaService.getLabels(),
+    enabled: isAuthReady,
   });
 
-  const selectedDetail = dimensiDesaData?.detail?.find(d => d.tahun === selectedDetailYear);
+  const labelsList = labelsResponse?.data || [];
+  const activeLabel = selectedLabel || labelsList[0] || "";
+
+  // 2. Fetch List Indikator (GET /v1/dimensi-desa/indikator?nama=...)
+  const {
+    data: indikatorListResponse,
+    isLoading: isLoadingIndikatorList,
+    isError: isErrorIndikatorList,
+  } = useQuery({
+    queryKey: ["dimensiDesaIndikatorList", activeLabel, indikatorPage],
+    queryFn: () => dimensiDesaService.getIndikatorByNama(activeLabel, { page: indikatorPage, size: 10 }),
+    enabled: isAuthReady && !!activeLabel,
+  });
+
+  const indikatorItems = indikatorListResponse?.data?.items || indikatorListResponse?.items || [];
+  const indikatorPagination = indikatorListResponse?.data?.pagination || indikatorListResponse?.pagination;
+
+  // 3. Fetch Detail Indikator (GET /v1/dimensi-desa/:id)
+  const {
+    data: detailIndikatorResponse,
+    isLoading: isLoadingDetailIndikator,
+    isError: isErrorDetailIndikator,
+  } = useQuery({
+    queryKey: ["dimensiDesaDetailById", selectedIndikatorId],
+    queryFn: () => dimensiDesaService.getDimensiDesaById(selectedIndikatorId),
+    enabled: isAuthReady && !!selectedIndikatorId,
+  });
+
+  const detailData = detailIndikatorResponse?.data || detailIndikatorResponse;
 
   const desa = desaResponse;
   const provinceName = location.state?.provinceName || desa?.provinsi || "Provinsi";
@@ -408,12 +440,32 @@ const DesaDetail = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-gray-900">
-                    Data Dimensi Desa
+                    Data Indeks & Dimensi Desa
                   </h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Rekapitulasi skor, status, dan rincian indeks dimensi pembangunan desa per tahun.
+                    Rekapitulasi indikator dan rincian dimensi pembangunan desa.
                   </p>
                 </div>
+              </div>
+
+              {/* Dropdown Labels */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Label:</span>
+                <select
+                  value={activeLabel}
+                  onChange={(e) => {
+                    setSelectedLabel(e.target.value);
+                    setIndikatorPage(1);
+                  }}
+                  disabled={isLoadingLabels}
+                  className="bg-[#F8FAFC] border border-gray-200 text-gray-800 text-xs sm:text-sm font-extrabold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all cursor-pointer shadow-sm min-w-[200px]"
+                >
+                  {labelsList.map((labelItem, idx) => (
+                    <option key={idx} value={labelItem}>
+                      {labelItem}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
 
@@ -421,38 +473,35 @@ const DesaDetail = () => {
               <DataTable
                 columns={[
                   {
-                    header: "Tahun",
-                    render: (row) => <span className="font-bold text-slate-900">Tahun {row.tahun}</span>,
+                    header: "NO",
+                    className: "w-16 text-center",
+                    render: (row, idx) => {
+                      const currentPage = indikatorPagination?.currentPage || indikatorPage;
+                      const perPage = indikatorPagination?.perPage || 10;
+                      return <span className="font-bold text-gray-400">{(currentPage - 1) * perPage + idx + 1}</span>;
+                    },
                   },
                   {
-                    header: "Skor",
+                    header: "NAMA INDIKATOR",
+                    render: (row) => <span className="font-extrabold text-slate-900">{row.nama || "-"}</span>,
+                  },
+                  {
+                    header: "TAHUN",
                     render: (row) => (
-                      <span className="font-bold text-slate-700">
-                        {row.skor !== null && row.skor !== undefined 
-                          ? (typeof row.skor === 'number' ? row.skor.toFixed(2) : row.skor) 
-                          : "-"}
+                      <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100/80 px-2.5 py-1 rounded-lg text-xs">
+                        {row.tahunIndikatorDimensi?.tahun || row.tahun || "-"}
                       </span>
                     ),
                   },
                   {
-                    header: "Status",
-                    render: (row) => (
-                      <span className={`px-2.5 py-1 rounded-lg text-xs font-bold border ${
-                        row.status ? "bg-emerald-50 text-emerald-700 border-emerald-100" : "bg-slate-100 text-slate-600 border-slate-200"
-                      }`}>
-                        {row.status || "-"}
-                      </span>
-                    ),
-                  },
-                  {
-                    header: "Aksi",
+                    header: "AKSI",
                     className: "text-center w-24",
                     render: (row) => (
                       <div className="flex justify-center">
                         <button
-                          onClick={() => setSelectedDetailYear(row.tahun)}
+                          onClick={() => setSelectedIndikatorId(row.id)}
                           className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors cursor-pointer"
-                          title="Lihat Detail Dimensi"
+                          title="Lihat Detail Indikator"
                         >
                           <Eye size={16} strokeWidth={2.5} />
                         </button>
@@ -460,35 +509,66 @@ const DesaDetail = () => {
                     ),
                   },
                 ]}
-                data={dimensiDesaData?.metadata || []}
-                isLoading={isLoadingDimensi}
-                isError={isErrorDimensi}
-                emptyMessage="Tidak ada data dimensi desa."
+                data={indikatorItems}
+                isLoading={isLoadingIndikatorList || isLoadingLabels}
+                isError={isErrorIndikatorList}
+                emptyMessage="Tidak ada data indikator dimensi desa untuk label ini."
               />
+
+              {/* Pagination Controls */}
+              {indikatorPagination && indikatorPagination.totalPage > 1 && (
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200/60">
+                  <span className="text-xs text-gray-500 font-semibold">
+                    Menampilkan <span className="font-extrabold text-gray-800">{indikatorItems.length}</span> dari <span className="font-extrabold text-gray-800">{indikatorPagination.total}</span> data
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => setIndikatorPage(prev => Math.max(prev - 1, 1))}
+                      disabled={indikatorPage <= 1}
+                      className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Sebelumnya
+                    </button>
+                    <span className="px-3 py-1 text-xs font-extrabold text-gray-700">
+                      {indikatorPage} / {indikatorPagination.totalPage}
+                    </span>
+                    <button
+                      onClick={() => setIndikatorPage(prev => Math.min(prev + 1, indikatorPagination.totalPage))}
+                      disabled={indikatorPage >= indikatorPagination.totalPage}
+                      className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      Selanjutnya
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
         </div>
       </main>
 
-      {/* MODAL DETAIL DIMENSI DESA */}
-      {selectedDetailYear && (() => {
-        // Helper to extract highlight indicators
-        const idmStatus = selectedDetail?.dimensi?.find(d => d.kode === "IDM (Status)") || selectedDetail?.dimensi?.[0];
-        const idmNilai = selectedDetail?.dimensi?.find(d => d.kode === "IDM (Nilai)") || selectedDetail?.dimensi?.[1];
-        
-        // The rest of the indicators to show in the list/grid
-        const remainingDims = selectedDetail?.dimensi?.filter(d => 
-          d.kategoriIndikatorId !== idmStatus?.kategoriIndikatorId && 
-          d.kategoriIndikatorId !== idmNilai?.kategoriIndikatorId
-        ) || [];
+      {/* MODAL DETAIL INDIKATOR DIMENSI DESA (/v1/dimensi-desa/:id) */}
+      {selectedIndikatorId && (() => {
+        const targetItem = detailData?.items?.find(
+          it => it.desaId === desaId || it.desa?.id === desaId || (desa?.kodeKemendagri && it.desa?.kodeKemendagri === desa.kodeKemendagri)
+        ) || detailData?.items?.[0];
+
+        const nilaiList = targetItem?.nilai || [];
+        const columns = detailData?.column || [];
+
+        // Extract highlight cards
+        const idmStatus = nilaiList.find(n => n.kode?.toLowerCase().includes("status") || n.nama?.toLowerCase().includes("status")) || (nilaiList.length > 0 ? nilaiList[0] : null);
+        const idmNilai = nilaiList.find(n => n.kode?.toLowerCase().includes("nilai") || n.kode?.toLowerCase().includes("skor") || n.nama?.toLowerCase().includes("skor")) || (nilaiList.length > 1 ? nilaiList[1] : null);
+
+        const remainingDims = nilaiList.filter(n => n !== idmStatus && n !== idmNilai);
 
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
             <div className="bg-[#F8FAFC] rounded-[32px] shadow-2xl w-full max-w-4xl overflow-hidden border border-slate-200/50 animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
-              {/* Emerald Header Accent */}
+              {/* Emerald Accent Header */}
               <div className="h-1.5 bg-gradient-to-r from-emerald-600 to-[#10B981]" />
-              
+
               {/* Header */}
               <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
                 <div>
@@ -496,11 +576,11 @@ const DesaDetail = () => {
                     Rincian Dimensi Pembangunan
                   </span>
                   <h3 className="text-xl font-bold text-slate-800 mt-1.5">
-                    Detail Indeks Desa - Tahun {selectedDetailYear}
+                    {detailData?.dimensiDesa?.nama || "Detail Indikator Dimensi"}
                   </h3>
                 </div>
                 <button
-                  onClick={() => setSelectedDetailYear(null)}
+                  onClick={() => setSelectedIndikatorId(null)}
                   className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
                 >
                   <X size={20} />
@@ -509,12 +589,19 @@ const DesaDetail = () => {
 
               {/* Body */}
               <div className="p-8 overflow-y-auto custom-scrollbar flex-1">
-                {selectedDetail && selectedDetail.dimensi && selectedDetail.dimensi.length > 0 ? (
+                {isLoadingDetailIndikator ? (
+                  <div className="py-20 flex flex-col items-center justify-center">
+                    <Loading />
+                    <p className="text-sm font-bold text-slate-500 mt-4">Memuat detail dimensi desa...</p>
+                  </div>
+                ) : isErrorDetailIndikator ? (
+                  <div className="py-16 text-center text-red-500 font-bold">
+                    Gagal memuat rincian indikator dimensi dari server.
+                  </div>
+                ) : nilaiList.length > 0 ? (
                   <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                    
                     {/* Left Column: Highlight Cards */}
                     <div className="lg:col-span-5 space-y-6">
-                      {/* Main Banner Card */}
                       <div className="bg-gradient-to-tr from-[#0C2A18] to-[#164E2A] rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
                         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:12px_12px]" />
                         <span className="text-[9px] font-bold text-emerald-300 uppercase tracking-widest bg-emerald-950/40 border border-emerald-700/30 px-2.5 py-1 rounded-md inline-block mb-3 leading-none">
@@ -548,7 +635,7 @@ const DesaDetail = () => {
                             <Activity size={16} className="text-blue-600" />
                             <span className="text-[10px] font-bold uppercase tracking-wider">{idmNilai.nama}</span>
                           </div>
-                           <div className="text-4xl font-black text-slate-800 relative z-10 flex items-baseline">
+                          <div className="text-4xl font-black text-slate-800 relative z-10 flex items-baseline">
                             {typeof idmNilai.nilai === 'number' ? idmNilai.nilai.toFixed(2) : idmNilai.nilai}
                             <span className="text-xs text-slate-400 font-bold ml-1">Poin</span>
                           </div>
@@ -567,8 +654,8 @@ const DesaDetail = () => {
                           {remainingDims.map((dim, idx) => {
                             const isNumeric = typeof dim.nilai === 'number';
                             return (
-                              <div 
-                                key={idx} 
+                              <div
+                                key={idx}
                                 className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between gap-4 hover:border-emerald-200 transition-colors duration-300"
                               >
                                 <div className="space-y-1">
@@ -579,17 +666,16 @@ const DesaDetail = () => {
                                     {dim.nama}
                                   </span>
                                 </div>
-                                
+
                                 <div className="text-right shrink-0">
                                   {isNumeric ? (
                                     <div className="flex flex-col items-end gap-1">
                                       <span className="text-sm font-black text-slate-800 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
                                         {dim.nilai.toFixed(2)}
                                       </span>
-                                      {/* Simple progress bar */}
                                       <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1">
-                                        <div 
-                                          className="h-full bg-emerald-500 rounded-full" 
+                                        <div
+                                          className="h-full bg-emerald-500 rounded-full"
                                           style={{ width: `${Math.min(dim.nilai * 100, 100)}%` }}
                                         />
                                       </div>
@@ -608,17 +694,16 @@ const DesaDetail = () => {
                         <div className="py-12 flex flex-col items-center justify-center text-center text-slate-400 bg-white rounded-3xl border border-dashed border-slate-200">
                           <Info size={28} className="mb-2 text-slate-300" />
                           <p className="text-sm font-bold">Hanya data IDM utama yang tersedia</p>
-                          <p className="text-xs mt-0.5">Tidak ada dimensi pendukung tambahan untuk tahun ini.</p>
+                          <p className="text-xs mt-0.5">Tidak ada dimensi pendukung tambahan.</p>
                         </div>
                       )}
                     </div>
-
                   </div>
                 ) : (
                   <div className="py-20 flex flex-col items-center justify-center text-center text-slate-400 bg-white rounded-[32px] border border-dashed border-slate-200">
                     <Info size={40} className="mb-4 text-slate-300 animate-pulse" />
                     <h4 className="text-lg font-bold text-slate-700">Tidak ada rincian data</h4>
-                    <p className="text-sm text-slate-500 max-w-xs mt-1">Rincian dimensi pembangunan desa untuk tahun ini belum diunggah ke server.</p>
+                    <p className="text-sm text-slate-500 max-w-xs mt-1">Rincian dimensi pembangunan desa untuk indikator ini belum tersedia.</p>
                   </div>
                 )}
               </div>
@@ -626,7 +711,7 @@ const DesaDetail = () => {
               {/* Footer */}
               <div className="px-8 py-5 border-t border-slate-100 flex justify-end bg-white">
                 <button
-                  onClick={() => setSelectedDetailYear(null)}
+                  onClick={() => setSelectedIndikatorId(null)}
                   className="px-6 py-2.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition-colors cursor-pointer"
                 >
                   Tutup Rincian

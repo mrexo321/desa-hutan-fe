@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable";
 import { indikatorService } from "../../services/master/indikatorService";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DomainDesaIndikatorPage from "../DimensiDesa/DomainDesaIndikatorPage";
 import { usePermission } from "../../hooks/usePermission";
 
@@ -25,9 +25,17 @@ import { usePermission } from "../../hooks/usePermission";
 const Indikator = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
   const { can } = usePermission();
-  const [activeTab, setActiveTab] = useState("utama");
+  const [activeTab, setActiveTab] = useState(tabParam || "utama");
   const [searchQuery, setSearchQuery] = useState("");
+
+  React.useEffect(() => {
+    if (tabParam && ["utama", "kategori", "dimensi"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // ==========================================
   // STATE MODALS
@@ -400,6 +408,7 @@ const Indikator = () => {
                 onClick={() => {
                   setActiveTab(tab);
                   setSearchQuery("");
+                  setSearchParams({ tab });
                 }}
                 className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${
                   activeTab === tab

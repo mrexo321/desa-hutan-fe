@@ -14,8 +14,8 @@ export const dimensiDesaService = {
   },
 
   // Get indicator schema configured for a specific year
-  async getIndikatorByTahun(tahun) {
-    const response = await masterInstance.get(`/dimensi-desa/indikator/${tahun}`);
+  async getIndikatorByTahun(dimensiId) {
+    const response = await masterInstance.get(`/dimensi-desa/indikator/${dimensiId}`);
     return response.data;
   },
 
@@ -27,15 +27,15 @@ export const dimensiDesaService = {
     return response.data;
   },
 
-  // Add category indicator to a specific year
-  async addIndikator(tahun, payload) {
-    const response = await masterInstance.post(`/dimensi-desa/indikator/${tahun}`, payload);
+  // Add category indicator to a specific dimensi
+  async addIndikator(dimensiId, payload) {
+    const response = await masterInstance.post(`/dimensi-desa/indikator/${dimensiId}`, payload);
     return response.data;
   },
 
-  // Remove indicator from a specific year
-  async removeIndikator(tahun, kategoriIndikatorIds) {
-    const response = await masterInstance.delete(`/dimensi-desa/indikator/${tahun}`, {
+  // Remove indicator from a specific dimensi
+  async removeIndikator(dimensiId, kategoriIndikatorIds) {
+    const response = await masterInstance.delete(`/dimensi-desa/indikator/${dimensiId}`, {
       data: { kategoriIndikatorIds },
     });
     return response.data;

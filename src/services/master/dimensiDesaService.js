@@ -60,9 +60,13 @@ export const dimensiDesaService = {
   },
 
   // Ambil data matrix & chart
-  async getMatrixSummary(tahun, onlyPsn = false) {
+  async getMatrixSummary(tahun, onlyPsn = false, extraParams = {}) {
     const response = await masterInstance.get(`/dimensi-desa/matrix/${tahun}`, {
-      params: { onlyPsn }
+      params: {
+        onlyPsn,
+        ...(extraParams?.memilikiKawasanHutan && { memilikiKawasanHutan: extraParams.memilikiKawasanHutan }),
+        ...(extraParams?.tipeAdministrasi && { tipeAdministrasi: extraParams.tipeAdministrasi }),
+      }
     });
     return response.data;
   },
@@ -111,6 +115,28 @@ export const dimensiDesaService = {
         sortBy: params.sortBy || null,
         order: params.order || "asc"
       }
+    });
+    return response.data;
+  },
+
+  // Ambil list desa hutan matrix untuk popup modal
+  async getListDesaHutanMatrix(tahun, params = {}) {
+    const response = await masterInstance.get(`/dimensi-desa/matrix/${tahun}/list-desa-hutan`, {
+      params: {
+        kawasan: params.kawasan,
+        page: params.page || 1,
+        size: params.size || 10,
+        ...(params.search && { search: params.search }),
+        ...(params.provinsi && { provinsi: params.provinsi }),
+        ...(params.kabupaten && { kabupaten: params.kabupaten }),
+        ...(params.kecamatan && { kecamatan: params.kecamatan }),
+        ...(params.only !== undefined && params.only !== null && { only: params.only }),
+        ...(params.onlyPsn !== undefined && params.onlyPsn !== null && { onlyPsn: params.onlyPsn }),
+        ...((params.tipe_administrasi || params.tipeAdministrasi) && {
+          tipe_administrasi: params.tipe_administrasi || params.tipeAdministrasi,
+          tipeAdministrasi: params.tipeAdministrasi || params.tipe_administrasi,
+        }),
+      },
     });
     return response.data;
   }

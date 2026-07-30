@@ -7,6 +7,24 @@ export const dimensiDesaService = {
     return response.data;
   },
 
+  // GET /v1/dimensi-desa/labels
+  async getLabels() {
+    const response = await masterInstance.get("/dimensi-desa/labels");
+    return response.data;
+  },
+
+  // GET /v1/dimensi-desa/indikator?nama=...
+  async getIndikatorByNama(nama, params = {}) {
+    const response = await masterInstance.get("/dimensi-desa/indikator", {
+      params: {
+        nama,
+        page: params.page || 1,
+        size: params.size || 10,
+      },
+    });
+    return response.data;
+  },
+
   // Create a new dimension year
   async createTahun(payload) {
     const response = await masterInstance.post("/dimensi-desa/tahun", payload);

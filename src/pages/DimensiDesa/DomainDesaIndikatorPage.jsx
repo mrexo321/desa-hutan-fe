@@ -16,6 +16,7 @@ import {
   Info,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { toast } from "sonner";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { usePermission } from "../../hooks/usePermission";
@@ -74,14 +75,14 @@ export default function DomainDesaIndikatorPage() {
     }
   };
 
-  const fetchSchemaIndikator = async (tahun) => {
+  const fetchSchemaIndikator = async (dimensiId) => {
     setLoadingIndikator(true);
     try {
-      const res = await dimensiDesaService.getIndikatorByTahun(tahun);
-      const data = res?.data?.[0]?.dimensiIndikator || res?.data || res || [];
-      setSchemaIndikator(data);
+      const res = await dimensiDesaService.getIndikatorByTahun(dimensiId);
+      const rows = Array.isArray(res?.data) ? res.data : res?.data ? [res.data] : [];
+      setSchemaIndikator(rows[0]?.dimensiIndikator || []);
     } catch (err) {
-      toast.error(`Gagal memuat indikator tahun ${tahun}`);
+      toast.error("Gagal memuat indikator");
     } finally {
       setLoadingIndikator(false);
     }
@@ -128,7 +129,7 @@ export default function DomainDesaIndikatorPage() {
       const item = { tahun: yearVal || "-", indicatorId: indicatorIdParam };
       setSelectedTahun(item);
       setDimensiDesaPage(1);
-      if (yearVal) fetchSchemaIndikator(yearVal);
+      fetchSchemaIndikator(indicatorIdParam);
       fetchDimensiDesa(indicatorIdParam, 1, dimensiDesaSize, true);
     } else if (detailTahunParam) {
       const yearVal = parseInt(detailTahunParam);
@@ -136,7 +137,6 @@ export default function DomainDesaIndikatorPage() {
         const item = { tahun: yearVal };
         setSelectedTahun(item);
         setDimensiDesaPage(1);
-        fetchSchemaIndikator(yearVal);
         fetchDimensiDesa(yearVal, 1, dimensiDesaSize, false);
       }
     }
@@ -172,6 +172,15 @@ export default function DomainDesaIndikatorPage() {
   };
 
   // ==================== HANDLER INDIKATOR ====================
+  // Reload tabel Data Dimensi Desa (kolom dinamisnya berubah setelah indikator ditambah/dihapus)
+  const reloadDimensiDesaTable = () => {
+    if (selectedTahun?.indicatorId) {
+      fetchDimensiDesa(selectedTahun.indicatorId, dimensiDesaPage, dimensiDesaSize, true);
+    } else if (selectedTahun?.tahun) {
+      fetchDimensiDesa(selectedTahun.tahun, dimensiDesaPage, dimensiDesaSize, false);
+    }
+  };
+
   const handleAddIndikator = async () => {
     if (!selectedKategoriId) {
       toast.warning("Silakan pilih indikator terlebih dahulu");
@@ -179,12 +188,13 @@ export default function DomainDesaIndikatorPage() {
     }
     setAddingIndikator(true);
     try {
-      await dimensiDesaService.addIndikator(selectedTahun.tahun, {
+      await dimensiDesaService.addIndikator(selectedTahun.indicatorId, {
         kategoriIndikatorId: selectedKategoriId,
       });
       toast.success("Indikator berhasil ditambahkan ke tahun ini");
       setSelectedKategoriId("");
-      fetchSchemaIndikator(selectedTahun.tahun);
+      fetchSchemaIndikator(selectedTahun.indicatorId);
+      reloadDimensiDesaTable();
     } catch (err) {
       toast.error(err.response?.data?.message || "Gagal menambahkan indikator");
     } finally {
@@ -199,10 +209,11 @@ export default function DomainDesaIndikatorPage() {
   const confirmRemoveIndikator = async () => {
     if (!deleteKategori) return;
     try {
-      await dimensiDesaService.removeIndikator(selectedTahun.tahun, [deleteKategori.id]);
+      await dimensiDesaService.removeIndikator(selectedTahun.indicatorId, [deleteKategori.id]);
       toast.success(`Berhasil menghapus indikator ${deleteKategori.nama}`);
       setDeleteKategori(null);
-      fetchSchemaIndikator(selectedTahun.tahun);
+      fetchSchemaIndikator(selectedTahun.indicatorId);
+      reloadDimensiDesaTable();
     } catch (err) {
       toast.error(err.response?.data?.message || "Gagal menghapus indikator");
     }

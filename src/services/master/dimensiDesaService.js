@@ -19,6 +19,14 @@ export const dimensiDesaService = {
     return response.data;
   },
 
+  // Get list of indicators for a specific year via query params (/dimensi-desa/indikator?tahun=2025)
+  async getIndikatorDimensiByTahun(tahun) {
+    const response = await masterInstance.get("/dimensi-desa/indikator", {
+      params: { tahun },
+    });
+    return response.data;
+  },
+
   // Add category indicator to a specific year
   async addIndikator(tahun, payload) {
     const response = await masterInstance.post(`/dimensi-desa/indikator/${tahun}`, payload);
@@ -59,7 +67,7 @@ export const dimensiDesaService = {
     return response.data;
   },
 
-  // Ambil data dimensi desa (tabel dengan kolom dinamis)
+  // Ambil data dimensi desa (tabel dengan kolom dinamis) per tahun
   async getDimensiDesa(params = {}) {
     const response = await masterInstance.get("/dimensi-desa", {
       params: {
@@ -70,6 +78,25 @@ export const dimensiDesaService = {
     });
     return response.data;
   },
+
+  // Ambil data dimensi desa (tabel dengan kolom dinamis) per ID indikator (/dimensi-desa/:id)
+  async getDimensiDesaById(id, params = {}) {
+    const response = await masterInstance.get(`/dimensi-desa/${id}`, {
+      params: {
+        page: params.page || 1,
+        size: params.size || 10,
+      },
+    });
+    return response.data;
+  },
+
+  // Update indikator dimensi desa per ID (/dimensi-desa/:id)
+  async updateIndikatorDimensi(id, payload) {
+    const response = await masterInstance.patch(`/dimensi-desa/${id}`, payload);
+    return response.data;
+  },
+
+
 
   // Ambil detail desa untuk drill-down modal
   async getDetailDesa(tahun, params = {}) {

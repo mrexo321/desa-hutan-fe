@@ -29,6 +29,7 @@ import ManajemenUser from "./pages/ManajemenUser/ManajemenUser";
 import ManajemenRoles from "./pages/ManajemenRole/ManajemenRole";
 import MasterWilayah from "./pages/MasterWilayah/MasterWilayah";
 import MasterPotensi from "./pages/MasterPotensi/MasterPotensi";
+import MasterIntervensiDesa from "./pages/MasterIntervensiDesa/MasterIntervensiDesa";
 import ProvinceDetail from "./pages/dashboard/ProvinceDetail";
 import DetailMainIndikator from "./pages/Indikator/DetailMainIndikator";
 import FormMainIndikator from "./pages/Indikator/FormMainIndicator";
@@ -235,6 +236,16 @@ const App = () => {
         element={
           <ProtectedRoute allowedPermissions={["performa_desa_hutan:read"]}>
             <MasterPotensi />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --- MASTER INTERVENSI DESA --- */}
+      <Route
+        path="/dashboard/master-intervensi-desa"
+        element={
+          <ProtectedRoute allowedPermissions={["intervensi_desa:read"]}>
+            <MasterIntervensiDesa />
           </ProtectedRoute>
         }
       />

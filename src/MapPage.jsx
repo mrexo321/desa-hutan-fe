@@ -417,34 +417,7 @@ export default function MapPage() {
                         )}
                       </div>
 
-                      {detailData.desa && (detailData.desa.provinsi || detailData.desa.kabupaten || detailData.desa.kecamatan) && (
-                        <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100/80 text-xs flex flex-col gap-1.5">
-                          {detailData.desa.kecamatan && (
-                            <div className="flex justify-between items-center">
-                              <span className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Kecamatan</span>
-                              <span className="font-bold text-gray-700">
-                                {typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan?.nama : detailData.desa.kecamatan}
-                              </span>
-                            </div>
-                          )}
-                          {detailData.desa.kabupaten && (
-                            <div className="flex justify-between items-center border-t border-gray-100 pt-1.5">
-                              <span className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Kabupaten</span>
-                              <span className="font-bold text-gray-700">
-                                {typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten?.nama : detailData.desa.kabupaten}
-                              </span>
-                            </div>
-                          )}
-                          {detailData.desa.provinsi && (
-                            <div className="flex justify-between items-center border-t border-gray-100 pt-1.5">
-                              <span className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Provinsi</span>
-                              <span className="font-bold text-gray-700">
-                                {typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi?.nama : detailData.desa.provinsi}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      )}
+
 
 
                       <div className="grid grid-cols-2 gap-3">
@@ -551,7 +524,7 @@ export default function MapPage() {
                 GEO<span className="text-[#2D7344]">DASHBOARD</span>
               </h1>
               <p className="text-[9px] text-gray-500 uppercase tracking-[0.25em] font-bold">
-                GEODASHBOARD SISTEM TATA HUTAN
+                GEODASHBOARD SISTEM DESA HUTAN
               </p>
             </div>
           </div>

@@ -277,67 +277,6 @@ const Homepage = () => {
           </div>
         </section>
 
-        {/* ─────────────────────────────────────────── */}
-        {/* 3. MAP & HUBUNGI KAMI SECTION               */}
-        {/* ─────────────────────────────────────────── */}
-        <section id="contact-section" className="py-20 bg-white border-y border-slate-100">
-          <div className="max-w-7xl mx-auto px-6">
-            {/* Header */}
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-full inline-block mb-3">
-                Hubungi Kami
-              </span>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight uppercase">
-                LOKASI &amp; KONTAK KEMENTERIAN KEHUTANAN
-              </h2>
-              <p className="text-sm text-slate-500 mt-2 font-medium">
-                Kantor Pusat Kementerian Kehutanan Republik Indonesia siap melayani informasi publik dan konsultasi perhutanan sosial. Silakan akses peta dan titik lokasi resmi di bawah ini.
-              </p>
-            </div>
-
-            {/* Dashboard Mockup Map Frame */}
-            <div className="max-w-5xl mx-auto bg-slate-950 p-3 rounded-[2rem] shadow-2xl border border-slate-800 relative group overflow-hidden">
-              {/* Inner Map Panel */}
-              <div className="relative w-full h-[400px] md:h-[480px] bg-slate-900 rounded-[1.5rem] overflow-hidden">
-                <iframe
-                  title="Peta Lokasi Kementerian Kehutanan RI"
-                  src="https://maps.google.com/maps?q=Gedung%20Manggala%20Wanabakti%20Kementerian%20Kehutanan%20RI%20Jakarta&t=&z=16&ie=UTF8&iwloc=&output=embed"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, opacity: 0.9 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="brightness-95 hover:brightness-100 transition-all duration-700"
-                ></iframe>
-
-                {/* Floating Map Info Overlay */}
-                <div className="absolute bottom-6 left-6 right-6 md:right-auto bg-slate-950/90 backdrop-blur-md border border-slate-800 p-5 rounded-2xl text-white shadow-2xl font-sans max-w-sm">
-                  <div className="flex items-center gap-2 mb-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                    <MapPin size={14} />
-                    Lokasi Kantor Resmi
-                  </div>
-                  <h4 className="font-extrabold text-sm mb-1 text-slate-100">Kementerian Kehutanan RI</h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                    Gedung Manggala Wanabakti, Jl. Gatot Subroto, Senayan, Jakarta Pusat, DKI Jakarta 10270
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-800 text-center">
-                    <div>
-                      <div className="text-xs font-bold text-emerald-400">Senin - Jumat</div>
-                      <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">08.00 - 16.00 WIB</div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-amber-400">Pusat Layanan</div>
-                      <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Informasi Publik</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
 
         {/* ─────────────────────────────────────────── */}
         {/* 4. MEDIA SOSIAL & SITUS TERKAIT SECTION     */}
@@ -359,20 +298,43 @@ const Homepage = () => {
           {/* 30% / 70% Grid Layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
 
-            {/* SEBELAH KIRI (~30% / 4 COLS): CARD MEDIA SOSIAL */}
+            {/* SEBELAH KIRI (~30% / 4 COLS): CARD KONTAK EMAIL & MEDIA SOSIAL */}
             <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow">
               <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
                 <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
-                  <Share2 size={20} />
+                  <Mail size={20} />
                 </div>
                 <div>
-                  <h3 className="font-extrabold text-slate-800 text-base">Media Sosial Resmi</h3>
-                  <p className="text-xs text-slate-400 font-medium">Ikuti pembaruan berita</p>
+                  <h3 className="font-extrabold text-slate-800 text-base">Kontak &amp; Medsos</h3>
+                  <p className="text-xs text-slate-400 font-medium">Layanan email &amp; akun sosial media</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-3.5">
-                {/* Instagram */}
+                {/* 1. EMAIL (URUTAN PERTAMA - MENONJOL & HIGHLIGHTED) */}
+                <a
+                  href="mailto:humas@menhut.go.id"
+                  className="relative flex items-center gap-3.5 p-4 rounded-2xl border-2 border-emerald-500/40 bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 shadow-md shadow-emerald-700/5 hover:border-emerald-600 hover:shadow-lg transition-all group overflow-hidden"
+                >
+                  {/* Decorative background glow */}
+                  <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-emerald-500/10 rounded-full blur-xl pointer-events-none"></div>
+
+                  <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover:scale-105 transition-transform">
+                    <Mail size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-extrabold text-slate-900 truncate">Email Resmi</span>
+                      <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
+                        Utama
+                      </span>
+                    </div>
+                    <div className="text-xs font-bold text-emerald-700 truncate mt-0.5">humas@menhut.go.id</div>
+                  </div>
+                  <ExternalLink size={14} className="text-emerald-700 group-hover:translate-x-0.5 transition-transform shrink-0" />
+                </a>
+
+                {/* 2. INSTAGRAM */}
                 <a
                   href="https://www.instagram.com/kementeriankehutanan"
                   target="_blank"
@@ -389,7 +351,7 @@ const Homepage = () => {
                   <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
                 </a>
 
-                {/* YouTube */}
+                {/* 3. YOUTUBE */}
                 <a
                   href="https://www.youtube.com/@kementeriankehutananri"
                   target="_blank"
@@ -405,42 +367,9 @@ const Homepage = () => {
                   </div>
                   <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
                 </a>
-
-                {/* Facebook */}
-                <a
-                  href="https://www.facebook.com/kementeriankehutanan"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Globe size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">Facebook</div>
-                    <div className="text-[11px] font-semibold text-slate-400 truncate">Kementerian Kehutanan</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
-
-                {/* X / Twitter */}
-                <a
-                  href="https://x.com/kemenhut"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform font-black text-xs">
-                    X
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">X (Twitter)</div>
-                    <div className="text-[11px] font-semibold text-slate-400 truncate">@kemenhut</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
               </div>
             </div>
+
 
             {/* SEBELAH KANAN (~70% / 8 COLS): CARD SITUS TERKAIT */}
             <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow">

@@ -41,7 +41,7 @@ const Footer = () => {
             <Link to="/" className="hover:text-amber-400 transition-colors w-fit">Beranda</Link>
             <Link to="/map" className="hover:text-amber-400 transition-colors w-fit">Peta Spasial</Link>
             <Link to="/infografis" className="hover:text-amber-400 transition-colors w-fit">Infografis Potensi</Link>
-            <Link to="/data-desa" className="hover:text-amber-400 transition-colors w-fit">Data Desa</Link>
+            <Link to="/data-desa" className="hover:text-amber-400 transition-colors w-fit">Permintaan Data</Link>
             <Link to="/about-us" className="hover:text-amber-400 transition-colors w-fit">Tentang Kami</Link>
           </nav>
         </div>

@@ -13,6 +13,7 @@ import {
   Database,
   BrainCircuit,
   FileSpreadsheet,
+  ClipboardList,
 } from "lucide-react";
 
 
@@ -111,5 +112,11 @@ export const metadataMenus = [
     path: "/dashboard/master-potensi",
     icon: Database,
     permission: "master_fungsi_kawasan_hutan:read",
+  },
+  {
+    name: "Master Intervensi Desa",
+    path: "/dashboard/master-intervensi-desa",
+    icon: ClipboardList,
+    permission: "intervensi_desa:read",
   },
 ];

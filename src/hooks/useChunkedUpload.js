@@ -82,8 +82,7 @@ export function useChunkedUpload() {
 
             const { data: finalData } = await masterInstance.post(
                 "/upload/finalize",
-                { uploadId },
-                { timeout: 10 * 60 * 1000 } // 10 menit untuk batch besar
+                { uploadId }
             );
 
             setProgress(100);

@@ -1,129 +1,73 @@
-import React, { useMemo, useState } from "react";
+import React, { useState, useMemo } from "react";
 import DashboardLayout from "../../components/DashboardLayout";
-import DataTable from "../../components/DataTable";
 import { roleService } from "../../services/auth/roleService";
-import userService from "../../services/auth/userService";
+import { userService } from "../../services/auth/userService";
 import { userRoleService } from "../../services/auth/userRoleService";
 import { usePermission } from "../../hooks/usePermission";
 import {
-  Edit2,
-  Eye,
-  EyeOff,
-  Loader2,
-  Lock,
-  Mail,
   Plus,
   Search,
-  ShieldPlus,
-  Trash,
+  Edit2,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
   Users,
+  Loader2,
+  ShieldPlus,
   X,
+  Lock,
+  Mail,
+  EyeOff,
+  Eye,
+  Trash,
 } from "lucide-react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
-const getUserId = (user) =>
-  String(user?.id ?? user?.userId ?? user?.user_id ?? user?.user?.id ?? "");
-
-const getRoleId = (role, roles = []) => {
-  if (role && typeof role === "object") {
-    const id =
-      role.roleId ??
-      role.role_id ??
-      role.roleID ??
-      role.RoleId ??
-      role.role?.id ??
-      role.role?.roleId ??
-      role.role?.role_id ??
-      role.Role?.id ??
-      role.id;
-
-    if (id !== undefined && id !== null) return String(id);
-
-    const roleName =
-      role.name ??
-      role.nama ??
-      role.role?.name ??
-      role.role?.nama ??
-      role.Role?.name ??
-      role.Role?.nama;
-    const matchedRole = roles.find(
-      (item) => (item.name ?? item.nama) === roleName,
-    );
-    if (matchedRole?.id) return String(matchedRole.id);
-  }
-
-  if (typeof role === "string" || typeof role === "number") {
-    const roleValue = String(role);
-    const matchedRole = roles.find(
-      (item) =>
-        String(item.id) === roleValue ||
-        item.name === roleValue ||
-        item.nama === roleValue,
-    );
-    return matchedRole?.id ? String(matchedRole.id) : roleValue;
-  }
-
-  return "";
-};
-
-const getRelationUserId = (relation) =>
-  String(
-    relation?.userId ??
-      relation?.user_id ??
-      relation?.userID ??
-      relation?.UserId ??
-      relation?.user?.id ??
-      relation?.user?.userId ??
-      relation?.user?.user_id ??
-      relation?.User?.id ??
-      relation?.User?.userId ??
-      "",
-  );
-
-const getRelationRoleId = (relation, roles = []) =>
-  getRoleId(
-    relation?.role ??
-      relation?.roleId ??
-      relation?.role_id ??
-      relation?.roleID ??
-      relation?.RoleId ??
-      relation?.Role ??
-      relation?.roles?.[0] ??
-      relation?.roleName ??
-      relation?.role_name,
-    roles,
-  );
-
-const uniqueValues = (values) => [...new Set(values.filter(Boolean))];
+import DataTable from "../../components/DataTable";
 
 const ManajemenUser = () => {
   const queryClient = useQueryClient();
   const { can, canAny } = usePermission();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedIds, setSelectedIds] = useState([]);
 
+  // =========================================================
+  // 1. STATE GLOBAL & SEARCH & BULK SELECT
+  // =========================================================
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]); // State untuk Bulk Delete
+  const [deleteUserObj, setDeleteUserObj] = useState(null); // State untuk modal single delete
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false); // State untuk modal bulk delete
+
+  // =========================================================
+  // 2. STATE UNTUK MODAL ASSIGN ROLE (MULTIPLE)
+  // =========================================================
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [initialRoles, setInitialRoles] = useState([]);
-  const [isPreparingRoles, setIsPreparingRoles] = useState(false);
 
+  // =========================================================
+  // 3. STATE UNTUK MODAL ADD (SINGLE & BULK) & EDIT
+  // =========================================================
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // State array untuk Bulk Add
   const [userInputs, setUserInputs] = useState([
     { username: "", password: "" },
   ]);
+  // State object untuk Edit (Single)
   const [editData, setEditData] = useState({
     id: "",
     username: "",
     password: "",
   });
 
+  // =========================================================
+  // 4. FETCH DATA
+  // =========================================================
   const {
-    data: users = [],
+    data: users,
     isLoading: isLoadingUsers,
     isError: isErrorUsers,
   } = useQuery({
@@ -131,22 +75,22 @@ const ManajemenUser = () => {
     queryFn: userService.getUser,
   });
 
-  const { data: roles = [], isLoading: isLoadingRoles } = useQuery({
+  const { data: roles, isLoading: isLoadingRoles } = useQuery({
     queryKey: ["roles"],
     queryFn: roleService.getRoles,
   });
 
-  const { data: userRoleRelations = [] } = useQuery({
-    queryKey: ["user-roles"],
-    queryFn: userRoleService.getUserRoles,
-    enabled: can("user_role:assign"),
-  });
-
+  // =========================================================
+  // 5. MUTASI CRUD USER (CREATE, CREATE BULK, DELETE, DELETE BULK)
+  // =========================================================
   const createUserMutation = useMutation({
-    mutationFn: (payload) =>
-      payload.length === 1
-        ? userService.createUser(payload[0])
-        : userService.createUserBulk(payload),
+    mutationFn: async (payload) => {
+      if (payload.length === 1) {
+        return await userService.createUser(payload[0]);
+      } else {
+        return await userService.createUserBulk(payload); // Kirim langsung payload array
+      }
+    },
     onSuccess: () => {
       toast.success("User berhasil ditambahkan!");
       queryClient.invalidateQueries({ queryKey: ["users"] });
@@ -161,17 +105,6 @@ const ManajemenUser = () => {
     },
   });
 
-  const updateUserMutation = useMutation({
-    mutationFn: ({ id, payload }) => userService.updateUser(id, payload),
-    onSuccess: () => {
-      toast.success("User berhasil diperbarui!");
-      queryClient.invalidateQueries({ queryKey: ["users"] });
-      closeEditModal();
-    },
-    onError: (err) =>
-      toast.error(err?.response?.data?.message || "Gagal memperbarui user."),
-  });
-
   const deleteMutation = useMutation({
     mutationFn: (id) => userService.deleteUser(id),
     onSuccess: () => {
@@ -183,100 +116,66 @@ const ManajemenUser = () => {
   });
 
   const deleteBulkMutation = useMutation({
-    mutationFn: (ids) => userService.deleteUserBulk(ids),
+    mutationFn: (ids) => userService.deleteUserBulk(ids), // Kirim langsung array of ID
     onSuccess: () => {
       toast.success(`${selectedIds.length} User berhasil dihapus!`);
       setSelectedIds([]);
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
-    onError: () => toast.error("Gagal menghapus data secara massal."),
+    onError: (err) => toast.error("Gagal menghapus data secara massal."),
   });
 
+  // =========================================================
+  // 6. MUTASI ASSIGN ROLE BULK
+  // =========================================================
   const saveUserRolesMutation = useMutation({
     mutationFn: async () => {
-      const userId = getUserId(selectedUser);
-      if (!userId) throw new Error("User tidak valid.");
-
       const addedIds = selectedRoles.filter((id) => !initialRoles.includes(id));
-      const removedIds = initialRoles.filter((id) => !selectedRoles.includes(id));
+      const removedIds = initialRoles.filter(
+        (id) => !selectedRoles.includes(id),
+      );
 
-      const assignPayload = addedIds.map((roleId) => ({ userId, roleId }));
-      const unassignPayload = removedIds.map((roleId) => ({ userId, roleId }));
+      const assignPayload = addedIds.map((roleId) => ({
+        userId: selectedUser.id,
+        roleId,
+      }));
+      const unassignPayload = removedIds.map((roleId) => ({
+        userId: selectedUser.id,
+        roleId,
+      }));
 
-      if (unassignPayload.length > 0) {
-        await userRoleService.unassignRoleBulk(unassignPayload);
-      }
+      const promises = [];
+      if (assignPayload.length > 0)
+        promises.push(userRoleService.assignRoleBulk(assignPayload));
+      if (unassignPayload.length > 0)
+        promises.push(userRoleService.unassignRoleBulk(unassignPayload));
 
-      if (assignPayload.length > 0) {
-        await userRoleService.assignRoleBulk(assignPayload);
-      }
+      await Promise.all(promises);
     },
     onSuccess: () => {
       toast.success("Hak akses role pengguna berhasil diperbarui!");
       queryClient.invalidateQueries({ queryKey: ["users"] });
-      queryClient.invalidateQueries({ queryKey: ["user-roles"] });
       closeAssignRoleModal();
     },
-    onError: (err) =>
-      toast.error(err?.response?.data?.message || "Gagal memperbarui Role."),
+    onError: (err) => toast.error("Gagal memperbarui Role."),
   });
 
-  const getRoleIdsForUser = (user, relations = userRoleRelations) => {
-    const userId = getUserId(user);
-    const rolesFromUser = [
-      user?.roleId,
-      user?.role_id,
-      user?.role,
-      ...(Array.isArray(user?.roles) ? user.roles : []),
-    ].map((role) => getRoleId(role, roles));
-    const rolesFromRelations = relations
-      .filter((relation) => getRelationUserId(relation) === userId)
-      .map((relation) => getRelationRoleId(relation, roles));
-
-    return uniqueValues([...rolesFromUser, ...rolesFromRelations]);
-  };
-
-  const applyCurrentRoles = (roleIds) => {
-    const nextRoleIds = uniqueValues(roleIds);
-    setSelectedRoles(nextRoleIds);
-    setInitialRoles(nextRoleIds);
-  };
-
-  const openAssignRoleModal = async (user) => {
+  // =========================================================
+  // 7. HANDLERS ASSIGN ROLE
+  // =========================================================
+  const openAssignRoleModal = (user) => {
     setSelectedUser(user);
-    applyCurrentRoles(getRoleIdsForUser(user));
-    setIsRoleModalOpen(true);
-    setIsPreparingRoles(true);
-
-    try {
-      const [userDetailResult, userRoleListResult] =
-        await Promise.allSettled([
-          userService.getUserById(getUserId(user)),
-          queryClient.fetchQuery({
-            queryKey: ["user-roles"],
-            queryFn: userRoleService.getUserRoles,
-          }),
-        ]);
-      const userDetail =
-        userDetailResult.status === "fulfilled" && userDetailResult.value
-          ? userDetailResult.value
-          : user;
-      const latestUserRoleRelations =
-        userRoleListResult.status === "fulfilled"
-          ? userRoleListResult.value
-          : userRoleRelations;
-      const freshRoleIds = uniqueValues([
-        ...getRoleIdsForUser(user, latestUserRoleRelations),
-        ...getRoleIdsForUser(userDetail, latestUserRoleRelations),
-      ]);
-
-      setSelectedUser(userDetail);
-      applyCurrentRoles(freshRoleIds);
-    } catch {
-      toast.error("Gagal mengambil role user terbaru.");
-    } finally {
-      setIsPreparingRoles(false);
+    let currentRoleIds = [];
+    if (Array.isArray(user.roles)) {
+      currentRoleIds = user.roles.map((r) =>
+        typeof r === "object" ? r.id : r,
+      );
+    } else if (user.role_id || user.roleId) {
+      currentRoleIds = [user.role_id || user.roleId];
     }
+    setSelectedRoles(currentRoleIds);
+    setInitialRoles(currentRoleIds);
+    setIsRoleModalOpen(true);
   };
 
   const closeAssignRoleModal = () => {
@@ -285,7 +184,6 @@ const ManajemenUser = () => {
       setSelectedUser(null);
       setSelectedRoles([]);
       setInitialRoles([]);
-      setIsPreparingRoles(false);
     }, 200);
   };
 
@@ -301,6 +199,10 @@ const ManajemenUser = () => {
     selectedRoles.length !== initialRoles.length ||
     !selectedRoles.every((id) => initialRoles.includes(id));
 
+  // =========================================================
+  // 8. HANDLERS TAMBAH & EDIT USER
+  // =========================================================
+  // --- Handlers untuk Form Dynamic Tambah User ---
   const closeAddModal = () => {
     setIsAddModalOpen(false);
     setTimeout(() => {
@@ -313,7 +215,7 @@ const ManajemenUser = () => {
     setUserInputs([...userInputs, { username: "", password: "" }]);
 
   const handleRemoveRow = (index) => {
-    setUserInputs(userInputs.filter((_, itemIndex) => itemIndex !== index));
+    setUserInputs(userInputs.filter((_, i) => i !== index));
   };
 
   const handleInputAddChange = (index, field, value) => {
@@ -322,22 +224,22 @@ const ManajemenUser = () => {
     setUserInputs(updated);
   };
 
-  const handleSimpanUserBaru = (event) => {
-    event.preventDefault();
+  const handleSimpanUserBaru = (e) => {
+    e.preventDefault();
     const validInputs = userInputs.filter(
-      (user) => user.username.trim() !== "" && user.password.trim() !== "",
+      (u) => u.username.trim() !== "" && u.password.trim() !== "",
     );
-
     if (validInputs.length === 0) {
-      toast.error("Minimal satu data user harus diisi!");
-      return;
+      return toast.error(
+        "Minimal satu data user (username & password) harus diisi!",
+      );
     }
-
     createUserMutation.mutate(validInputs);
   };
 
+  // --- Handlers untuk Form Edit User ---
   const openEditModal = (user) => {
-    setEditData({ id: getUserId(user), username: user.username || "", password: "" });
+    setEditData({ id: user.id, username: user.username || "", password: "" });
     setIsEditModalOpen(true);
   };
 
@@ -349,56 +251,34 @@ const ManajemenUser = () => {
     }, 200);
   };
 
-  const handleSaveEditUser = () => {
-    const payload = {
-      username: editData.username,
-      ...(editData.password ? { password: editData.password } : {}),
-    };
-
-    updateUserMutation.mutate({ id: editData.id, payload });
+  // =========================================================
+  // 9. HANDLERS HAPUS USER (SONNER TOAST)
+  // =========================================================
+  const confirmDelete = (user) => {
+    setDeleteUserObj(user);
   };
 
-  const confirmDelete = (user) => {
-    toast.warning("Yakin ingin menghapus pengguna ini?", {
-      description: `Akun @${user.username} akan dihapus secara permanen.`,
-      action: {
-        label: "Ya, Hapus",
-        onClick: () => deleteMutation.mutate(getUserId(user)),
-      },
-      cancel: { label: "Batal" },
-    });
+  const handleDeleteUser = () => {
+    if (!deleteUserObj) return;
+    deleteMutation.mutate(deleteUserObj.id);
+    setDeleteUserObj(null);
   };
 
   const confirmBulkDelete = () => {
-    toast.error(
-      `Yakin ingin menghapus ${selectedIds.length} pengguna terpilih?`,
-      {
-        description: "Operasi massal ini tidak dapat dibatalkan.",
-        action: {
-          label: "Ya, Hapus Semua",
-          onClick: () => deleteBulkMutation.mutate(selectedIds),
-        },
-        cancel: { label: "Batal" },
-      },
-    );
+    setShowBulkDeleteConfirm(true);
   };
 
-  const filteredUsers = useMemo(() => {
-    const lowerQuery = searchQuery.toLowerCase();
+  const handleBulkDeleteUsers = () => {
+    deleteBulkMutation.mutate(selectedIds);
+    setShowBulkDeleteConfirm(false);
+  };
 
-    return users
-      .filter((user) =>
-        lowerQuery
-          ? (user.username || "").toLowerCase().includes(lowerQuery)
-          : true,
-      )
-      .map((user, index) => ({ ...user, _index: index + 1 }));
-  }, [users, searchQuery]);
-
-  const handleSelectAll = (event) => {
-    setSelectedIds(
-      event.target.checked ? filteredUsers.map((user) => getUserId(user)) : [],
-    );
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(filteredUsers.map((u) => u.id));
+    } else {
+      setSelectedIds([]);
+    }
   };
 
   const handleSelectRow = (id) => {
@@ -407,33 +287,44 @@ const ManajemenUser = () => {
     );
   };
 
+  // =========================================================
+  // 10. KONFIGURASI DATATABLE
+  // =========================================================
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    let result = users;
+    if (searchQuery) {
+      const lowerQ = searchQuery.toLowerCase();
+      result = result.filter((u) =>
+        (u.username || "").toLowerCase().includes(lowerQ),
+      );
+    }
+    return result.map((user, index) => ({ ...user, _index: index + 1 }));
+  }, [users, searchQuery]);
+
   const isAllSelected =
     filteredUsers.length > 0 && selectedIds.length === filteredUsers.length;
 
   const tableColumns = [
-    ...(can("user:delete")
-      ? [
-          {
-            header: (
-              <input
-                type="checkbox"
-                checked={isAllSelected}
-                onChange={handleSelectAll}
-                className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344] cursor-pointer"
-              />
-            ),
-            className: "w-12 text-center",
-            render: (row) => (
-              <input
-                type="checkbox"
-                checked={selectedIds.includes(getUserId(row))}
-                onChange={() => handleSelectRow(getUserId(row))}
-                className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344] cursor-pointer"
-              />
-            ),
-          },
-        ]
-      : []),
+    {
+      header: (
+        <input
+          type="checkbox"
+          checked={isAllSelected}
+          onChange={handleSelectAll}
+          className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344] cursor-pointer"
+        />
+      ),
+      className: "w-12 text-center",
+      render: (row) => (
+        <input
+          type="checkbox"
+          checked={selectedIds.includes(row.id)}
+          onChange={() => handleSelectRow(row.id)}
+          className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344] cursor-pointer"
+        />
+      ),
+    },
     {
       header: "No",
       className: "w-16 text-center",
@@ -447,12 +338,11 @@ const ManajemenUser = () => {
       header: "Informasi Pengguna",
       render: (row) => {
         const username = row.username || "Anonim";
-        const initial = username.charAt(0).toUpperCase();
-
+        const inisial = username.charAt(0).toUpperCase();
         return (
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center text-[#2D7344] text-sm font-bold shrink-0 uppercase">
-              {initial}
+              {inisial}
             </div>
             <div className="flex flex-col">
               <span className="font-bold text-gray-900">@{username}</span>
@@ -464,40 +354,37 @@ const ManajemenUser = () => {
     {
       header: "Aksi",
       className: "text-center w-48",
-      render: (row) =>
-        canAny(["user_role:assign", "user:update", "user:delete"]) ? (
-          <div className="flex items-center justify-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
-            {can("user_role:assign") && (
-              <button
-                onClick={() => openAssignRoleModal(row)}
-                className="px-3 py-1.5 flex items-center gap-1.5 text-[#2D7344] hover:text-white hover:bg-[#2D7344] border border-[#2D7344]/30 hover:border-[#2D7344] rounded-md transition-all text-xs font-bold bg-[#EAFBF0]"
-                title="Atur Role Akses"
-              >
-                <ShieldPlus size={14} /> Roles
-              </button>
-            )}
-            {can("user:update") && (
-              <button
-                onClick={() => openEditModal(row)}
-                className="p-1.5 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-md transition-all"
-                title="Edit Data User"
-              >
-                <Edit2 size={16} strokeWidth={2} />
-              </button>
-            )}
-            {can("user:delete") && (
-              <button
-                onClick={() => confirmDelete(row)}
-                className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
-                title="Hapus User"
-              >
-                <Trash2 size={16} strokeWidth={2} />
-              </button>
-            )}
-          </div>
-        ) : (
-          <span className="text-gray-400 text-xs">-</span>
-        ),
+      render: (row) => (
+        <div className="flex items-center justify-center gap-2 opacity-80 hover:opacity-100 transition-opacity">
+          {can("user_role:assign") && (
+            <button
+              onClick={() => openAssignRoleModal(row)}
+              className="px-3 py-1.5 flex items-center gap-1.5 text-[#2D7344] hover:text-white hover:bg-[#2D7344] border border-[#2D7344]/30 hover:border-[#2D7344] rounded-md transition-all text-xs font-bold bg-[#EAFBF0]"
+              title="Atur Role Akses"
+            >
+              <ShieldPlus size={14} /> Roles
+            </button>
+          )}
+          {can("user:update") && (
+            <button
+              onClick={() => openEditModal(row)}
+              className="p-1.5 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-md transition-all"
+              title="Edit Data User"
+            >
+              <Edit2 size={16} strokeWidth={2} />
+            </button>
+          )}
+          {can("user:delete") && (
+            <button
+              onClick={() => confirmDelete(row)}
+              className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all"
+              title="Hapus User"
+            >
+              <Trash2 size={16} strokeWidth={2} />
+            </button>
+          )}
+        </div>
+      ),
     },
   ];
 
@@ -510,14 +397,15 @@ const ManajemenUser = () => {
               Manajemen User
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Kelola data akun pengguna, hak akses, dan wilayah penugasan.
+              Kelola data akun pengguna (username) dan hak akses peran.
             </p>
           </div>
 
           <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col">
-            <div className="p-6 border-b border-gray-50 flex flex-col xl:flex-row justify-between gap-6">
+            <div className="p-6 border-b border-gray-50 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
+              {/* BULK ACTION ATAU TITLE */}
               <div className="flex items-center gap-4">
-                {can("user:delete") && selectedIds.length > 0 ? (
+                {selectedIds.length > 0 ? (
                   <div className="flex items-center gap-3 bg-red-50 px-4 py-2 rounded-lg border border-red-100">
                     <span className="text-sm font-bold text-red-700">
                       {selectedIds.length} Terpilih
@@ -531,16 +419,17 @@ const ManajemenUser = () => {
                   </div>
                 ) : (
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2D7344]">
+                    <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2D7344] shrink-0">
                       <Users size={20} strokeWidth={2} />
                     </div>
                     <h2 className="text-lg font-bold text-gray-800 hidden sm:block">
-                      Tabel Data User
+                      Tabel Pengguna
                     </h2>
                   </div>
                 )}
               </div>
 
+              {/* PENCARIAN & TAMBAH DATA */}
               <div className="flex flex-col sm:flex-row items-center gap-3">
                 <div className="relative w-full sm:w-64 group">
                   <Search
@@ -551,7 +440,7 @@ const ManajemenUser = () => {
                     type="text"
                     placeholder="Cari username..."
                     value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
+                    onChange={(e) => setSearchQuery(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:border-[#2D7344]"
                   />
                 </div>
@@ -566,6 +455,7 @@ const ManajemenUser = () => {
               </div>
             </div>
 
+            {/* INTEGRASI DATATABLE */}
             <DataTable
               columns={tableColumns}
               data={filteredUsers}
@@ -575,7 +465,7 @@ const ManajemenUser = () => {
               emptyMessage="Belum ada data pengguna yang terdaftar."
             />
 
-            <div className="p-4 md:p-6 border-t border-gray-50 bg-gray-50/30 rounded-b-2xl">
+            <div className="p-4 md:p-6 border-t border-gray-50 flex flex-col md:flex-row justify-between items-center gap-4 bg-gray-50/30 rounded-b-2xl">
               <p className="text-xs font-medium text-gray-500">
                 Menampilkan{" "}
                 <span className="font-bold text-gray-900">
@@ -588,6 +478,9 @@ const ManajemenUser = () => {
         </div>
       </main>
 
+      {/* ========================================================= */}
+      {/* 1. MODAL ASSIGN ROLE (MULTIPLE ROLES)                       */}
+      {/* ========================================================= */}
       {isRoleModalOpen && selectedUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-in zoom-in-95 duration-200">
@@ -621,19 +514,17 @@ const ManajemenUser = () => {
                 </span>
               </div>
 
-              {isLoadingRoles || isPreparingRoles ? (
+              {isLoadingRoles ? (
                 <div className="flex justify-center py-8">
                   <Loader2 className="animate-spin text-[#2D7344]" size={32} />
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {roles.map((role) => {
-                    const roleId = getRoleId(role);
-                    const isChecked = selectedRoles.includes(roleId);
-
+                  {roles?.map((role) => {
+                    const isChecked = selectedRoles.includes(role.id);
                     return (
                       <label
-                        key={roleId}
+                        key={role.id}
                         className={`flex items-center gap-3 p-3 border rounded-xl cursor-pointer transition-all ${
                           isChecked
                             ? "bg-[#EAFBF0] border-[#2D7344]/40 shadow-sm"
@@ -644,14 +535,10 @@ const ManajemenUser = () => {
                           type="checkbox"
                           className="w-4 h-4 text-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344] cursor-pointer"
                           checked={isChecked}
-                          onChange={() => handleToggleRole(roleId)}
+                          onChange={() => handleToggleRole(role.id)}
                         />
                         <span
-                          className={`text-sm ${
-                            isChecked
-                              ? "font-bold text-[#2D7344]"
-                              : "font-semibold text-gray-700"
-                          }`}
+                          className={`text-sm ${isChecked ? "font-bold text-[#2D7344]" : "font-semibold text-gray-700"}`}
                         >
                           {role.name || role.nama}
                         </span>
@@ -666,7 +553,7 @@ const ManajemenUser = () => {
               <div>
                 {isRoleChanged && (
                   <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded">
-                    Ada Perubahan
+                    ⚠️ Ada Perubahan
                   </span>
                 )}
               </div>
@@ -682,7 +569,6 @@ const ManajemenUser = () => {
                   onClick={() => saveUserRolesMutation.mutate()}
                   disabled={
                     saveUserRolesMutation.isPending ||
-                    isPreparingRoles ||
                     !isRoleChanged ||
                     selectedRoles.length === 0
                   }
@@ -690,7 +576,8 @@ const ManajemenUser = () => {
                 >
                   {saveUserRolesMutation.isPending ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" /> Menyimpan...
+                      <Loader2 size={16} className="animate-spin" />{" "}
+                      Menyimpan...
                     </>
                   ) : (
                     "Simpan Hak Akses"
@@ -702,6 +589,9 @@ const ManajemenUser = () => {
         </div>
       )}
 
+      {/* ========================================================= */}
+      {/* 2. MODAL TAMBAH USER (DINAMIS - BISA BANYAK BARIS)          */}
+      {/* ========================================================= */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
@@ -733,6 +623,7 @@ const ManajemenUser = () => {
                     key={index}
                     className="flex flex-col sm:flex-row items-start sm:items-end gap-3 p-4 border border-gray-100 bg-gray-50/30 rounded-xl relative"
                   >
+                    {/* Tombol Hapus Baris */}
                     {userInputs.length > 1 && (
                       <button
                         type="button"
@@ -757,11 +648,11 @@ const ManajemenUser = () => {
                           type="text"
                           required
                           value={input.username}
-                          onChange={(event) =>
+                          onChange={(e) =>
                             handleInputAddChange(
                               index,
                               "username",
-                              event.target.value,
+                              e.target.value,
                             )
                           }
                           placeholder="Contoh: andi_admin"
@@ -783,11 +674,11 @@ const ManajemenUser = () => {
                           type={showPassword ? "text" : "password"}
                           required
                           value={input.password}
-                          onChange={(event) =>
+                          onChange={(e) =>
                             handleInputAddChange(
                               index,
                               "password",
-                              event.target.value,
+                              e.target.value,
                             )
                           }
                           placeholder="Minimal 6 karakter"
@@ -833,7 +724,8 @@ const ManajemenUser = () => {
                 >
                   {createUserMutation.isPending ? (
                     <>
-                      <Loader2 size={16} className="animate-spin" /> Menyimpan...
+                      <Loader2 size={16} className="animate-spin" />{" "}
+                      Menyimpan...
                     </>
                   ) : (
                     "Simpan Data"
@@ -845,6 +737,9 @@ const ManajemenUser = () => {
         </div>
       )}
 
+      {/* ========================================================= */}
+      {/* 3. MODAL EDIT USER (SINGLE)                                 */}
+      {/* ========================================================= */}
       {isEditModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
@@ -871,8 +766,8 @@ const ManajemenUser = () => {
                   <input
                     type="text"
                     value={editData.username}
-                    onChange={(event) =>
-                      setEditData({ ...editData, username: event.target.value })
+                    onChange={(e) =>
+                      setEditData({ ...editData, username: e.target.value })
                     }
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#2D7344]"
                   />
@@ -882,7 +777,7 @@ const ManajemenUser = () => {
                 <label className="block text-sm font-bold text-gray-700 mb-1.5">
                   Password{" "}
                   <span className="text-gray-400 font-normal text-xs">
-                    (Kosongkan jika tidak diubah)
+                    (Kosongkan jika tak diubah)
                   </span>
                 </label>
                 <div className="relative">
@@ -893,10 +788,10 @@ const ManajemenUser = () => {
                   <input
                     type={showPassword ? "text" : "password"}
                     value={editData.password}
-                    onChange={(event) =>
-                      setEditData({ ...editData, password: event.target.value })
+                    onChange={(e) =>
+                      setEditData({ ...editData, password: e.target.value })
                     }
-                    placeholder="Minimal 6 karakter"
+                    placeholder="••••••••"
                     className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#2D7344]"
                   />
                   <button
@@ -918,15 +813,84 @@ const ManajemenUser = () => {
                 Batal
               </button>
               <button
-                onClick={handleSaveEditUser}
-                disabled={updateUserMutation.isPending}
-                className="flex items-center gap-2 px-5 py-2 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-lg text-sm font-bold disabled:opacity-70"
+                onClick={() => {
+                  toast.info(
+                    "Fungsi update backend dapat disambungkan di sini.",
+                  );
+                  closeEditModal();
+                }}
+                className="px-5 py-2 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-lg text-sm font-bold"
               >
-                {updateUserMutation.isPending && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
                 Simpan Perubahan
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMATION DELETE SINGLE */}
+      {deleteUserObj && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Pengguna</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans leading-relaxed">
+                Apakah Anda yakin ingin menghapus akun <span className="font-extrabold text-slate-800">@{deleteUserObj.username}</span>? Tindakan ini akan menghapus pengguna secara permanen.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setDeleteUserObj(null)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteUser}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CONFIRMATION DELETE BULK */}
+      {showBulkDeleteConfirm && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-1 bg-red-500" />
+            <div className="p-6">
+              <div className="flex items-center gap-3 text-red-500 mb-3 font-sans">
+                <Trash2 size={24} />
+                <h3 className="text-lg font-bold text-gray-800">Hapus Banyak Pengguna</h3>
+              </div>
+              <p className="text-xs text-gray-500 font-semibold mb-6 font-sans leading-relaxed">
+                Apakah Anda yakin ingin menghapus <span className="font-extrabold text-slate-800">{selectedIds.length} pengguna</span> yang terpilih? Operasi massal ini tidak dapat dibatalkan.
+              </p>
+              <div className="flex justify-end gap-3 font-sans">
+                <button
+                  type="button"
+                  onClick={() => setShowBulkDeleteConfirm(false)}
+                  className="px-4 py-2.5 text-xs font-bold text-gray-600 bg-white hover:bg-gray-100 border border-gray-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkDeleteUsers}
+                  className="px-4 py-2.5 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-all shadow-sm cursor-pointer"
+                >
+                  Ya, Hapus Semua
+                </button>
+              </div>
             </div>
           </div>
         </div>

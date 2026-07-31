@@ -23,33 +23,6 @@ import {
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const getRelationRoleId = (relation) =>
-  String(
-    relation?.roleId ??
-      relation?.role_id ??
-      relation?.roleID ??
-      relation?.RoleId ??
-      relation?.role?.id ??
-      relation?.role?.roleId ??
-      relation?.Role?.id ??
-      "",
-  );
-
-const getPermissionId = (permission) =>
-  String(
-    permission?.permissionId ??
-      permission?.permission_id ??
-      permission?.permissionID ??
-      permission?.PermissionId ??
-      permission?.permission?.id ??
-      permission?.Permission?.id ??
-      permission?.id ??
-      permission ??
-      "",
-  );
-
-const extractPermission = (item) => item?.permission ?? item?.Permission ?? item;
-
 const AssignPermission = () => {
   const { id: roleId } = useParams();
   const navigate = useNavigate();
@@ -73,40 +46,31 @@ const AssignPermission = () => {
     enabled: !!roleId,
   });
 
+  const { data: rolePermissionsData, isLoading: isLoadingRolePerms } = useQuery({
+    queryKey: ["role-permissions", roleId],
+    queryFn: () => rolePermissionService.getRolePermissionById(roleId),
+    enabled: !!roleId,
+  });
+
   const { data: allPermissions, isLoading: isLoadingPerms } = useQuery({
     queryKey: ["permissions"],
     queryFn: permissionService.getPermissions,
   });
 
-  const { data: rolePermissionRelations = [] } = useQuery({
-    queryKey: ["role-permissions"],
-    queryFn: rolePermissionService.getRolePermission,
-    enabled: !!roleId,
-  });
-
   // Sinkronisasi data awal
   useEffect(() => {
-    if (roleData) {
-      const permissionsFromRole = Array.isArray(roleData.permissions)
-        ? roleData.permissions
-        : [];
-      const permissionsFromRelations = rolePermissionRelations
-        .filter((relation) => getRelationRoleId(relation) === String(roleId))
-        .map(extractPermission);
-      const currentIds = [
-        ...new Set(
-          [...permissionsFromRole, ...permissionsFromRelations]
-            .map(getPermissionId)
-            .filter(Boolean),
-        ),
-      ];
+    if (rolePermissionsData) {
+      const dataList = Array.isArray(rolePermissionsData)
+        ? rolePermissionsData
+        : rolePermissionsData?.data || [];
+      const currentIds = dataList.map((rp) => rp.permissionId || rp.permission?.id || rp.id);
       const t = setTimeout(() => {
         setSelectedPerms(currentIds);
         setInitialPerms(currentIds);
       }, 0);
       return () => clearTimeout(t);
     }
-  }, [roleData, roleId, rolePermissionRelations]);
+  }, [rolePermissionsData]);
 
   // =========================================================
   // LOGIC & GROUPING
@@ -246,7 +210,6 @@ const AssignPermission = () => {
       toast.success("Hak akses berhasil diperbarui!");
       queryClient.invalidateQueries({ queryKey: ["role", roleId] });
       queryClient.invalidateQueries({ queryKey: ["roles"] });
-      queryClient.invalidateQueries({ queryKey: ["role-permissions"] });
       navigate("/dashboard/manajemen-role");
     },
     onError: (err) => {
@@ -345,7 +308,7 @@ const AssignPermission = () => {
     );
   };
 
-  if (isLoadingRole || isLoadingPerms) {
+  if (isLoadingRole || isLoadingRolePerms || isLoadingPerms) {
     return (
       <DashboardLayout activeMenu="Manajemen Role">
         <div className="flex h-full items-center justify-center">

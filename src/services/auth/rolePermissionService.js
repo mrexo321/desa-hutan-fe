@@ -1,31 +1,14 @@
 import authInstance from "../../api/authInstance";
-import { normalizeCollection, normalizeResource } from "../../utils/apiResponse";
-
-const bulkUnassignPermissionFromRole = async (payload) => {
-    const response = await authInstance.post(`/role-permissions/bulk-unassign`, payload)
-    return response.data;
-};
 
 export const rolePermissionService ={
     async getRolePermission(){
         const response = await authInstance.get("/role-permissions")
-        return normalizeCollection(response);
+        return response.data.data;
     },
 
     async getRolePermissionById(id){
-        try {
-        const response = await authInstance.get(`/role-permissions/${id}`, {
-            skipGlobalErrorToast: true,
-        })
-        const collection = normalizeCollection(response);
-        if (collection.length > 0) return collection;
-
-        const resource = normalizeResource(response);
-        return Array.isArray(resource) ? resource : resource ? [resource] : [];
-        } catch (error) {
-            if (error?.response?.status === 404) return [];
-            throw error;
-        }
+        const response = await authInstance.get(`/role-permissions/${id}`)
+        return response.data.data;
     },
 
     async assignPermissionToRole(payload){
@@ -44,11 +27,13 @@ export const rolePermissionService ={
     },
 
     async unassignPermissionToRoleBulk(payload){
-        return bulkUnassignPermissionFromRole(payload);
+        const response = await authInstance.post(`/role-permissions/bulk-unassign`, payload)
+        return response.data;
     },
 
     async unassignPermissionFromRoleBulk(payload){
-        return bulkUnassignPermissionFromRole(payload);
+        const response = await authInstance.post(`/role-permissions/bulk-unassign`, payload)
+        return response.data;
     },
 
 }

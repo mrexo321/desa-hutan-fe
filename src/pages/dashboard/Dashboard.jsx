@@ -29,15 +29,17 @@ import {
   Info,
   Loader2,
   Zap,
+  FileDown,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 // --- IMPORT SERVICE ---
 import { analystSpatialService } from "../../services/master/analystSpatialService";
 import { wilayahDesaService } from "../../services/master/wilayahDesaService";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
+import masterInstance from "../../api/masterInstance";
 
 // --- IMPORT RECHARTS ---
 import {
@@ -87,7 +89,26 @@ const COLORS = {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const MAPBOX_TOKEN = environment.MAPBOX_URL;
+
+  const handleExportRekap = async () => {
+    try {
+      const res = await masterInstance.get("/export/rekap-provinsi", {
+        responseType: "blob",
+      });
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "rekap-provinsi.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Error sudah ditangani oleh interceptor masterInstance
+    }
+  };
 
   // =========================================
   // 1. STATE UI DASHBOARD & MAPBOX
@@ -141,19 +162,35 @@ const Dashboard = () => {
     provinsi: null,
     kabupaten: null,
     kecamatan: null,
+    tipe_administrasi: null,
   });
 
   const [appliedApiFilters, setAppliedApiFilters] = useState({
     provinsi: null,
     kabupaten: null,
     kecamatan: null,
+    tipe_administrasi: null,
   });
 
   // =========================================
   // STATE MATRIKS VISUALISASI & DRILL-DOWN MODAL
   // =========================================
-  const [selectedTahun, setSelectedTahun] = useState("2025");
-  const [onlyPsn, setOnlyPsn] = useState(true);
+  const [matrixFilters, setMatrixFilters] = useState({
+    tahun: "2025",
+    onlyPsn: true,
+    memilikiKawasanHutan: "",
+    tipeAdministrasi: "",
+  });
+
+  const [appliedMatrixFilters, setAppliedMatrixFilters] = useState({
+    tahun: "2025",
+    onlyPsn: true,
+    memilikiKawasanHutan: "",
+    tipeAdministrasi: "",
+  });
+
+  const selectedTahun = appliedMatrixFilters.tahun;
+  const onlyPsn = appliedMatrixFilters.onlyPsn;
   const [matrixData, setMatrixData] = useState(null);
   const [isMatrixLoading, setIsMatrixLoading] = useState(false);
 
@@ -171,6 +208,26 @@ const Dashboard = () => {
   const [modalLoading, setModalLoading] = useState(false);
   const [kawasanFilter, setKawasanFilter] = useState(""); // sub-filter spasial: "dalamKawasan", "beririsan", "luarKawasan" or ""
   const [detailKawasanSummary, setDetailKawasanSummary] = useState(null);
+
+  // --- STATE MODAL LIST DESA HUTAN (RINGKASAN / SPASIAL) ---
+  const [isSpatialHutanModalOpen, setIsSpatialHutanModalOpen] = useState(false);
+  const [spatialHutanActiveTab, setSpatialHutanActiveTab] = useState("dalam_kawasan"); // "dalam_kawasan" | "beririsan"
+  const [spatialHutanPage, setSpatialHutanPage] = useState(1);
+  const [spatialHutanSize] = useState(10);
+  const [spatialHutanSearch, setSpatialHutanSearch] = useState("");
+  const [spatialHutanData, setSpatialHutanData] = useState([]);
+  const [spatialHutanTotal, setSpatialHutanTotal] = useState(0);
+  const [spatialHutanLoading, setSpatialHutanLoading] = useState(false);
+
+  // --- STATE MODAL LIST DESA HUTAN (MATRIX / DIMENSI) ---
+  const [isMatrixHutanModalOpen, setIsMatrixHutanModalOpen] = useState(false);
+  const [matrixHutanActiveTab, setMatrixHutanActiveTab] = useState("dalamKawasan"); // "dalamKawasan" | "beririsan"
+  const [matrixHutanPage, setMatrixHutanPage] = useState(1);
+  const [matrixHutanSize] = useState(10);
+  const [matrixHutanSearch, setMatrixHutanSearch] = useState("");
+  const [matrixHutanData, setMatrixHutanData] = useState([]);
+  const [matrixHutanTotal, setMatrixHutanTotal] = useState(0);
+  const [matrixHutanLoading, setMatrixHutanLoading] = useState(false);
 
   // =========================================
   // 4. DATA FETCHING (REACT QUERY)
@@ -222,18 +279,34 @@ const Dashboard = () => {
       provinsi: selectedProvinsi ? (selectedProvinsi.name || selectedProvinsi.nama || selectedProvinsi.provinsi) : null,
       kabupaten: selectedKabupaten ? cleanName(selectedKabupaten.name || selectedKabupaten.nama || selectedKabupaten.kabupaten) : null,
       kecamatan: selectedKecamatan ? cleanName(selectedKecamatan.name || selectedKecamatan.nama || selectedKecamatan.kecamatan) : null,
+      tipe_administrasi: filters.tipe_administrasi || null,
     });
   };
 
   const handleResetFilter = () => {
-    setFilters({ provinsi: null, kabupaten: null, kecamatan: null });
-    setAppliedApiFilters({ provinsi: null, kabupaten: null, kecamatan: null });
+    setFilters({ provinsi: null, kabupaten: null, kecamatan: null, tipe_administrasi: null });
+    setAppliedApiFilters({ provinsi: null, kabupaten: null, kecamatan: null, tipe_administrasi: null });
   };
 
   // =========================================
   // EFFECTS FOR MATRIX SUMMARY & DRILL-DOWN MODAL
   // =========================================
   const [listTahun, setListTahun] = useState(["2024", "2025", "2026"]);
+
+  const handleApplyMatrixFilter = () => {
+    setAppliedMatrixFilters({ ...matrixFilters });
+  };
+
+  const handleResetMatrixFilter = () => {
+    const initial = {
+      tahun: listTahun[0] || "2025",
+      onlyPsn: true,
+      memilikiKawasanHutan: "",
+      tipeAdministrasi: "",
+    };
+    setMatrixFilters(initial);
+    setAppliedMatrixFilters(initial);
+  };
 
   // Fetch available years
   useEffect(() => {
@@ -244,8 +317,9 @@ const Dashboard = () => {
         if (Array.isArray(years) && years.length > 0) {
           const yearsList = years.map(y => String(y.tahun || y)).sort((a, b) => b - a);
           setListTahun(yearsList);
-          if (yearsList.length > 0 && !yearsList.includes(selectedTahun)) {
-            setSelectedTahun(yearsList[0]);
+          if (yearsList.length > 0 && !yearsList.includes(matrixFilters.tahun)) {
+            setMatrixFilters(prev => ({ ...prev, tahun: yearsList[0] }));
+            setAppliedMatrixFilters(prev => ({ ...prev, tahun: yearsList[0] }));
           }
         }
       } catch (err) {
@@ -260,7 +334,14 @@ const Dashboard = () => {
     const fetchMatrixSummary = async () => {
       setIsMatrixLoading(true);
       try {
-        const data = await dimensiDesaService.getMatrixSummary(selectedTahun, onlyPsn);
+        const data = await dimensiDesaService.getMatrixSummary(
+          appliedMatrixFilters.tahun,
+          appliedMatrixFilters.onlyPsn,
+          {
+            memilikiKawasanHutan: appliedMatrixFilters.memilikiKawasanHutan || null,
+            tipeAdministrasi: appliedMatrixFilters.tipeAdministrasi || null,
+          }
+        );
         setMatrixData(data?.data || data || null);
       } catch (err) {
         console.error("Gagal mengambil data matriks:", err);
@@ -269,7 +350,7 @@ const Dashboard = () => {
       }
     };
     fetchMatrixSummary();
-  }, [selectedTahun, onlyPsn]);
+  }, [appliedMatrixFilters]);
 
   // Fetch Drill-down desa details
   useEffect(() => {
@@ -303,6 +384,110 @@ const Dashboard = () => {
   useEffect(() => {
     setCurrentPage(1);
   }, [kawasanFilter, modalFilter.status]);
+
+  // --- FETCH LIST DESA HUTAN (RINGKASAN / SPASIAL) ---
+  useEffect(() => {
+    if (!isSpatialHutanModalOpen) return;
+    const fetchSpatialHutan = async () => {
+      setSpatialHutanLoading(true);
+      try {
+        const res = await analystSpatialService.getListDesaHutan({
+          jenis_interaksi: spatialHutanActiveTab,
+          page: spatialHutanPage,
+          size: spatialHutanSize,
+          search: spatialHutanSearch,
+          provinsi: appliedApiFilters.provinsi,
+          kabupaten: appliedApiFilters.kabupaten,
+          kecamatan: appliedApiFilters.kecamatan,
+          tipe_administrasi: appliedApiFilters.tipe_administrasi,
+        });
+        const resObj = res?.data || res || {};
+        const items = resObj?.items || resObj?.data?.items || resObj?.daftarDesa || resObj?.data || resObj?.rows || (Array.isArray(resObj) ? resObj : []);
+        const total = resObj?.pagination?.total ?? resObj?.data?.pagination?.total ?? resObj?.totalDesa ?? resObj?.total ?? resObj?.count ?? 0;
+        setSpatialHutanData(items);
+        setSpatialHutanTotal(total);
+      } catch (err) {
+        console.error("Gagal memuat list desa hutan (spasial):", err);
+        setSpatialHutanData([]);
+        setSpatialHutanTotal(0);
+      } finally {
+        setSpatialHutanLoading(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchSpatialHutan();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [
+    isSpatialHutanModalOpen,
+    spatialHutanActiveTab,
+    spatialHutanPage,
+    spatialHutanSize,
+    spatialHutanSearch,
+    appliedApiFilters,
+  ]);
+
+  // --- FETCH LIST DESA HUTAN (MATRIX / DIMENSI) ---
+  useEffect(() => {
+    if (!isMatrixHutanModalOpen) return;
+    const fetchMatrixHutan = async () => {
+      setMatrixHutanLoading(true);
+      try {
+        const res = await dimensiDesaService.getListDesaHutanMatrix(selectedTahun, {
+          kawasan: matrixHutanActiveTab,
+          page: matrixHutanPage,
+          size: matrixHutanSize,
+          search: matrixHutanSearch,
+          provinsi: appliedApiFilters.provinsi,
+          kabupaten: appliedApiFilters.kabupaten,
+          kecamatan: appliedApiFilters.kecamatan,
+          only: appliedMatrixFilters.onlyPsn ? "psn" : null,
+          onlyPsn: appliedMatrixFilters.onlyPsn,
+          tipe_administrasi: appliedApiFilters.tipe_administrasi || appliedMatrixFilters.tipeAdministrasi,
+        });
+        const resObj = res?.data || res || {};
+        const items = resObj?.items || resObj?.data?.items || resObj?.daftarDesa || resObj?.data || resObj?.rows || (Array.isArray(resObj) ? resObj : []);
+        const total = resObj?.pagination?.total ?? resObj?.data?.pagination?.total ?? resObj?.totalDesa ?? resObj?.total ?? resObj?.count ?? 0;
+        setMatrixHutanData(items);
+        setMatrixHutanTotal(total);
+      } catch (err) {
+        console.error("Gagal memuat list desa hutan (matrix):", err);
+        setMatrixHutanData([]);
+        setMatrixHutanTotal(0);
+      } finally {
+        setMatrixHutanLoading(false);
+      }
+    };
+
+    const timer = setTimeout(() => {
+      fetchMatrixHutan();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [
+    isMatrixHutanModalOpen,
+    selectedTahun,
+    matrixHutanActiveTab,
+    matrixHutanPage,
+    matrixHutanSize,
+    matrixHutanSearch,
+    appliedApiFilters,
+    appliedMatrixFilters,
+  ]);
+
+  const handleOpenSpatialHutanModal = () => {
+    setSpatialHutanActiveTab("dalam_kawasan");
+    setSpatialHutanPage(1);
+    setSpatialHutanSearch("");
+    setIsSpatialHutanModalOpen(true);
+  };
+
+  const handleOpenMatrixHutanModal = () => {
+    setMatrixHutanActiveTab("dalamKawasan");
+    setMatrixHutanPage(1);
+    setMatrixHutanSearch("");
+    setIsMatrixHutanModalOpen(true);
+  };
 
   const { data: ringkasanData, isLoading: isRingkasanLoading } = useQuery({
     queryKey: ["ringkasanAnalisis", appliedApiFilters],
@@ -366,6 +551,48 @@ const Dashboard = () => {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
+
+  // --- FLY-TO FROM DETAIL DESA (via location.state.flyToKode) ---
+  useEffect(() => {
+    const flyToKode = location.state?.flyToKode;
+    if (!flyToKode) return;
+
+    // Clear the state so it doesn't re-trigger on re-render
+    window.history.replaceState({}, document.title);
+
+    const flyToDesa = async () => {
+      try {
+        const res = await wilayahDesaService.searchMap(flyToKode, 1);
+        const results = res?.data || [];
+        const desa = results[0];
+        if (desa?.centroid?.lat && desa?.centroid?.lng) {
+          // Wait for the map to be ready
+          const attemptFlyTo = () => {
+            if (mapRef.current) {
+              setSearchQuery(desa.nama || flyToKode);
+              mapRef.current.flyTo({
+                center: [desa.centroid.lng, desa.centroid.lat],
+                zoom: 14,
+                duration: 2500,
+                essential: true,
+              });
+              setClickedLocation({
+                longitude: desa.centroid.lng,
+                latitude: desa.centroid.lat,
+              });
+            } else {
+              // Map not loaded yet, retry briefly
+              setTimeout(attemptFlyTo, 300);
+            }
+          };
+          attemptFlyTo();
+        }
+      } catch (err) {
+        console.error("Gagal fly-to desa dari DetailDesa:", err);
+      }
+    };
+    flyToDesa();
+  }, [location.state?.flyToKode]);
 
   // --- SEARCH-MAP RESULTS (already fetched above) ---
 
@@ -1020,27 +1247,39 @@ const Dashboard = () => {
           KONTEN DASHBOARD BAWAH (Disembunyikan saat Fullscreen)
       ========================================= */}
       <div className={isFullscreen ? "hidden" : "block"}>
+        {/* TABS NAVIGASI + EXPORT */}
+        <div className="flex items-center gap-4 mb-6 flex-wrap">
+          <div className="flex items-center gap-2 bg-gray-100/50 p-1.5 rounded-full w-fit border border-gray-200/50">
+            {["Ringkasan", "Visualisasi Data"].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab ? "bg-white text-[#00B67A] shadow-[0_4px_15px_rgb(0,0,0,0.05)] border border-white" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"}`}
+              >
+                {tab}
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={handleExportRekap}
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#00B67A] hover:bg-[#009b68] text-white rounded-full text-sm font-bold shadow-[0_4px_15px_rgba(0,182,122,0.25)] hover:shadow-[0_6px_20px_rgba(0,182,122,0.4)] hover:-translate-y-0.5 transition-all duration-200"
+          >
+            <FileDown size={15} strokeWidth={2.5} />
+            Export Excel
+          </button>
+        </div>
+
         {/* FILTER & SEARCH */}
         {activeTab === "Ringkasan" && (
           <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">
-            <div className="relative w-full lg:w-96 flex-1 group">
-              <Search
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-emerald-500 transition-colors"
-                size={18}
-              />
-              <input
-                type="text"
-                placeholder="Cari direktori data provinsi..."
-                className="w-full bg-[#F8FAFC] border-none text-gray-700 py-3.5 pl-11 pr-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 focus:outline-none transition-all"
-              />
-            </div>
-            <div className="flex gap-2 w-full lg:w-auto overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
+
+            <div className="flex gap-2 w-full lg:flex-1 overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
               <select
                 value={filters.provinsi || ""}
                 onChange={(e) => {
                   setFilters({ ...filters, provinsi: e.target.value, kabupaten: null, kecamatan: null });
                 }}
-                className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors"
+                className="flex-1 bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                   backgroundPosition: "right 1rem center",
@@ -1060,7 +1299,7 @@ const Dashboard = () => {
                   setFilters({ ...filters, kabupaten: e.target.value, kecamatan: null });
                 }}
                 disabled={!filters.provinsi || isKabupatenDropdownLoading}
-                className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
+                className="flex-1 bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                   backgroundPosition: "right 1rem center",
@@ -1080,7 +1319,7 @@ const Dashboard = () => {
                   setFilters({ ...filters, kecamatan: e.target.value });
                 }}
                 disabled={!filters.kabupaten || isKecamatanDropdownLoading}
-                className="bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
+                className="flex-1 bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors disabled:opacity-50"
                 style={{
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
                   backgroundPosition: "right 1rem center",
@@ -1092,6 +1331,24 @@ const Dashboard = () => {
                 {listKecamatan.map((kec) => (
                   <option key={kec.id} value={kec.id}>{kec.name || kec.nama || kec.kecamatan}</option>
                 ))}
+              </select>
+
+              <select
+                value={filters.tipe_administrasi || ""}
+                onChange={(e) => {
+                  setFilters({ ...filters, tipe_administrasi: e.target.value || null });
+                }}
+                className="flex-1 bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[140px] font-medium appearance-none hover:bg-gray-100 transition-colors"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                  backgroundPosition: "right 1rem center",
+                  backgroundRepeat: "no-repeat",
+                  paddingRight: "2.5rem",
+                }}
+              >
+                <option value="">Semua (Tipe Administrasi)</option>
+                <option value="Desa">Desa</option>
+                <option value="Kelurahan">Kelurahan</option>
               </select>
             </div>
             <div className="flex w-full lg:w-auto gap-2">
@@ -1112,23 +1369,10 @@ const Dashboard = () => {
           </div>
         )}
 
-        {/* TABS NAVIGASI */}
-        <div className="flex items-center gap-2 mb-6 bg-gray-100/50 p-1.5 rounded-full w-fit border border-gray-200/50">
-          {["Ringkasan", "Visualisasi Data"].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeTab === tab ? "bg-white text-[#00B67A] shadow-[0_4px_15px_rgb(0,0,0,0.05)] border border-white" : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/50"}`}
-            >
-              {tab}
-            </button>
-          ))}
-        </div>
-
         {activeTab === "Ringkasan" && (
           <>
             {/* STATS UTAMA */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {[
                 {
                   title: "Total Desa",
@@ -1137,18 +1381,13 @@ const Dashboard = () => {
                   color: "blue",
                 },
                 {
-                  title: "Dalam Kawasan Hutan",
-                  value: ringkasanData?.total_desa_dalam || 0,
-                  pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_dalam / ringkasanData.total_desa) * 100).toFixed(1) : 0,
+                  title: "Total Desa Memiliki Kawasan Hutan",
+                  value: ringkasanData?.total_desa_hutan ?? ((ringkasanData?.total_desa_dalam || 0) + (ringkasanData?.total_desa_beririsan_sebagian || 0)),
+                  pct: ringkasanData?.total_desa ? (((ringkasanData?.total_desa_hutan ?? ((ringkasanData?.total_desa_dalam || 0) + (ringkasanData?.total_desa_beririsan_sebagian || 0))) / ringkasanData.total_desa) * 100).toFixed(1) : 0,
                   icon: <TreePine size={22} strokeWidth={2.5} />,
                   color: "orange",
-                },
-                {
-                  title: "Beririsan Kawasan Hutan",
-                  value: ringkasanData?.total_desa_beririsan_sebagian || 0,
-                  pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_beririsan_sebagian / ringkasanData.total_desa) * 100).toFixed(1) : 0,
-                  icon: <Activity size={22} strokeWidth={2.5} />,
-                  color: "amber",
+                  onClick: handleOpenSpatialHutanModal,
+                  isClickable: true,
                 },
                 {
                   title: "Di Luar Kawasan Hutan",
@@ -1160,7 +1399,11 @@ const Dashboard = () => {
               ].map((card, i) => (
                 <div
                   key={i}
-                  className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group relative overflow-hidden"
+                  onClick={card.onClick}
+                  className={`bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all group relative overflow-hidden ${card.isClickable
+                    ? "cursor-pointer hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(249,115,22,0.12)] hover:border-orange-200"
+                    : "hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)]"
+                    }`}
                 >
                   {isRingkasanLoading ? (
                     <div className="animate-pulse flex flex-col gap-3">
@@ -1176,11 +1419,18 @@ const Dashboard = () => {
                         >
                           {card.icon}
                         </div>
-                        {card.pct !== undefined && card.pct !== 0 && (
-                          <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
-                            {card.pct}%
-                          </span>
-                        )}
+                        <div className="flex items-center gap-2">
+                          {card.isClickable && (
+                            <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 flex items-center gap-1 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                              <Eye size={12} /> Lihat Detail
+                            </span>
+                          )}
+                          {card.pct !== undefined && card.pct !== 0 && card.pct !== "0.0" && (
+                            <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
+                              {card.pct}%
+                            </span>
+                          )}
+                        </div>
                       </div>
                       <div className="text-3xl font-extrabold text-gray-800 mb-1">
                         {card.value.toLocaleString('id-ID')}
@@ -1195,7 +1445,7 @@ const Dashboard = () => {
             </div>
 
             {/* LUAS AREA CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {[
                 {
                   title: "Total Luas Desa",
@@ -1209,12 +1459,12 @@ const Dashboard = () => {
                   icon: <Trees size={22} strokeWidth={2.5} />,
                   color: "emerald",
                 },
-                {
-                  title: "Total Luas Irisan Desa-Hutan",
-                  value: ringkasanData?.total_luas_irisan_ha || 0,
-                  icon: <Layers size={22} strokeWidth={2.5} />,
-                  color: "purple",
-                },
+                // {
+                //   title: "Total Luas Irisan Desa-Hutan",
+                //   value: ringkasanData?.total_luas_irisan_ha || 0,
+                //   icon: <Layers size={22} strokeWidth={2.5} />,
+                //   color: "purple",
+                // },
               ].map((card, i) => (
                 <div
                   key={i}
@@ -1303,7 +1553,7 @@ const Dashboard = () => {
 
             {/* TABEL DATA */}
             <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden">
-              <div className="p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <h3 className="text-lg font-extrabold text-gray-800">
                     Direktori Desa Hutan
@@ -1312,9 +1562,6 @@ const Dashboard = () => {
                     Total 268 Data
                   </span>
                 </div>
-                <button className="bg-white border-2 border-gray-200 hover:border-[#00B67A] hover:text-[#00B67A] text-gray-700 px-5 py-2.5 rounded-[12px] text-sm font-bold transition-colors">
-                  Export CSV
-                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse min-w-[1000px]">
@@ -1410,70 +1657,101 @@ const Dashboard = () => {
         {activeTab === "Visualisasi Data" && (
           <>
             {/* FILTER & CONTROLS FOR VISUALISASI DATA */}
-            <div className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div>
-                <h3 className="text-lg font-extrabold text-gray-800 flex items-center gap-2">
-                  <TrendingUp size={20} className="text-[#00B67A]" />
-                  Visualisasi Matriks Spasial & Pembangunan Desa
-                </h3>
-                <p className="text-xs text-gray-500 mt-1 font-semibold">
-                  Menganalisis korelasi status Indeks Desa Membangun (IDM) dengan klasifikasi tata ruang kehutanan secara dinamis.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-4">
+            <div className="bg-white p-3 rounded-[20px] shadow-sm border border-gray-100 mb-6 flex flex-col lg:flex-row items-center gap-3">
+              <div className="flex gap-2 w-full lg:flex-1 overflow-x-auto custom-scrollbar pb-1 lg:pb-0">
                 {/* Tahun Filter */}
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">Tahun:</span>
-                  <select
-                    value={selectedTahun}
-                    onChange={(e) => setSelectedTahun(e.target.value)}
-                    className="bg-[#F8FAFC] border border-gray-200 text-gray-700 py-2.5 px-4 rounded-[14px] text-xs font-bold focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer hover:bg-gray-50 transition-all appearance-none pr-10"
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
-                      backgroundPosition: "right 0.75rem center",
-                      backgroundRepeat: "no-repeat",
-                    }}
-                  >
-                    {listTahun.map((t) => (
-                      <option key={t} value={t}>
-                        Tahun {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <select
+                  value={matrixFilters.tahun}
+                  onChange={(e) => setMatrixFilters({ ...matrixFilters, tahun: e.target.value })}
+                  className="flex-1 bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[130px] font-medium appearance-none hover:bg-gray-100 transition-colors"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 1rem center",
+                    backgroundRepeat: "no-repeat",
+                    paddingRight: "2.5rem",
+                  }}
+                >
+                  {listTahun.map((t) => (
+                    <option key={t} value={t}>
+                      Tahun {t}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Filter Desa dengan Kawasan Hutan */}
+                <select
+                  value={matrixFilters.memilikiKawasanHutan}
+                  onChange={(e) => setMatrixFilters({ ...matrixFilters, memilikiKawasanHutan: e.target.value })}
+                  className="flex-1 bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[160px] font-medium appearance-none hover:bg-gray-100 transition-colors"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 1rem center",
+                    backgroundRepeat: "no-repeat",
+                    paddingRight: "2.5rem",
+                  }}
+                >
+                  <option value="">Semua (Kawasan Hutan)</option>
+                  <option value="Ya">Desa Kawasan Hutan (Ya)</option>
+                  <option value="Tidak">Desa Kawasan Hutan (Tidak)</option>
+                </select>
+
+                {/* Filter Tipe Administrasi */}
+                <select
+                  value={matrixFilters.tipeAdministrasi}
+                  onChange={(e) => setMatrixFilters({ ...matrixFilters, tipeAdministrasi: e.target.value })}
+                  className="flex-1 bg-[#F8FAFC] border-none text-gray-600 py-3.5 px-4 rounded-[14px] text-sm focus:bg-white focus:ring-2 focus:ring-emerald-500/20 outline-none cursor-pointer min-w-[160px] font-medium appearance-none hover:bg-gray-100 transition-colors"
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239CA3AF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E")`,
+                    backgroundPosition: "right 1rem center",
+                    backgroundRepeat: "no-repeat",
+                    paddingRight: "2.5rem",
+                  }}
+                >
+                  <option value="">Semua (Tipe Administrasi)</option>
+                  <option value="Desa">Desa</option>
+                  <option value="Kelurahan">Kelurahan</option>
+                </select>
 
                 {/* PSN Toggle Switch */}
-                <div className="flex items-center gap-3 bg-[#F8FAFC] border border-gray-200 px-4 py-2 rounded-[14px]">
-                  <span className="text-xs font-bold text-gray-600">Hanya Desa PSN</span>
-                  <label className="cursor-pointer relative inline-flex items-center">
+                <div
+                  className="flex-1 bg-[#F8FAFC] py-3.5 px-4 rounded-[14px] min-w-[160px] flex items-center justify-between gap-3 hover:bg-gray-100 transition-colors cursor-pointer"
+                  onClick={() => setMatrixFilters({ ...matrixFilters, onlyPsn: !matrixFilters.onlyPsn })}
+                >
+                  <span className="text-sm font-medium text-gray-600 whitespace-nowrap">Hanya Desa PSN</span>
+                  <label className="cursor-pointer relative inline-flex items-center" onClick={(e) => e.stopPropagation()}>
                     <input
                       type="checkbox"
                       className="sr-only peer"
-                      checked={onlyPsn}
-                      onChange={() => setOnlyPsn(!onlyPsn)}
+                      checked={matrixFilters.onlyPsn}
+                      onChange={(e) => setMatrixFilters({ ...matrixFilters, onlyPsn: e.target.checked })}
                     />
                     <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#00B67A]"></div>
                   </label>
                 </div>
+              </div>
 
-                {/* Reset Button */}
+              {/* Action Buttons */}
+              <div className="flex w-full lg:w-auto gap-2">
                 <button
-                  onClick={() => {
-                    setSelectedTahun(listTahun[0] || "2025");
-                    setOnlyPsn(true);
-                  }}
-                  className="bg-[#F8FAFC] hover:bg-gray-100 text-gray-600 py-2.5 px-4 rounded-[14px] text-xs font-bold border border-gray-200/50 flex items-center gap-1.5 transition-colors"
+                  onClick={handleResetMatrixFilter}
+                  className="flex items-center justify-center gap-2 bg-[#F8FAFC] hover:bg-gray-100 text-gray-600 py-3.5 px-5 rounded-[14px] text-sm font-bold transition-colors border border-gray-100/50"
                 >
-                  <RotateCcw size={14} />
-                  Reset
+                  <RotateCcw size={16} />{" "}
+                  <span className="hidden sm:inline">Reset</span>
+                </button>
+                <button
+                  onClick={handleApplyMatrixFilter}
+                  className="flex items-center justify-center gap-2 bg-[#00B67A] hover:bg-[#009b68] text-white py-3.5 px-7 rounded-[14px] text-sm font-bold shadow-[0_8px_20px_rgba(0,182,122,0.25)] hover:shadow-[0_8px_25px_rgba(0,182,122,0.4)] hover:-translate-y-0.5"
+                >
+                  <Filter size={16} /> Filter Data
                 </button>
               </div>
             </div>
 
             {/* HIGH-LEVEL SPATIAL MATRIKS SUMMARY CARDS */}
             {isMatrixLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6 animate-pulse">
-                {[1, 2, 3, 4].map(i => (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 animate-pulse">
+                {[1, 2, 3].map(i => (
                   <div key={i} className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 h-32 flex flex-col justify-center gap-3">
                     <div className="w-10 h-10 bg-gray-200 rounded-[14px]"></div>
                     <div className="h-6 bg-gray-200 rounded w-1/2"></div>
@@ -1482,7 +1760,7 @@ const Dashboard = () => {
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 {[
                   {
                     title: "Total Desa",
@@ -1492,18 +1770,13 @@ const Dashboard = () => {
                     pct: null
                   },
                   {
-                    title: "Dalam Kawasan Hutan",
-                    value: matrixData?.ringkasanKawasan?.dalamKawasan || 0,
+                    title: "Total Desa Memiliki Kawasan Hutan",
+                    value: matrixData?.ringkasanKawasan?.totalDesaHutan ?? ((matrixData?.ringkasanKawasan?.dalamKawasan || 0) + (matrixData?.ringkasanKawasan?.beririsan || 0)),
                     icon: <TreePine size={22} strokeWidth={2.5} />,
                     color: "orange",
-                    pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.dalamKawasan / matrixData.totalDesa) * 100).toFixed(1) : 0
-                  },
-                  {
-                    title: "Beririsan Kawasan Hutan",
-                    value: matrixData?.ringkasanKawasan?.beririsan || 0,
-                    icon: <Activity size={22} strokeWidth={2.5} />,
-                    color: "amber",
-                    pct: matrixData?.totalDesa ? ((matrixData.ringkasanKawasan.beririsan / matrixData.totalDesa) * 100).toFixed(1) : 0
+                    pct: matrixData?.totalDesa ? ((((matrixData?.ringkasanKawasan?.totalDesaHutan ?? ((matrixData?.ringkasanKawasan?.dalamKawasan || 0) + (matrixData?.ringkasanKawasan?.beririsan || 0)))) / matrixData.totalDesa) * 100).toFixed(1) : 0,
+                    onClick: handleOpenMatrixHutanModal,
+                    isClickable: true,
                   },
                   {
                     title: "Di Luar Kawasan Hutan",
@@ -1515,7 +1788,11 @@ const Dashboard = () => {
                 ].map((card, i) => (
                   <div
                     key={i}
-                    className="bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)] group relative overflow-hidden"
+                    onClick={card.onClick}
+                    className={`bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col justify-center transition-all group relative overflow-hidden ${card.isClickable
+                      ? "cursor-pointer hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(249,115,22,0.12)] hover:border-orange-200"
+                      : "hover:-translate-y-1 hover:shadow-[0_15px_30px_rgb(0,0,0,0.06)]"
+                      }`}
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div
@@ -1523,11 +1800,18 @@ const Dashboard = () => {
                       >
                         {card.icon}
                       </div>
-                      {card.pct !== null && card.pct !== "0.0" && (
-                        <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
-                          {card.pct}%
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {card.isClickable && (
+                          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 flex items-center gap-1 group-hover:bg-orange-500 group-hover:text-white transition-colors">
+                            <Eye size={12} /> Lihat Detail
+                          </span>
+                        )}
+                        {card.pct !== null && card.pct !== "0.0" && (
+                          <span className={`text-[11px] font-extrabold px-3 py-1.5 rounded-lg bg-${card.color}-50 text-${card.color}-600`}>
+                            {card.pct}%
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="text-3xl font-extrabold text-gray-800 mb-1">
                       {card.value.toLocaleString('id-ID')}
@@ -1540,10 +1824,10 @@ const Dashboard = () => {
               </div>
             )}
 
-            {/* DUAL INTERACTIVE CHARTS */}
+            {/* INTERACTIVE CHART */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
               {/* Pie Chart Card (Status IDM) */}
-              <div className="lg:col-span-7 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
+              <div className="lg:col-span-12 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
                 <div className="mb-4">
                   <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full bg-[#00B67A]"></div>
@@ -1558,204 +1842,125 @@ const Dashboard = () => {
                   <div className="h-80 flex items-center justify-center">
                     <Loading />
                   </div>
-                ) : !matrixData?.daftarMatriks?.[0]?.dataChart?.length ? (
-                  <div className="h-80 flex items-center justify-center text-gray-500 text-xs font-bold">
-                    Tidak ada data chart yang tersedia.
-                  </div>
-                ) : (
-                  <div className="flex flex-col md:flex-row items-center justify-between gap-4 h-full">
-                    {/* Responsive Pie Chart Container */}
-                    <div className="w-full md:w-1/2 h-64 relative">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                          <Pie
-                            data={matrixData.daftarMatriks[0].dataChart}
-                            nameKey="label"
-                            dataKey="jumlah"
-                            cx="50%"
-                            cy="50%"
-                            innerRadius={60}
-                            outerRadius={90}
-                            paddingAngle={3}
-                            fill="#8884d8"
-                            onClick={(data) => {
-                              if (data && data.label) {
-                                setModalFilter({ status: data.label, kawasan: null });
+                ) : (() => {
+                  const idmStatusMatrix = matrixData?.daftarMatriks?.find(m => m.kode === "IDM (Status)");
+                  const chartData = idmStatusMatrix?.dataChart || [];
+                  if (!chartData.length) {
+                    return (
+                      <div className="h-80 flex items-center justify-center text-gray-500 text-xs font-bold">
+                        Tidak ada data chart yang tersedia.
+                      </div>
+                    );
+                  }
+                  const totalDesaChart = chartData.reduce((acc, curr) => acc + (curr.jumlah || 0), 0);
+                  return (
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-6 h-full">
+                      {/* Responsive Pie Chart Container */}
+                      <div className="w-full md:w-1/2 h-80 relative">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={chartData}
+                              nameKey="label"
+                              dataKey="jumlah"
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={75}
+                              outerRadius={110}
+                              paddingAngle={3}
+                              fill="#8884d8"
+                              onClick={(data) => {
+                                if (data && data.label) {
+                                  setModalFilter({ status: data.label, kawasan: null });
+                                  setKawasanFilter("");
+                                  setIsModalOpen(true);
+                                }
+                              }}
+                              className="cursor-pointer"
+                            >
+                              {chartData.map((entry, idx) => (
+                                <Cell
+                                  key={`cell-${idx}`}
+                                  fill={COLORS[entry.label.toUpperCase()] || '#cbd5e1'}
+                                  className="transition-all duration-300 hover:opacity-85 focus:outline-none"
+                                />
+                              ))}
+                            </Pie>
+                            <ChartTooltip
+                              content={({ active, payload }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
+                                      <div className="flex items-center gap-1.5 mb-1.5">
+                                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[data.label.toUpperCase()] }}></div>
+                                        <span className="font-extrabold text-sm">{data.label}</span>
+                                      </div>
+                                      <div className="flex flex-col gap-1 text-[11px] text-slate-300">
+                                        <div className="flex justify-between gap-4">
+                                          <span>Jumlah Desa:</span>
+                                          <span className="font-bold text-white">{data.jumlah} Desa</span>
+                                        </div>
+                                        <div className="w-full h-px bg-slate-700/50 my-1"></div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Dalam Kawasan:</span>
+                                          <span className="font-bold text-red-400">{data.breakdown?.dalamKawasan || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Beririsan Hutan:</span>
+                                          <span className="font-bold text-amber-400">{data.breakdown?.beririsan || 0}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Luar Kawasan:</span>
+                                          <span className="font-bold text-emerald-400">{data.breakdown?.luarKawasan || 0}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+                          <div className="text-3xl font-extrabold text-gray-800">
+                            {totalDesaChart.toLocaleString('id-ID')}
+                          </div>
+                          <div className="text-xs text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
+                        </div>
+                      </div>
+
+                      {/* Legenda Chart */}
+                      <div className="w-full md:w-1/2 flex flex-col gap-2">
+                        {chartData.map((entry, idx) => {
+                          const percent = totalDesaChart ? ((entry.jumlah / totalDesaChart) * 100).toFixed(1) : 0;
+                          const color = COLORS[entry.label.toUpperCase()] || '#cbd5e1';
+                          return (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setModalFilter({ status: entry.label, kawasan: null });
                                 setKawasanFilter("");
                                 setIsModalOpen(true);
-                              }
-                            }}
-                            className="cursor-pointer"
-                          >
-                            {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => (
-                              <Cell
-                                key={`cell-${idx}`}
-                                fill={COLORS[entry.label.toUpperCase()] || '#cbd5e1'}
-                                className="transition-all duration-300 hover:opacity-85 focus:outline-none"
-                              />
-                            ))}
-                          </Pie>
-                          <ChartTooltip
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
-                                    <div className="flex items-center gap-1.5 mb-1.5">
-                                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: COLORS[data.label.toUpperCase()] }}></div>
-                                      <span className="font-extrabold text-sm">{data.label}</span>
-                                    </div>
-                                    <div className="flex flex-col gap-1 text-[11px] text-slate-300">
-                                      <div className="flex justify-between gap-4">
-                                        <span>Jumlah Desa:</span>
-                                        <span className="font-bold text-white">{data.jumlah} Desa</span>
-                                      </div>
-                                      <div className="w-full h-px bg-slate-700/50 my-1"></div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Dalam Kawasan:</span>
-                                        <span className="font-bold text-red-400">{data.breakdown?.dalamKawasan || 0}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Beririsan Hutan:</span>
-                                        <span className="font-bold text-amber-400">{data.breakdown?.beririsan || 0}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Luar Kawasan:</span>
-                                        <span className="font-bold text-emerald-400">{data.breakdown?.luarKawasan || 0}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                        </PieChart>
-                      </ResponsiveContainer>
-                      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-                        <div className="text-2xl font-extrabold text-gray-800">
-                          {matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0)}
-                        </div>
-                        <div className="text-[10px] text-gray-400 uppercase font-extrabold tracking-wider">Desa</div>
+                              }}
+                              className="flex items-center justify-between p-2.5 rounded-[12px] bg-[#F8FAFC] border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer group"
+                            >
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-full shrink-0 group-hover:scale-110 transition-transform" style={{ backgroundColor: color }}></div>
+                                <span className="text-xs font-bold text-gray-700">{entry.label}</span>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs font-extrabold text-gray-800">{entry.jumlah} <span className="text-[9px] text-gray-400 font-bold">Desa</span></span>
+                                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 shrink-0">{percent}%</span>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-
-                    {/* Legenda Chart */}
-                    <div className="w-full md:w-1/2 flex flex-col gap-2">
-                      {matrixData.daftarMatriks[0].dataChart.map((entry, idx) => {
-                        const total = matrixData.daftarMatriks[0].dataChart.reduce((acc, curr) => acc + curr.jumlah, 0);
-                        const percent = total ? ((entry.jumlah / total) * 100).toFixed(1) : 0;
-                        const color = COLORS[entry.label.toUpperCase()] || '#cbd5e1';
-                        return (
-                          <div
-                            key={idx}
-                            onClick={() => {
-                              setModalFilter({ status: entry.label, kawasan: null });
-                              setKawasanFilter("");
-                              setIsModalOpen(true);
-                            }}
-                            className="flex items-center justify-between p-2.5 rounded-[12px] bg-[#F8FAFC] border border-gray-100 hover:border-gray-300 hover:bg-gray-50 transition-all cursor-pointer group"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="w-3 h-3 rounded-full shrink-0 group-hover:scale-110 transition-transform" style={{ backgroundColor: color }}></div>
-                              <span className="text-xs font-bold text-gray-700">{entry.label}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs font-extrabold text-gray-800">{entry.jumlah} <span className="text-[9px] text-gray-400 font-bold">Desa</span></span>
-                              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-md bg-gray-100 text-gray-500 shrink-0">{percent}%</span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Bar Chart Card (Average IDM Score Breakdown) */}
-              <div className="lg:col-span-5 bg-white rounded-[24px] p-6 shadow-sm border border-gray-100 flex flex-col">
-                <div className="mb-4">
-                  <h3 className="text-base font-extrabold text-gray-800 flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
-                    Rata-rata Skor IDM per Letak Spasial
-                  </h3>
-                  <p className="text-xs text-gray-400 mt-0.5 font-semibold">
-                    Perbandingan rata-rata nilai indeks desa lintas zona tata ruang kehutanan.
-                  </p>
-                </div>
-
-                {isMatrixLoading ? (
-                  <div className="h-80 flex items-center justify-center">
-                    <Loading />
-                  </div>
-                ) : (
-                  <div className="h-80 flex flex-col justify-between">
-                    <div className="w-full h-56 mt-2">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                          data={[
-                            { name: "Dalam Kawasan", score: onlyPsn ? 0.635 : 0.612, fill: "#EF4444" },
-                            { name: "Beririsan Hutan", score: onlyPsn ? 0.718 : 0.684, fill: "#F59E0B" },
-                            { name: "Luar Kawasan", score: onlyPsn ? 0.776 : 0.742, fill: "#10B981" }
-                          ]}
-                          margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" vertical={false} />
-                          <XAxis
-                            dataKey="name"
-                            tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <YAxis
-                            domain={[0, 1.0]}
-                            tick={{ fill: "#64748B", fontSize: 9, fontWeight: 700 }}
-                            axisLine={false}
-                            tickLine={false}
-                          />
-                          <ChartTooltip
-                            cursor={{ fill: '#F8FAFC' }}
-                            content={({ active, payload }) => {
-                              if (active && payload && payload.length) {
-                                const data = payload[0].payload;
-                                return (
-                                  <div className="bg-slate-900/95 border border-slate-700/50 rounded-xl p-3 shadow-xl text-xs font-semibold text-slate-100">
-                                    <span className="block text-slate-400 text-[10px] uppercase font-bold tracking-wider mb-1">{data.name}</span>
-                                    <span className="text-sm font-extrabold text-emerald-400">{data.score.toFixed(3)}</span>
-                                  </div>
-                                );
-                              }
-                              return null;
-                            }}
-                          />
-                          <Bar
-                            dataKey="score"
-                            radius={[8, 8, 0, 0]}
-                            maxBarSize={45}
-                          >
-                            {[
-                              { name: "Dalam Kawasan", score: onlyPsn ? 0.635 : 0.612, fill: "#EF4444" },
-                              { name: "Beririsan Hutan", score: onlyPsn ? 0.718 : 0.684, fill: "#F59E0B" },
-                              { name: "Luar Kawasan", score: onlyPsn ? 0.776 : 0.742, fill: "#10B981" }
-                            ].map((entry, idx) => (
-                              <Cell key={`bar-cell-${idx}`} fill={entry.fill} />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-
-                    {/* Insight Teks Card */}
-                    <div className="bg-[#F8FAFC] border border-gray-100 p-3 rounded-2xl flex gap-3 items-center">
-                      <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center shrink-0">
-                        <Info size={14} />
-                      </div>
-                      <p className="text-[10px] leading-relaxed text-gray-500 font-bold">
-                        Desa di <strong className="text-gray-700">Luar Kawasan Hutan</strong> memiliki rata-rata IDM tertinggi disebabkan oleh aksesibilitas infrastruktur publik yang lebih optimal dibandingkan desa di dalam kawasan.
-                      </p>
-                    </div>
-                  </div>
-                )}
+                  );
+                })()}
               </div>
             </div>
           </>
@@ -1920,12 +2125,12 @@ const Dashboard = () => {
                                   {spatialLabel}
                                 </span>
                                 {countKawasan > 0 && uniqueKawasan.length > 0 && (
-                                  <div className="relative group/tooltip inline-block shrink-0">
+                                  <div className="relative group/tooltip inline-block shrink-0 hover:z-50">
                                     <span className="cursor-help inline-flex items-center justify-center text-slate-500 hover:text-slate-600 transition-colors">
                                       <Info size={14} className="ml-0.5" />
                                     </span>
                                     {/* Beautiful Interactive Tooltip popup */}
-                                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover/tooltip:block w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-xl p-3 shadow-xl z-[99] text-left">
+                                    <div className="absolute top-full right-0 mt-2 hidden group-hover/tooltip:block w-64 bg-slate-900/95 backdrop-blur-md border border-slate-700/50 rounded-xl p-3 shadow-xl z-[9999] text-left">
                                       <div className="text-[9px] uppercase font-bold tracking-wider text-slate-400 mb-1.5">
                                         Daftar Fungsi Kawasan Hutan ({uniqueKawasan.length}):
                                       </div>
@@ -1937,7 +2142,7 @@ const Dashboard = () => {
                                           </div>
                                         ))}
                                       </div>
-                                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-slate-900"></div>
+                                      <div className="absolute bottom-full right-[6px] border-[5px] border-transparent border-b-slate-900"></div>
                                     </div>
                                   </div>
                                 )}
@@ -1995,6 +2200,461 @@ const Dashboard = () => {
                       disabled={currentPage === Math.ceil(totalRecords / pageSize)}
                       onClick={() => setCurrentPage(prev => Math.min(prev + 1, Math.ceil(totalRecords / pageSize)))}
                       className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================
+            MODAL 1: LIST DESA HUTAN (ANALISIS SPASIAL)
+        ========================================= */}
+        {isSpatialHutanModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-[28px] shadow-2xl border border-gray-100 w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* Header Modal */}
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-[#F8FAFC]">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg font-extrabold text-gray-800">
+                      Daftar Desa Memiliki Kawasan Hutan
+                    </h3>
+                    {(appliedApiFilters.provinsi || appliedApiFilters.kabupaten || appliedApiFilters.tipe_administrasi) && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                        Filtered
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 font-medium">
+                    Menampilkan direktori desa berdasarkan hasil analisis spasial cakupan kawasan hutan.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsSpatialHutanModalOpen(false)}
+                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 hover:scale-105 text-gray-500 hover:text-gray-700 flex items-center justify-center transition-all focus:outline-none cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Quick Filters Tab Active (2 Active Tabs: Dalam Kawasan Hutan & Beririsan Kawasan Hutan) */}
+              <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 p-1 rounded-full border border-gray-200/50">
+                  {[
+                    { key: "dalam_kawasan", label: "Dalam Kawasan Hutan" },
+                    { key: "beririsan", label: "Beririsan Kawasan Hutan" }
+                  ].map((tab) => {
+                    const isActive = spatialHutanActiveTab === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => {
+                          setSpatialHutanActiveTab(tab.key);
+                          setSpatialHutanPage(1);
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer ${isActive
+                          ? "bg-white text-[#00B67A] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-white"
+                          : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/30"
+                          }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Cari desa..."
+                      value={spatialHutanSearch}
+                      onChange={(e) => {
+                        setSpatialHutanSearch(e.target.value);
+                        setSpatialHutanPage(1);
+                      }}
+                      className="pl-8 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#00B67A] w-44 sm:w-56 font-medium"
+                    />
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <div className="text-xs text-gray-500 font-semibold bg-gray-50 border border-gray-100 rounded-xl px-3 py-1.5 shrink-0">
+                    Total: <span className="font-extrabold text-gray-800">{spatialHutanTotal} Desa</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Area Tabel List (Scrollable) */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                {spatialHutanLoading ? (
+                  <div className="p-12">
+                    <Loading />
+                  </div>
+                ) : spatialHutanData.length === 0 ? (
+                  <div className="p-12 text-center text-gray-500 text-sm font-bold flex flex-col items-center justify-center gap-3">
+                    <Home size={32} className="text-gray-300" />
+                    Tidak ada data desa ditemukan.
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse min-w-[950px]">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-[#F8FAFC] text-[11px] font-extrabold text-gray-400 uppercase tracking-wider sticky top-0 z-10">
+                        <th className="py-4 px-6 text-center w-16">NO</th>
+                        <th className="py-4 px-4">NAMA DESA / KELURAHAN</th>
+                        <th className="py-4 px-4">KODE KEMENDAGRI</th>
+                        <th className="py-4 px-4">PROVINSI</th>
+                        <th className="py-4 px-4">KABUPATEN / KOTA</th>
+                        <th className="py-4 px-4">KECAMATAN</th>
+                        <th className="py-4 px-4 text-center">TIPE</th>
+                        <th className="py-4 px-4 text-right">LUAS DESA (HA)</th>
+                        {/* <th className="py-4 px-6 text-center">KLASIFIKASI SPASIAL</th> */}
+                      </tr>
+                    </thead>
+                    <tbody className="text-xs font-semibold text-gray-600">
+                      {spatialHutanData.map((row, idx) => {
+                        const absoluteNo = (spatialHutanPage - 1) * spatialHutanSize + idx + 1;
+                        const letak = row.jenis_interaksi || row.jenisInteraksi || row.kawasan?.kategori || spatialHutanActiveTab;
+                        let spatialBadgeClass = "bg-amber-50 text-amber-600 border-amber-200";
+                        let spatialLabel = "Beririsan Hutan";
+
+                        if (letak === "dalam_kawasan" || letak === "dalamKawasan") {
+                          spatialBadgeClass = "bg-red-50 text-red-600 border-red-200";
+                          spatialLabel = "Dalam Kawasan";
+                        }
+
+                        const nama = row.nama || row.namaDesa || row.nama_desa || "-";
+                        const kode = row.kode_kemendagri || row.kodeKemendagri || row.kode || "-";
+                        const prov = row.provinsi || row.nama_provinsi || "-";
+                        const kab = row.kabupaten || row.nama_kabupaten || "-";
+                        const kec = row.kecamatan || row.nama_kecamatan || "-";
+                        const tipe = row.tipe_administrasi || row.tipeAdministrasi || "Desa";
+                        const luas = row.luas_desa_ha ?? row.luasHa ?? row.luas_ha ?? null;
+
+                        return (
+                          <tr
+                            key={row.id || idx}
+                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors"
+                          >
+                            <td className="py-3 px-6 text-center text-gray-400 font-bold">
+                              {absoluteNo}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-extrabold text-[#00B67A]">{nama}</span>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-gray-500">
+                              {kode}
+                            </td>
+                            <td className="py-3 px-4 font-medium text-gray-700">
+                              {prov}
+                            </td>
+                            <td className="py-3 px-4 font-medium text-gray-700">
+                              {kab}
+                            </td>
+                            <td className="py-3 px-4 font-medium text-gray-700">
+                              {kec}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                {tipe}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-semibold text-gray-700">
+                              {luas !== null ? Number(luas).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "-"}
+                            </td>
+                            {/* <td className="py-3 px-6 text-center">
+                              <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border ${spatialBadgeClass}`}>
+                                {spatialLabel}
+                              </span>
+                            </td> */}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Paginator Footer Modal */}
+              {!spatialHutanLoading && spatialHutanTotal > spatialHutanSize && (
+                <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-[#F8FAFC]">
+                  <div>
+                    Menampilkan {((spatialHutanPage - 1) * spatialHutanSize) + 1} - {Math.min(spatialHutanPage * spatialHutanSize, spatialHutanTotal)} dari {spatialHutanTotal} data desa
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      disabled={spatialHutanPage === 1}
+                      onClick={() => setSpatialHutanPage(prev => Math.max(prev - 1, 1))}
+                      className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    {Array.from({ length: Math.ceil(spatialHutanTotal / spatialHutanSize) }).map((_, i) => {
+                      const pageNum = i + 1;
+                      const isNear = Math.abs(spatialHutanPage - pageNum) <= 2;
+                      const isFirstOrLast = pageNum === 1 || pageNum === Math.ceil(spatialHutanTotal / spatialHutanSize);
+
+                      if (!isNear && !isFirstOrLast) {
+                        if (pageNum === 2 || pageNum === Math.ceil(spatialHutanTotal / spatialHutanSize) - 1) {
+                          return <span key={pageNum} className="px-1 text-gray-400">...</span>;
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setSpatialHutanPage(pageNum)}
+                          className={`w-8 h-8 flex items-center justify-center rounded-[8px] font-bold transition-all cursor-pointer ${spatialHutanPage === pageNum
+                            ? "bg-[#00B67A] text-white shadow-sm"
+                            : "hover:bg-gray-100 hover:text-gray-800"
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      disabled={spatialHutanPage === Math.ceil(spatialHutanTotal / spatialHutanSize)}
+                      onClick={() => setSpatialHutanPage(prev => Math.min(prev + 1, Math.ceil(spatialHutanTotal / spatialHutanSize)))}
+                      className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* =========================================
+            MODAL 2: LIST DESA HUTAN (MATRIX DIMENSI DESA)
+        ========================================= */}
+        {isMatrixHutanModalOpen && (
+          <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-white rounded-[28px] shadow-2xl border border-gray-100 w-full max-w-5xl h-[85vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+              {/* Header Modal */}
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-[#F8FAFC]">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h3 className="text-lg font-extrabold text-gray-800">
+                      Detail Desa Memiliki Kawasan Hutan (Matriks Dimensi)
+                    </h3>
+                    <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-200">
+                      Tahun {selectedTahun}
+                    </span>
+                    {onlyPsn && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                        Hanya PSN
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1 font-medium">
+                    Menampilkan direktori desa berdasarkan matriks korelasi IDM dan keterbatasan spasial kawasan hutan.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsMatrixHutanModalOpen(false)}
+                  className="w-9 h-9 rounded-full bg-gray-100 hover:bg-gray-200 hover:scale-105 text-gray-500 hover:text-gray-700 flex items-center justify-center transition-all focus:outline-none cursor-pointer"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              {/* Quick Filters Tab Active (2 Active Tabs: Dalam Kawasan Hutan & Beririsan Kawasan Hutan) */}
+              <div className="px-6 py-4 border-b border-gray-100 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-wrap items-center gap-2 bg-gray-100/50 p-1 rounded-full border border-gray-200/50">
+                  {[
+                    { key: "dalamKawasan", label: "Dalam Kawasan Hutan" },
+                    { key: "beririsan", label: "Beririsan Kawasan Hutan" }
+                  ].map((tab) => {
+                    const isActive = matrixHutanActiveTab === tab.key;
+                    return (
+                      <button
+                        key={tab.key}
+                        onClick={() => {
+                          setMatrixHutanActiveTab(tab.key);
+                          setMatrixHutanPage(1);
+                        }}
+                        className={`px-4 py-2 rounded-full text-xs font-bold transition-all duration-200 flex items-center gap-2 cursor-pointer ${isActive
+                          ? "bg-white text-[#00B67A] shadow-[0_2px_8px_rgba(0,0,0,0.05)] border border-white"
+                          : "text-gray-500 hover:text-gray-800 hover:bg-gray-200/30"
+                          }`}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Cari desa..."
+                      value={matrixHutanSearch}
+                      onChange={(e) => {
+                        setMatrixHutanSearch(e.target.value);
+                        setMatrixHutanPage(1);
+                      }}
+                      className="pl-8 pr-3 py-1.5 text-xs bg-white border border-gray-200 rounded-lg focus:outline-none focus:border-[#00B67A] w-44 sm:w-56 font-medium"
+                    />
+                    <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+                  </div>
+                  <div className="text-xs text-gray-500 font-semibold bg-gray-50 border border-gray-100 rounded-xl px-3 py-1.5 shrink-0">
+                    Total: <span className="font-extrabold text-gray-800">{matrixHutanTotal} Desa</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Area Tabel List (Scrollable) */}
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                {matrixHutanLoading ? (
+                  <div className="p-12">
+                    <Loading />
+                  </div>
+                ) : matrixHutanData.length === 0 ? (
+                  <div className="p-12 text-center text-gray-500 text-sm font-bold flex flex-col items-center justify-center gap-3">
+                    <Home size={32} className="text-gray-300" />
+                    Tidak ada data desa ditemukan.
+                  </div>
+                ) : (
+                  <table className="w-full text-left border-collapse min-w-[950px]">
+                    <thead>
+                      <tr className="border-b border-gray-100 bg-[#F8FAFC] text-[11px] font-extrabold text-gray-400 uppercase tracking-wider sticky top-0 z-10">
+                        <th className="py-4 px-6 text-center w-16">NO</th>
+                        <th className="py-4 px-4">NAMA DESA / KELURAHAN</th>
+                        <th className="py-4 px-4">KODE KEMENDAGRI</th>
+                        <th className="py-4 px-4">PROVINSI</th>
+                        <th className="py-4 px-4">KABUPATEN / KOTA</th>
+                        <th className="py-4 px-4">KECAMATAN</th>
+                        <th className="py-4 px-4 text-center">TIPE</th>
+                        <th className="py-4 px-4 text-right">LUAS DESA (HA)</th>
+                        <th className="py-4 px-4 text-center">DESA PSN</th>
+                        {/* <th className="py-4 px-6 text-center">KLASIFIKASI SPASIAL</th> */}
+                      </tr>
+                    </thead>
+                    <tbody className="text-xs font-semibold text-gray-600">
+                      {matrixHutanData.map((row, idx) => {
+                        const absoluteNo = (matrixHutanPage - 1) * matrixHutanSize + idx + 1;
+                        const letak = row.kawasan?.kategori || row.kawasan?.letakSpasial || matrixHutanActiveTab;
+                        let spatialBadgeClass = "bg-amber-50 text-amber-600 border-amber-200";
+                        let spatialLabel = "Beririsan Hutan";
+
+                        if (letak === "dalamKawasan" || letak === "dalam_kawasan") {
+                          spatialBadgeClass = "bg-red-50 text-red-600 border-red-200";
+                          spatialLabel = "Dalam Kawasan";
+                        }
+
+                        const nama = row.nama || row.namaDesa || row.nama_desa || "-";
+                        const kode = row.kode_kemendagri || row.kodeKemendagri || row.kode || "-";
+                        const prov = row.provinsi || row.nama_provinsi || "-";
+                        const kab = row.kabupaten || row.nama_kabupaten || "-";
+                        const kec = row.kecamatan || row.nama_kecamatan || "-";
+                        const tipe = row.tipe_administrasi || row.tipeAdministrasi || "Desa";
+                        const luas = row.luas_desa_ha ?? row.luasHa ?? row.luas_ha ?? null;
+
+                        return (
+                          <tr
+                            key={row.id || idx}
+                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors"
+                          >
+                            <td className="py-3 px-6 text-center text-gray-400 font-bold">
+                              {absoluteNo}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="font-extrabold text-[#00B67A]">{nama}</span>
+                            </td>
+                            <td className="py-3 px-4 font-mono text-gray-500">
+                              {kode}
+                            </td>
+                            <td className="py-3 px-4 font-medium text-gray-700">
+                              {prov}
+                            </td>
+                            <td className="py-3 px-4 font-medium text-gray-700">
+                              {kab}
+                            </td>
+                            <td className="py-3 px-4 font-medium text-gray-700">
+                              {kec}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 border border-slate-200">
+                                {tipe}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right font-semibold text-gray-700">
+                              {luas !== null ? Number(luas).toLocaleString('id-ID', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) : "-"}
+                            </td>
+                            <td className="py-3 px-4 text-center">
+                              {row.isPsn ? (
+                                <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200/50">
+                                  YA
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-400">
+                                  TIDAK
+                                </span>
+                              )}
+                            </td>
+                            {/* <td className="py-3 px-6 text-center">
+                              <span className={`text-[10px] font-extrabold px-3 py-1 rounded-full border ${spatialBadgeClass}`}>
+                                {spatialLabel}
+                              </span>
+                            </td> */}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+
+              {/* Paginator Footer Modal */}
+              {!matrixHutanLoading && matrixHutanTotal > matrixHutanSize && (
+                <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-[#F8FAFC]">
+                  <div>
+                    Menampilkan {((matrixHutanPage - 1) * matrixHutanSize) + 1} - {Math.min(matrixHutanPage * matrixHutanSize, matrixHutanTotal)} dari {matrixHutanTotal} data desa
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      disabled={matrixHutanPage === 1}
+                      onClick={() => setMatrixHutanPage(prev => Math.max(prev - 1, 1))}
+                      className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    {Array.from({ length: Math.ceil(matrixHutanTotal / matrixHutanSize) }).map((_, i) => {
+                      const pageNum = i + 1;
+                      const isNear = Math.abs(matrixHutanPage - pageNum) <= 2;
+                      const isFirstOrLast = pageNum === 1 || pageNum === Math.ceil(matrixHutanTotal / matrixHutanSize);
+
+                      if (!isNear && !isFirstOrLast) {
+                        if (pageNum === 2 || pageNum === Math.ceil(matrixHutanTotal / matrixHutanSize) - 1) {
+                          return <span key={pageNum} className="px-1 text-gray-400">...</span>;
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setMatrixHutanPage(pageNum)}
+                          className={`w-8 h-8 flex items-center justify-center rounded-[8px] font-bold transition-all cursor-pointer ${matrixHutanPage === pageNum
+                            ? "bg-[#00B67A] text-white shadow-sm"
+                            : "hover:bg-gray-100 hover:text-gray-800"
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
+                    <button
+                      disabled={matrixHutanPage === Math.ceil(matrixHutanTotal / matrixHutanSize)}
+                      onClick={() => setMatrixHutanPage(prev => Math.min(prev + 1, Math.ceil(matrixHutanTotal / matrixHutanSize)))}
+                      className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
                     >
                       <ChevronRight size={16} />
                     </button>

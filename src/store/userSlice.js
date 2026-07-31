@@ -1,126 +1,45 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-const emptyUser = {
-  id: null,
-  userId: null,
-  username: null,
-  roles: [],
-  permissions: [],
-  accessToken: null,
-  refreshToken: null,
-  isSessionExpired: false,
-};
+// ============================================================
+// SECURITY:
+// - user_profile (non-sensitif) → localStorage (persist lintas tab)
+// - refreshToken → sessionStorage (persist hard-refresh, hilang saat tab tutup)
+// - accessToken → Redux memory SAJA (tidak pernah disimpan ke storage)
+// ============================================================
 
-const normalizeList = (value) => {
-  const source = Array.isArray(value) ? value : value ? [value] : [];
+const RT_KEY = "_rt"; // sessionStorage key untuk refreshToken
 
-  return [
-    ...new Set(
-      source
-        .flatMap((item) => {
-          if (Array.isArray(item)) return normalizeList(item);
-
-          if (typeof item === "string" || typeof item === "number") {
-            return String(item);
-          }
-
-          if (!item || typeof item !== "object") return [];
-
-          const direct =
-            item.name ??
-            item.nama ??
-            item.code ??
-            item.kode ??
-            item.slug ??
-            item.value ??
-            item.role?.name ??
-            item.role?.nama ??
-            item.permission?.name ??
-            item.permission?.nama ??
-            item.permission?.code ??
-            item.permission?.kode;
-
-          return direct ? String(direct) : [];
-        })
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
-  ];
-};
-
-const getStoredProfile = () => {
+const savedUserData = (() => {
   try {
-    const profile = localStorage.getItem("user_profile");
-    const legacyUser = localStorage.getItem("user");
-    return profile
-      ? JSON.parse(profile)
-      : legacyUser
-        ? JSON.parse(legacyUser)
-        : null;
+    const raw = localStorage.getItem("user_profile");
+    return raw ? JSON.parse(raw) : null;
   } catch {
     return null;
   }
-};
+})();
 
-const normalizeUserPayload = (payload = {}) => {
-  const source = payload && typeof payload === "object" ? payload : {};
-  const user = source.user && typeof source.user === "object" ? source.user : {};
-  const rawRoles = source.roles ?? user.roles ?? source.role ?? user.role;
-  const roleItems = Array.isArray(rawRoles) ? rawRoles : rawRoles ? [rawRoles] : [];
-  const roleNames = normalizeList(
-    roleItems.map((role) =>
-      role && typeof role === "object" && role.role ? role.role : role,
-    ),
-  );
-  const rawPermissions =
-    source.permissions ??
-    user.permissions ??
-    source.permission ??
-    user.permission;
-  const permissionsFromRoles = normalizeList(
-    roleItems.flatMap((role) => {
-      if (!role || typeof role !== "object") return [];
-      return [
-        role.permission,
-        role.permissions,
-        role.role?.permission,
-        role.role?.permissions,
-      ].filter(Boolean);
-    }),
-  );
+const savedRefreshToken = (() => {
+  try {
+    return sessionStorage.getItem(RT_KEY) || null;
+  } catch {
+    return null;
+  }
+})();
 
-  const id = source.id ?? source.userId ?? user.id ?? null;
-
-  return {
-    ...emptyUser,
-    ...source,
-    id,
-    userId: source.userId ?? source.id ?? user.id ?? null,
-    username:
-      source.username ??
-      user.username ??
-      source.name ??
-      user.name ??
-      source.nama ??
-      user.nama ??
-      null,
-    accessToken:
-      source.accessToken ?? source.token ?? source.access_token ?? null,
-    refreshToken: source.refreshToken ?? source.refresh_token ?? null,
-    roles: roleNames,
-    permissions: normalizeList([rawPermissions, permissionsFromRoles]),
-    isSessionExpired: false,
-  };
-};
-
-const initialProfile = normalizeUserPayload(getStoredProfile());
 const initialState = {
-  ...emptyUser,
-  id: initialProfile.id,
-  userId: initialProfile.userId,
-  username: initialProfile.username,
-  roles: initialProfile.roles,
-  permissions: initialProfile.permissions,
+  // Data profil (non-sensitif) — dipersist ke localStorage
+  userId: savedUserData?.userId || null,
+  username: savedUserData?.username || null,
+  roles: savedUserData?.roles || [],
+  permissions: savedUserData?.permissions || [],
+
+  // accessToken — HANYA di Redux memory (hilang saat hard-refresh → di-recover via refreshToken)
+  accessToken: null,
+  // refreshToken — disimpan ke sessionStorage agar tahan hard-refresh
+  refreshToken: savedRefreshToken,
+
+  // Status session
+  isSessionExpired: false,
 };
 
 const userSlice = createSlice({
@@ -128,29 +47,49 @@ const userSlice = createSlice({
   initialState,
   reducers: {
     setUserData: (state, action) => {
-      const normalized = normalizeUserPayload(action.payload);
-      const profileData = {
-        id: normalized.id,
-        userId: normalized.userId,
-        username: normalized.username,
-        roles: normalized.roles,
-        permissions: normalized.permissions,
-      };
+      const { userId, username, roles, permissions, accessToken, refreshToken } =
+        action.payload;
 
-      Object.assign(state, normalized, { isSessionExpired: false });
+      state.accessToken = accessToken || null;
+      state.refreshToken = refreshToken || null;
+
+      // Simpan profil non-sensitif ke localStorage
+      const profileData = { userId, username, roles, permissions };
+      state.userId = userId || null;
+      state.username = username || null;
+      state.roles = roles || [];
+      state.permissions = permissions || [];
 
       try {
         localStorage.setItem("user_profile", JSON.stringify(profileData));
-        localStorage.removeItem("user");
       } catch {
-        // Ignore storage errors.
+        // Ignore storage errors
+      }
+
+      // Simpan refreshToken ke sessionStorage
+      try {
+        if (refreshToken) {
+          sessionStorage.setItem(RT_KEY, refreshToken);
+        } else {
+          sessionStorage.removeItem(RT_KEY);
+        }
+      } catch {
+        // Ignore storage errors
       }
     },
 
     setToken: (state, action) => {
       const { accessToken, refreshToken } = action.payload;
       if (accessToken) state.accessToken = accessToken;
-      if (refreshToken) state.refreshToken = refreshToken;
+      if (refreshToken) {
+        state.refreshToken = refreshToken;
+        // Perbarui sessionStorage dengan refreshToken terbaru
+        try {
+          sessionStorage.setItem(RT_KEY, refreshToken);
+        } catch {
+          // Ignore
+        }
+      }
       state.isSessionExpired = false;
     },
 
@@ -158,20 +97,33 @@ const userSlice = createSlice({
       state.accessToken = null;
       state.refreshToken = null;
       state.isSessionExpired = true;
+      try {
+        sessionStorage.removeItem(RT_KEY);
+      } catch {
+        // Ignore
+      }
     },
 
     clearUserData: () => {
       try {
         localStorage.removeItem("user_profile");
         localStorage.removeItem("user");
+        sessionStorage.removeItem(RT_KEY);
       } catch {
-        // Ignore storage errors.
+        // Ignore
       }
-      return { ...emptyUser };
+      return {
+        userId: null,
+        username: null,
+        roles: [],
+        permissions: [],
+        accessToken: null,
+        refreshToken: null,
+      };
     },
   },
 });
 
-export const { setUserData, clearUserData, setToken, triggerSessionExpired } =
+export const { setUserData, clearUserData, setToken } =
   userSlice.actions;
 export default userSlice.reducer;

@@ -1,16 +1,168 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Download, Upload, Loader2, X, FileUp, ChevronDown, Search } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { indikatorService } from "../../services/master/indikatorService";
 import { performaDesaService } from "../../services/master/performaDesaService";
-import { Download, Upload, Loader2, X, FileUp } from "lucide-react";
+import { usePermission } from "../../hooks/usePermission";
+import DataTable from "../../components/DataTable";
+import Pagination from "../../components/Pagination";
+
+// ── KOMPONEN CUSTOM: SEARCHABLE DROPDOWN (Premium UI & UX) ──
+const SearchableDropdown = ({
+  label,
+  value,
+  onChange,
+  options = [],
+  placeholder = "Pilih opsi",
+  required = false,
+  emptyMessage = "Tidak ada hasil ditemukan",
+}) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const dropdownRef = useRef(null);
+
+  // Close dropdown on click outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Reset search input when dropdown is closed
+  useEffect(() => {
+    if (!isOpen) {
+      setSearch("");
+    }
+  }, [isOpen]);
+
+  const selectedOption = useMemo(() => {
+    return options.find((opt) => String(opt.value) === String(value));
+  }, [options, value]);
+
+  const filteredOptions = useMemo(() => {
+    if (!search.trim()) return options;
+    const query = search.toLowerCase();
+    return options.filter((opt) => opt.label.toLowerCase().includes(query));
+  }, [options, search]);
+
+  return (
+    <div ref={dropdownRef} className="relative w-full flex flex-col">
+      {/* CSS Scrollbar Kustom Lokal */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(45, 115, 68, 0.15);
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(45, 115, 68, 0.3);
+        }
+      `}</style>
+
+      {/* Label */}
+      <label className="text-[10px] text-[#2D7344] font-extrabold uppercase tracking-wider mb-1 block select-none">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+
+      {/* Trigger Button */}
+      <div
+        onClick={() => setIsOpen((prev) => !prev)}
+        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${isOpen
+            ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm"
+            : "border-gray-250 shadow-sm"
+          }`}
+      >
+        <span
+          className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}
+        >
+          {selectedOption ? selectedOption.label : placeholder}
+        </span>
+        <ChevronDown
+          size={14}
+          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? "transform rotate-180 text-[#2D7344]" : ""
+            }`}
+        />
+      </div>
+
+      {/* Dropdown Panel */}
+      {isOpen && (
+        <div className="absolute z-[100] top-[60px] left-0 w-full bg-white border border-gray-150 rounded-2xl shadow-xl p-2 animate-in fade-in slide-in-from-top-2 duration-150 flex flex-col">
+          {/* Search Box */}
+          <div className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-xl mb-2 focus-within:border-[#2D7344]/40 focus-within:ring-2 focus-within:ring-[#2D7344]/10 transition-all bg-slate-50/50 flex-shrink-0">
+            <Search size={14} className="text-gray-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Cari ${label.toLowerCase()}...`}
+              className="w-full bg-transparent text-xs font-bold text-gray-700 focus:outline-none placeholder-gray-400"
+              autoFocus
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="text-gray-400 hover:text-gray-600 transition-colors flex items-center justify-center"
+              >
+                <X size={12} />
+              </button>
+            )}
+          </div>
+
+          {/* Options List */}
+          <div className="overflow-y-auto overflow-x-hidden flex-1 space-y-0.5 custom-scrollbar pr-1 max-h-[190px]">
+            {filteredOptions.length === 0 ? (
+              <div className="px-3 py-4 text-center text-xs font-bold text-gray-400 italic">
+                {emptyMessage}
+              </div>
+            ) : (
+              filteredOptions.map((opt) => {
+                const isActive = String(opt.value) === String(value);
+                return (
+                  <button
+                    key={opt.key || opt.value}
+                    type="button"
+                    onClick={() => {
+                      onChange(opt.value);
+                      setIsOpen(false);
+                    }}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${isActive
+                        ? "bg-green-50 text-[#2D7344] font-extrabold"
+                        : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
+                      }`}
+                  >
+                    <span className="truncate">{opt.label}</span>
+                    {isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#2D7344] flex-shrink-0 ml-2" />
+                    )}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 export default function PerformaDesa() {
+  const { can } = usePermission();
   const [selectedFormulaId, setSelectedFormulaId] = useState("");
   const [selectedTahunId, setSelectedTahunId] = useState("");
   const [page, setPage] = useState(1);
-  const pageSize = 20;
+  const [pageSize, setPageSize] = useState(20);
 
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadFile, setUploadFile] = useState(null);
@@ -39,7 +191,7 @@ export default function PerformaDesa() {
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["performa-desa", selectedFormulaId, page],
+    queryKey: ["performa-desa", selectedFormulaId, page, pageSize],
     queryFn: () =>
       performaDesaService.getPerformaList({
         formulaId: selectedFormulaId,
@@ -54,6 +206,53 @@ export default function PerformaDesa() {
   const items = performaRes?.data?.items || performaRes?.items || [];
   const total = performaRes?.data?.total || performaRes?.total || 0;
   const totalPages = Math.ceil(total / pageSize) || 1;
+
+  // Options formatting for SearchableDropdown
+  const formulaOptions = useMemo(() => {
+    return formulaList.map((f) => ({
+      value: f.id,
+      label: f.nama || f.name || "-",
+    }));
+  }, [formulaList]);
+
+  const tahunOptions = useMemo(() => {
+    return tahunList.map((t) => ({
+      value: t.id,
+      label: String(t.tahun),
+    }));
+  }, [tahunList]);
+
+  // Dynamic columns mapper for DataTable
+  const tableColumns = useMemo(() => {
+    const baseColumns = [
+      {
+        header: "No",
+        className: "text-center w-16",
+        render: (row, idx) => (
+          <div className="text-center text-slate-500">
+            {(page - 1) * pageSize + idx + 1}
+          </div>
+        ),
+      },
+      {
+        header: "Nama Desa",
+        className: "font-semibold text-slate-800 min-w-[160px]",
+        render: (row) => <span>{row.desa?.nama || "-"}</span>,
+      },
+    ];
+
+    const dynamicColumns = columns.map((col) => ({
+      header: col.nama,
+      render: (row) => {
+        const indVal = Array.isArray(row.nilaiIndikator)
+          ? row.nilaiIndikator.find((x) => x.kode === col.kode)
+          : null;
+        return <span>{indVal ? (indVal.label ?? indVal.nilai ?? "-") : "-"}</span>;
+      },
+    }));
+
+    return [...baseColumns, ...dynamicColumns];
+  }, [columns, page, pageSize]);
 
   // ── DOWNLOAD TEMPLATE ──
   const handleDownloadTemplate = async () => {
@@ -98,44 +297,43 @@ export default function PerformaDesa() {
   };
 
   return (
-    <DashboardLayout activeMenu="Performa Desa">
+    <DashboardLayout activeMenu="Perhitungan Indeks">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 flex flex-col min-h-[calc(100vh-120px)] overflow-hidden">
 
         {/* HEADER */}
         <div className="flex flex-col items-center mb-6">
-          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest mb-3">Performa Desa Hutan</h2>
+          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest mb-3">Perhitungan Indeks</h2>
           <div className="w-full h-[2px] bg-[#2D7344]"></div>
         </div>
 
-        {/* FILTER: Formula & Tahun */}
-        <div className="flex flex-wrap gap-3 mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex items-center px-4 py-2.5 gap-3 min-w-[260px]">
-            <span className="text-xs text-[#2D7344] font-bold whitespace-nowrap">Formula</span>
-            <select
-              className="flex-1 bg-transparent text-gray-600 text-xs focus:outline-none appearance-none cursor-pointer"
-              value={selectedFormulaId}
-              onChange={(e) => { setSelectedFormulaId(e.target.value); setPage(1); }}
-            >
-              <option value="">-- Pilih Formula --</option>
-              {formulaList.map((f) => (
-                <option key={f.id} value={f.id}>{f.nama || f.name}</option>
-              ))}
-            </select>
-          </div>
+        {/* FILTER BAR (Menggunakan grid & z-index agar dropdown melayang dengan indah) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-30 font-sans">
 
-          <div className="bg-white rounded-lg border border-gray-200 shadow-sm flex items-center px-4 py-2.5 gap-3 min-w-[200px]">
-            <span className="text-xs text-[#2D7344] font-bold whitespace-nowrap">Tahun</span>
-            <select
-              className="flex-1 bg-transparent text-gray-600 text-xs focus:outline-none appearance-none cursor-pointer"
-              value={selectedTahunId}
-              onChange={(e) => setSelectedTahunId(e.target.value)}
-            >
-              <option value="">-- Pilih Tahun --</option>
-              {tahunList.map((t) => (
-                <option key={t.id} value={t.id}>{t.tahun}</option>
-              ))}
-            </select>
-          </div>
+          {/* Formula Filter */}
+          <SearchableDropdown
+            label="Formula"
+            value={selectedFormulaId}
+            onChange={(val) => {
+              setSelectedFormulaId(val);
+              setPage(1);
+            }}
+            options={formulaOptions}
+            placeholder="Pilih Formula"
+            required={true}
+          />
+
+          {/* Tahun Filter */}
+          <SearchableDropdown
+            label="Tahun"
+            value={selectedTahunId}
+            onChange={(val) => {
+              setSelectedTahunId(val);
+            }}
+            options={tahunOptions}
+            placeholder="Pilih Tahun"
+            required={true}
+          />
+
         </div>
 
         {/* TABEL AREA */}
@@ -152,102 +350,52 @@ export default function PerformaDesa() {
               <button
                 onClick={handleDownloadTemplate}
                 disabled={isDownloading || !selectedFormulaId}
-                className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1d4d2b] disabled:opacity-60 text-white px-4 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm"
+                className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1d4d2b] disabled:opacity-60 text-white px-4 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm cursor-pointer"
               >
                 {isDownloading ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
                 Download Template
               </button>
-              <button
-                onClick={() => setIsUploadModalOpen(true)}
-                className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1d4d2b] text-white px-4 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm"
-              >
-                <Upload size={14} />
-                Upload Excel
-              </button>
+              {can('performa_desa_hutan:import') && (
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1d4d2b] text-white px-4 py-2 rounded-md text-xs font-semibold transition-colors shadow-sm cursor-pointer"
+                >
+                  <Upload size={14} />
+                  Upload Excel
+                </button>
+              )}
             </div>
           </div>
 
-          {/* TABLE */}
-          <div className="overflow-x-auto w-full flex-1">
-            {!selectedFormulaId ? (
-              <div className="flex items-center justify-center h-48 text-sm text-gray-400">
-                Pilih formula di atas untuk menampilkan data kalkulasi.
-              </div>
-            ) : isLoading ? (
-              <div className="flex items-center justify-center h-48 gap-2 text-[#2D7344]">
-                <Loader2 size={20} className="animate-spin" />
-                <span className="text-sm">Memuat data...</span>
-              </div>
-            ) : isError ? (
-              <div className="flex items-center justify-center h-48 text-sm text-red-500">
-                Gagal memuat data. Coba lagi.
-              </div>
-            ) : (
-              <table className="w-full text-left border-collapse min-w-[800px]">
-                <thead>
-                  <tr className="bg-[#2D7344] text-white text-xs font-bold">
-                    <th className="py-3 px-4 text-center w-12 border-r border-[#3A8353]">No</th>
-                    <th className="py-3 px-4 border-r border-[#3A8353] min-w-[160px]">Nama Desa</th>
-                    {columns.map((col) => (
-                      <th key={col.kode} className="py-3 px-4 border-r border-[#3A8353] whitespace-nowrap">
-                        {col.nama}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="text-xs text-gray-600 font-medium">
-                  {items.length === 0 ? (
-                    <tr>
-                      <td colSpan={2 + columns.length} className="text-center py-10 text-gray-400">
-                        Belum ada data untuk formula ini.
-                      </td>
-                    </tr>
-                  ) : (
-                    items.map((row, idx) => (
-                      <tr key={row.id} className="border-b border-gray-100 even:bg-[#E8EEF2] hover:bg-green-50 transition-colors">
-                        <td className="py-3 px-4 text-center">{(page - 1) * pageSize + idx + 1}</td>
-                        <td className="py-3 px-4 font-semibold text-gray-800">{row.desa?.nama || "-"}</td>
-                        {columns.map((col) => {
-                          const indVal = Array.isArray(row.nilaiIndikator)
-                            ? row.nilaiIndikator.find((x) => x.kode === col.kode)
-                            : null;
-                          return (
-                            <td key={col.kode} className="py-3 px-4">
-                              {indVal ? (indVal.label ?? indVal.nilai ?? "-") : "-"}
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
-
-          {/* PAGINATION */}
-          {selectedFormulaId && !isLoading && (
-            <div className="flex justify-between items-center gap-4 p-4 text-xs text-gray-500 bg-white border-t border-gray-100">
-              <span>
-                Halaman {page} dari {totalPages} · Total {total} data
-              </span>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                  className="px-3 py-1 rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-40 transition-colors"
-                >
-                  ‹ Prev
-                </button>
-                <button
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={page >= totalPages}
-                  className="px-3 py-1 rounded border border-gray-200 hover:bg-gray-100 disabled:opacity-40 transition-colors"
-                >
-                  Next ›
-                </button>
-              </div>
+          {/* TABLE & PAGINATION */}
+          {!selectedFormulaId ? (
+            <div className="flex items-center justify-center h-48 text-sm text-gray-400 font-bold font-sans">
+              Pilih formula di atas untuk menampilkan data kalkulasi.
             </div>
+          ) : (
+            <>
+              <DataTable
+                columns={tableColumns}
+                data={items}
+                isLoading={isLoading}
+                isError={isError}
+                emptyMessage="Belum ada data kalkulasi untuk formula ini"
+              />
+
+              {!isLoading && !isError && items.length > 0 && (
+                <Pagination
+                  currentPage={page}
+                  totalPage={totalPages}
+                  perPage={pageSize}
+                  total={total}
+                  onPageChange={setPage}
+                  onSizeChange={(size) => {
+                    setPageSize(size);
+                    setPage(1);
+                  }}
+                />
+              )}
+            </>
           )}
         </div>
       </div>
@@ -263,7 +411,7 @@ export default function PerformaDesa() {
                   <h3 className="text-lg font-bold text-gray-800">Upload Data Excel</h3>
                   <p className="text-xs text-gray-500 mt-0.5">Import data desa untuk proses kalkulasi performa</p>
                 </div>
-                <button onClick={() => setIsUploadModalOpen(false)} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors">
+                <button onClick={() => setIsUploadModalOpen(false)} className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors cursor-pointer">
                   <X size={20} />
                 </button>
               </div>
@@ -326,12 +474,12 @@ export default function PerformaDesa() {
 
                 <div className="flex justify-end gap-3 pt-2">
                   <button type="button" onClick={() => setIsUploadModalOpen(false)}
-                    className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors"
+                    className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-medium transition-colors cursor-pointer"
                     disabled={uploadMutation.isPending}>
                     Batal
                   </button>
                   <button type="submit" disabled={uploadMutation.isPending}
-                    className="flex items-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1d4d2b] text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-70 shadow-sm">
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1d4d2b] text-white rounded-lg text-sm font-semibold transition-colors disabled:opacity-70 shadow-sm cursor-pointer">
                     {uploadMutation.isPending ? <><Loader2 size={16} className="animate-spin" /> Mengunggah...</> : <><Upload size={16} /> Upload</>}
                   </button>
                 </div>

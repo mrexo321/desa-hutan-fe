@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Download, Upload, Loader2, Info, Search, MapPin, CheckCircle, RotateCcw } from "lucide-react";
+import { ArrowLeft, Download, Upload, Loader2, Info, Search, MapPin, CheckCircle, RotateCcw, FileDown } from "lucide-react";
 import { desaPsnService } from "../../services/master/desaPsnService";
+import environment from "../../config/environment";
+import masterInstance from "../../api/masterInstance";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { toast } from "sonner";
 import Pagination from "../../components/Pagination";
+import { usePermission } from "../../hooks/usePermission";
 
 
 const dummyDesas = [
@@ -151,6 +154,7 @@ const dummyDesas = [
 ];
 
 export default function DesaDetailTab({ periode, onBack }) {
+  const { can } = usePermission();
   const [desas, setDesas] = useState([]);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -352,6 +356,25 @@ export default function DesaDetailTab({ periode, onBack }) {
     }
   };
 
+  const handleExportDesaPsn = async () => {
+    try {
+      const res = await masterInstance.get(
+        `/export/desa-psn?psnPeriodeId=${periode.id}`,
+        { responseType: "blob" },
+      );
+      const url = URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `desa-psn-${periode.tahun}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // Error sudah ditangani oleh interceptor masterInstance
+    }
+  };
+
   const activeList = useDummy ? dummyDesas : desas;
   const filteredDesas = activeList.filter((desa) => {
     // Search Term Filter
@@ -411,24 +434,32 @@ export default function DesaDetailTab({ periode, onBack }) {
           >
             <Download size={15} strokeWidth={2.5} /> Template Excel
           </button>
-          <label className="flex items-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-xl font-bold cursor-pointer shadow-sm shadow-emerald-800/10 transition-all text-xs">
-            {importing ? (
-              <>
-                <Loader2 className="animate-spin" size={15} /> Meng-import...
-              </>
-            ) : (
-              <>
-                <Upload size={15} strokeWidth={2.5} /> Import Excel
-              </>
-            )}
-            <input
-              type="file"
-              accept=".xlsx, .xls"
-              onChange={handleImportExcel}
-              className="hidden"
-              disabled={importing}
-            />
-          </label>
+          <button
+            onClick={handleExportDesaPsn}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-emerald-50 text-emerald-700 rounded-xl font-bold border border-emerald-200 transition-all text-xs cursor-pointer shadow-sm"
+          >
+            <FileDown size={15} strokeWidth={2.5} /> Export Laporan
+          </button>
+          {can('desa_psn:import') && (
+            <label className="flex items-center gap-2 px-5 py-2.5 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-xl font-bold cursor-pointer shadow-sm shadow-emerald-800/10 transition-all text-xs">
+              {importing ? (
+                <>
+                  <Loader2 className="animate-spin" size={15} /> Meng-import...
+                </>
+              ) : (
+                <>
+                  <Upload size={15} strokeWidth={2.5} /> Import Excel
+                </>
+              )}
+              <input
+                type="file"
+                accept=".xlsx, .xls"
+                onChange={handleImportExcel}
+                className="hidden"
+                disabled={importing}
+              />
+            </label>
+          )}
         </div>
       </div>
 

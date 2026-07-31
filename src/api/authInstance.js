@@ -1,6 +1,5 @@
 import axios from "axios";
-import { toast } from "sonner";
-import { setToken, triggerSessionExpired } from "../store/userSlice";
+import { clearUserData, setToken } from "../store/userSlice";
 import environment from "../config/environment";
 import { reduxStore } from "../store/store";
 
@@ -10,11 +9,20 @@ const authInstance = axios.create({
 });
 
 // ============================================================
-// Dispatch session expired action → UI akan menampilkan
-// SessionExpiredScreen yang profesional (bukan redirect kasar)
+// Hapus data user dan redirect langsung ke halaman login
 // ============================================================
 const handleSessionExpired = () => {
-  reduxStore.dispatch(triggerSessionExpired());
+  reduxStore.dispatch(clearUserData());
+  if (window.location.pathname.startsWith("/dashboard")) {
+    window.location.href = "/login";
+  }
+};
+
+const handleForceLogout = () => {
+  reduxStore.dispatch(clearUserData());
+  if (window.location.pathname.startsWith("/dashboard")) {
+    window.location.href = "/login";
+  }
 };
 
 // ============================================================
@@ -53,7 +61,6 @@ authInstance.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
     const status = error.response?.status;
-    const skipGlobalErrorToast = originalRequest?.skipGlobalErrorToast;
     const message =
       error.response?.data?.message || error.response?.data?.error || "";
 
@@ -133,14 +140,13 @@ authInstance.interceptors.response.use(
 
       const isFatal = fatalErrorMessages.some((str) => message.includes(str));
 
-      if (isFatal && status !== 401) {
-        handleSessionExpired();
-      } else if (status === 403) {
-        if (!skipGlobalErrorToast) {
-          toast.error(message || "Akses ditolak.");
+      if ((isFatal || status === 403) && status !== 401) {
+        if (status === 403) {
+          // 403 = tidak punya izin, bukan session expired
+          handleForceLogout();
+        } else {
+          handleSessionExpired();
         }
-      } else if (status !== 401 && !skipGlobalErrorToast) {
-        toast.error(message || "Terjadi kesalahan pada server.");
       }
     }
 

@@ -12,15 +12,21 @@ import {
   Loader2,
   Leaf,
   ArrowRight,
+  ArrowLeft,
   ShieldCheck,
 } from "lucide-react";
 
 import { authService } from "../../services/auth/authService";
+import AltchaCaptcha from "../../components/AltchaCaptcha";
 
 const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Captcha State & Ref
+  const [altchaPayload, setAltchaPayload] = useState("");
+  const altchaRef = React.useRef(null);
 
   const dispatch = useDispatch();
   const navigate = useNavigate();
@@ -52,6 +58,9 @@ const Login = () => {
       toast.error(
         error?.response?.data?.message || "Username atau password salah.",
       );
+      // Reset widget jika login gagal
+      setAltchaPayload("");
+      altchaRef.current?.reset();
     },
   });
 
@@ -62,12 +71,31 @@ const Login = () => {
       toast.warning("Username dan Password wajib diisi!");
       return;
     }
-    loginMutation.mutate({ username, password });
+
+    if (!altchaPayload) {
+      toast.warning("Harap selesaikan verifikasi captcha terlebih dahulu!");
+      return;
+    }
+
+    loginMutation.mutate({
+      username,
+      password,
+      altcha: altchaPayload,
+    });
   };
 
   return (
     <div className="min-h-screen flex w-full bg-white font-sans overflow-hidden">
       <div className="w-full lg:w-[45%] flex flex-col justify-center px-8 sm:px-16 md:px-24 z-10 shadow-[20px_0_40px_rgba(0,0,0,0.04)] relative">
+        {/* Floating Back Button */}
+        <button
+          onClick={() => navigate("/")}
+          className="absolute top-8 left-8 sm:left-12 flex items-center gap-2 text-sm text-gray-500 hover:text-[#2D7344] transition-colors font-bold group cursor-pointer"
+        >
+          <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+          Kembali ke Beranda
+        </button>
+
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden -z-10 pointer-events-none">
           <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[50%] bg-green-50 rounded-full blur-3xl opacity-50"></div>
         </div>
@@ -133,7 +161,7 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-1 pb-4">
+            <div className="flex items-center justify-between pt-1 pb-2">
               <label className="flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
@@ -151,13 +179,20 @@ const Login = () => {
               </a>
             </div>
 
+            {/* ALTCHA CAPTCHA */}
+            <AltchaCaptcha
+              ref={altchaRef}
+              onVerify={(payload) => setAltchaPayload(payload)}
+              onExpire={() => setAltchaPayload("")}
+            />
+
             <button
               type="submit"
-              disabled={loginMutation.isPending}
+              disabled={loginMutation.isPending || !altchaPayload}
               className={`w-full flex items-center justify-center gap-2 text-white text-sm font-bold py-3.5 rounded-xl transition-all ${
-                loginMutation.isPending
-                  ? "bg-gray-400 cursor-not-allowed"
-                  : "bg-[#2D7344] hover:bg-[#1f5631] hover:shadow-[0_8px_25px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0"
+                loginMutation.isPending || !altchaPayload
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                  : "bg-[#2D7344] hover:bg-[#1f5631] hover:shadow-[0_8px_25px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
               }`}
             >
               {loginMutation.isPending ? (

@@ -17,15 +17,25 @@ import { toast } from "sonner";
 import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable";
 import { indikatorService } from "../../services/master/indikatorService";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DomainDesaIndikatorPage from "../DimensiDesa/DomainDesaIndikatorPage";
+import { usePermission } from "../../hooks/usePermission";
 
 
 const Indikator = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("utama");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const { can } = usePermission();
+  const [activeTab, setActiveTab] = useState(tabParam || "utama");
   const [searchQuery, setSearchQuery] = useState("");
+
+  React.useEffect(() => {
+    if (tabParam && ["utama", "kategori", "dimensi"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   // ==========================================
   // STATE MODALS
@@ -51,6 +61,7 @@ const Indikator = () => {
   // State Delete (Hanya untuk Kategori Modal)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
+  const [itemToDeleteUtama, setItemToDeleteUtama] = useState(null);
 
   // ==========================================
   // 1. DATA FETCHING & MUTATION
@@ -228,48 +239,51 @@ const Indikator = () => {
     if (itemToDelete) deleteCategoryMutation.mutate(itemToDelete.id);
   };
 
-  // HANDLER BARU: Hapus Indikator Utama (Pakai Sonner Toast)
+  // HANDLER BARU: Hapus Indikator Utama (Pakai Modal)
   const handleDeleteUtama = (row) => {
-    toast("Konfirmasi Hapus Data", {
-      description: `Apakah Anda yakin ingin menghapus indikator utama "${row.nama}"? Data yang dihapus tidak dapat dikembalikan.`,
-      action: {
-        label: "Ya, Hapus",
-        onClick: () => deleteMainMutation.mutate(row.id),
-      },
-      cancel: {
-        label: "Batal",
-      },
-      duration: 6000, // Durasi lebih lama agar user sempat klik
-    });
+    setItemToDeleteUtama(row);
+  };
+
+  const handleConfirmDeleteUtama = () => {
+    if (itemToDeleteUtama) {
+      deleteMainMutation.mutate(itemToDeleteUtama.id);
+      setItemToDeleteUtama(null);
+    }
   };
 
   // ==========================================
   // 3. KONFIGURASI KOLOM TABEL
   // ==========================================
 
-  const ActionButtons = ({ row, onPreview, onEdit, onDelete }) => (
+  const ActionButtons = ({ row, onPreview, onEdit, onDelete, editPermission, deletePermission }) => (
     <div className="flex items-center justify-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity duration-300">
-      <button
-        onClick={() => onPreview(row)}
-        className="p-2 text-slate-500 hover:text-[#2D7344] hover:bg-green-50 rounded-lg transition-colors"
-        title="Lihat Detail"
-      >
-        <Eye size={16} strokeWidth={2.5} />
-      </button>
-      <button
-        onClick={() => onEdit(row)}
-        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-        title="Edit"
-      >
-        <Edit2 size={16} strokeWidth={2.5} />
-      </button>
-      <button
-        onClick={() => onDelete(row)}
-        className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-        title="Hapus"
-      >
-        <Trash2 size={16} strokeWidth={2.5} />
-      </button>
+      {onPreview && (
+        <button
+          onClick={() => onPreview(row)}
+          className="p-2 text-slate-500 hover:text-[#2D7344] hover:bg-green-50 rounded-lg transition-colors"
+          title="Lihat Detail"
+        >
+          <Eye size={16} strokeWidth={2.5} />
+        </button>
+      )}
+      {(!editPermission || can(editPermission)) && (
+        <button
+          onClick={() => onEdit(row)}
+          className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Edit"
+        >
+          <Edit2 size={16} strokeWidth={2.5} />
+        </button>
+      )}
+      {(!deletePermission || can(deletePermission)) && (
+        <button
+          onClick={() => onDelete(row)}
+          className="p-2 text-slate-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Hapus"
+        >
+          <Trash2 size={16} strokeWidth={2.5} />
+        </button>
+      )}
     </div>
   );
 
@@ -313,7 +327,9 @@ const Indikator = () => {
             row={row}
             onPreview={() => navigate(`/dashboard/indikator/utama/${row.id}`)}
             onEdit={() => navigate(`/dashboard/indikator/utama/edit/${row.id}`)}
-            onDelete={() => handleDeleteUtama(row)} // Tautkan handler toast Sonner di sini
+            onDelete={() => handleDeleteUtama(row)}
+            editPermission="master_indikator_utama:update"
+            deletePermission="master_indikator_utama:delete"
           />
         ),
       },
@@ -347,9 +363,22 @@ const Indikator = () => {
         render: (row) => (
           <ActionButtons
             row={row}
-            onPreview={handlePreviewClick}
-            onEdit={handleEditClick}
-            onDelete={handleDeleteClick}
+            onEdit={(r) => {
+              setEditForm({
+                id: r.id,
+                kode: r.kode,
+                nama: r.nama,
+                originalKode: r.kode,
+                originalNama: r.nama,
+              });
+              setIsEditModalOpen(true);
+            }}
+            onDelete={(r) => {
+              setItemToDelete(r);
+              setIsDeleteModalOpen(true);
+            }}
+            editPermission="master_kategori_indikator:update"
+            deletePermission="master_kategori_indikator:delete"
           />
         ),
       },
@@ -379,6 +408,7 @@ const Indikator = () => {
                 onClick={() => {
                   setActiveTab(tab);
                   setSearchQuery("");
+                  setSearchParams({ tab });
                 }}
                 className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${
                   activeTab === tab
@@ -420,12 +450,15 @@ const Indikator = () => {
                       className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344]"
                     />
                   </div>
-                  <button
-                    onClick={handleAddClick}
-                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
-                  >
-                    <Plus size={18} strokeWidth={3} /> Tambah Data
-                  </button>
+                  {((activeTab === 'utama' && can('master_indikator_utama:create')) ||
+                    (activeTab === 'kategori' && can('master_kategori_indikator:create'))) && (
+                    <button
+                      onClick={handleAddClick}
+                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                    >
+                      <Plus size={18} strokeWidth={3} /> Tambah Data
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -737,6 +770,55 @@ const Indikator = () => {
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
               >
                 {deleteCategoryMutation.isLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  "Ya, Hapus"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ==========================================
+          MODAL DELETE (UNTUK INDIKATOR UTAMA)
+      ========================================== */}
+      {itemToDeleteUtama && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity">
+          <div className="bg-white rounded-3xl shadow-xl w-full max-w-sm overflow-hidden animate-in fade-in zoom-in-95 duration-200 p-6 sm:p-8 text-center">
+            <div className="w-16 h-16 bg-red-50 text-red-600 rounded-full flex items-center justify-center mx-auto mb-5 border-[6px] border-red-50/50">
+              <AlertTriangle size={28} strokeWidth={2.5} className="text-red-500" />
+            </div>
+
+            <h3 className="text-xl font-bold text-slate-900 mb-2">
+              Hapus Data?
+            </h3>
+            <p className="text-sm text-slate-500 mb-8 leading-relaxed font-sans">
+              Apakah Anda yakin ingin menghapus indikator utama{" "}
+              <span className="font-bold text-slate-800">
+                "{itemToDeleteUtama?.nama}"
+              </span>
+              ? Data yang telah dihapus tidak dapat dikembalikan.
+            </p>
+
+            <div className="flex items-center justify-center gap-3 w-full font-sans">
+              <button
+                type="button"
+                onClick={() => {
+                  setItemToDeleteUtama(null);
+                }}
+                className="flex-1 px-4 py-2.5 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors"
+                disabled={deleteMainMutation.isLoading}
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteUtama}
+                disabled={deleteMainMutation.isLoading}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                {deleteMainMutation.isLoading ? (
                   <Loader2 size={16} className="animate-spin" />
                 ) : (
                   "Ya, Hapus"

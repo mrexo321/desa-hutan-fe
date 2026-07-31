@@ -260,6 +260,15 @@ const App = () => {
       />
 
       <Route
+        path="/dashboard/manajemen-role"
+        element={
+          <ProtectedRoute allowedPermissions={["role:read"]}>
+            <ManajemenRoles />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
         path="/dashboard/manajemen-role/create"
         element={
           <ProtectedRoute

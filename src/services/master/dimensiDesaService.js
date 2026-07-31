@@ -31,6 +31,12 @@ export const dimensiDesaService = {
     return response.data;
   },
 
+    // Create a new dimensi desa entry for a specific year (body: { nama, tahun })
+  async createDimensiDesa(payload) {
+    const response = await masterInstance.post("/dimensi-desa", payload);
+    return response.data;
+  },
+
   // Get indicator schema configured for a specific year
   async getIndikatorByTahun(dimensiId) {
     const response = await masterInstance.get(`/dimensi-desa/indikator/${dimensiId}`);

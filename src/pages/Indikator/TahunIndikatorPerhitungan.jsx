@@ -159,7 +159,7 @@ const TahunIndikatorPerhitungan = () => {
       render: (_, idx) => (typeof idx === "number" ? idx + 1 : "-"),
     },
     {
-      header: "Tahun Indikator",
+      header: "Tahun",
       accessor: "tahun",
       render: (row) => (
         <span className="font-bold text-slate-800 text-base">{row.tahun}</span>
@@ -211,10 +211,10 @@ const TahunIndikatorPerhitungan = () => {
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-              Tahun Indikator
+              Rumus Indeks Desa Hutan
             </h1>
             <p className="text-sm text-slate-500 mt-1">
-              Kelola data master tahun untuk perhitungan indikator.
+              Master Rumus Per Tahun (Jika ada Perubahan)
             </p>
           </div>
 
@@ -225,7 +225,7 @@ const TahunIndikatorPerhitungan = () => {
                   <Calendar size={20} strokeWidth={2} />
                 </div>
                 <h2 className="text-lg font-bold text-slate-800">
-                  Daftar Tahun
+                  Daftar Rumus
                 </h2>
               </div>
 
@@ -237,7 +237,7 @@ const TahunIndikatorPerhitungan = () => {
                   />
                   <input
                     type="text"
-                    placeholder="Cari tahun..."
+                    placeholder=""
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all font-medium"

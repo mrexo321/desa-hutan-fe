@@ -44,12 +44,13 @@ export default function MapPage() {
   const mapRef = useRef(null);
 
   const [initialViewState] = useState({
-    longitude: 106.8229,
-    latitude: -6.2088,
-    zoom: 13,
+    longitude: 118.0149,
+    latitude: -2.5489,
+    zoom: 4.8,
     pitch: 0,
     bearing: 0,
   });
+
 
   const lngRef = useRef(null);
   const latRef = useRef(null);
@@ -206,7 +207,16 @@ export default function MapPage() {
     });
     // Tutup dropdown jika peta diklik
     setShowDropdown(false);
+
+    // Pusatkan peta dengan offset vertikal agar card popup berada lebih ke bawah dan terlihat sepenuhnya
+    mapRef.current?.flyTo({
+      center: [lngLat.lng, lngLat.lat],
+      offset: [0, -140],
+      duration: 1000,
+      essential: true,
+    });
   }, []);
+
 
   const closePopup = () => {
     setClickedLocation(null);
@@ -222,9 +232,10 @@ export default function MapPage() {
     const lng = desa.centroid?.lng;
 
     if (lat && lng) {
-      // Animasi terbang ke lokasi desa
+      // Animasi terbang ke lokasi desa dengan offset vertikal ke bawah
       mapRef.current?.flyTo({
         center: [lng, lat],
+        offset: [0, -140],
         zoom: 14,
         duration: 2500,
         essential: true,
@@ -237,6 +248,8 @@ export default function MapPage() {
       });
     }
   };
+
+
 
   if (!MAPBOX_TOKEN) {
     return (
@@ -391,7 +404,48 @@ export default function MapPage() {
                         <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
                           {detailData.desa?.nama || 'Area Tidak Diketahui'}
                         </h3>
+                        {detailData.desa && (
+                          <p className="text-xs text-gray-500 font-medium mt-1 leading-snug">
+                            {[
+                              detailData.desa.kecamatan && (typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan.nama : detailData.desa.kecamatan),
+                              detailData.desa.kabupaten && (typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten.nama : detailData.desa.kabupaten),
+                              detailData.desa.provinsi && (typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi.nama : detailData.desa.provinsi),
+                            ]
+                              .filter(Boolean)
+                              .join(" • ")}
+                          </p>
+                        )}
                       </div>
+
+                      {detailData.desa && (detailData.desa.provinsi || detailData.desa.kabupaten || detailData.desa.kecamatan) && (
+                        <div className="bg-gray-50/80 p-3 rounded-xl border border-gray-100/80 text-xs flex flex-col gap-1.5">
+                          {detailData.desa.kecamatan && (
+                            <div className="flex justify-between items-center">
+                              <span className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Kecamatan</span>
+                              <span className="font-bold text-gray-700">
+                                {typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan?.nama : detailData.desa.kecamatan}
+                              </span>
+                            </div>
+                          )}
+                          {detailData.desa.kabupaten && (
+                            <div className="flex justify-between items-center border-t border-gray-100 pt-1.5">
+                              <span className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Kabupaten</span>
+                              <span className="font-bold text-gray-700">
+                                {typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten?.nama : detailData.desa.kabupaten}
+                              </span>
+                            </div>
+                          )}
+                          {detailData.desa.provinsi && (
+                            <div className="flex justify-between items-center border-t border-gray-100 pt-1.5">
+                              <span className="text-gray-400 font-bold text-[10px] uppercase tracking-wider">Provinsi</span>
+                              <span className="font-bold text-gray-700">
+                                {typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi?.nama : detailData.desa.provinsi}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
 
                       <div className="grid grid-cols-2 gap-3">
                         <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
@@ -497,7 +551,7 @@ export default function MapPage() {
                 GEO<span className="text-[#2D7344]">DASHBOARD</span>
               </h1>
               <p className="text-[9px] text-gray-500 uppercase tracking-[0.25em] font-bold">
-                Sistem Tata Ruang
+                GEODASHBOARD SISTEM TATA HUTAN
               </p>
             </div>
           </div>
@@ -511,8 +565,9 @@ export default function MapPage() {
             </div>
             <input
               type="text"
-              placeholder="Cari Database Desa..."
+              placeholder="Cari Data Desa..."
               value={searchQuery}
+
               onChange={(e) => {
                 setSearchQuery(e.target.value);
                 setShowDropdown(true);
@@ -664,7 +719,7 @@ export default function MapPage() {
                           Kawasan Hutan
                         </div>
                         <div className="text-[10px] text-gray-400 font-medium">
-                          GeoServer WMS
+                          Kemenhut Desember 2025
                         </div>
                       </div>
                     </div>
@@ -727,7 +782,7 @@ export default function MapPage() {
                           Batas Desa
                         </div>
                         <div className="text-[10px] text-gray-400 font-medium">
-                          GeoServer WMS
+                          PETA BIG (Badan Informasi Geospasial)
                         </div>
                       </div>
                     </div>
@@ -790,7 +845,7 @@ export default function MapPage() {
                           Desa PSN
                         </div>
                         <div className="text-[10px] text-gray-400 font-medium">
-                          GeoServer WMS
+                          KETAHANAN PANGAN
                         </div>
                       </div>
                     </div>
@@ -873,7 +928,7 @@ export default function MapPage() {
               LNG
             </span>
             <span ref={lngRef} className="font-mono text-emerald-50 text-sm font-semibold w-20">
-              106.82290°
+              118.01490°
             </span>
           </div>
           <div className="w-px h-4 bg-gray-700"></div>
@@ -882,8 +937,9 @@ export default function MapPage() {
               LAT
             </span>
             <span ref={latRef} className="font-mono text-emerald-50 text-sm font-semibold w-20">
-              -6.20880°
+              -2.54890°
             </span>
+
           </div>
         </div>
       </div>

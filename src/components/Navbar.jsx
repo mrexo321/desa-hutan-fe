@@ -52,7 +52,7 @@ const Navbar = () => {
     { name: "Beranda", path: "/" },
     { name: "Peta", path: "/map" },
     { name: "Infografis", path: "/infografis" },
-    { name: "Data Desa", path: "/data-desa" },
+    { name: "Permintaan Data", path: "/data-desa" },
     { name: "Tentang Kami", path: "/about-us" },
   ];
 
@@ -110,7 +110,7 @@ const Navbar = () => {
               </Link>
             );
           })}
-          
+
           <Link
             to="/login"
             className="ml-4 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-[#10B981] hover:from-emerald-600 hover:to-emerald-500 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-emerald-950/20 active:scale-[0.98]"

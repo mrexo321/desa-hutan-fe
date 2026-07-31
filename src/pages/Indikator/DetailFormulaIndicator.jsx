@@ -16,6 +16,11 @@ import {
   BookOpen,
   Sparkles,
   Link as LinkIcon,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  Layers,
+  Scale
 } from "lucide-react";
 
 const DetailFormulaIndicator = () => {
@@ -34,6 +39,9 @@ const DetailFormulaIndicator = () => {
   });
 
   const formula = detailData?.data || detailData;
+
+  console.log(formula);
+
 
   // Fitur Copy Formula
   const handleCopy = (text) => {
@@ -296,21 +304,66 @@ const DetailFormulaIndicator = () => {
                 <div className="p-4 flex-1 overflow-y-auto max-h-[600px] custom-scrollbar bg-slate-50/50">
                   {formula.indikatorUtama &&
                   formula.indikatorUtama.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {formula.indikatorUtama.map((item, idx) => (
                         <div
                           key={idx}
-                          className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-emerald-300 hover:shadow-lg transition-all duration-300 group relative overflow-hidden"
+                          className="p-4 rounded-2xl border border-slate-200 bg-white hover:border-emerald-300 shadow-sm hover:shadow-md transition-all duration-300 group relative overflow-hidden"
                         >
                           {/* Aksen garis di sebelah kiri */}
                           <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
-                          <p className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md inline-block mb-3 font-mono border border-emerald-100">
-                            {item.kode}
-                          </p>
-                          <h4 className="font-bold text-slate-800 text-base leading-snug">
-                            {item.nama}
-                          </h4>
+                          {/* Header Indikator */}
+                          <div className="flex justify-between items-start mb-3">
+                            <div>
+                              <p className="text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md inline-block mb-2 font-mono border border-emerald-100 uppercase">
+                                {item.kode}
+                              </p>
+                              <h4 className="font-bold text-slate-800 text-base leading-snug">
+                                {item.nama}
+                              </h4>
+                            </div>
+                            <div className="bg-slate-50 text-slate-500 p-1.5 rounded-lg border border-slate-100">
+                              <Activity size={16} />
+                            </div>
+                          </div>
+
+                          {/* Metadata Indikator */}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            <span className="flex items-center gap-1.5 px-2 py-1 bg-slate-50 text-slate-600 rounded-md text-xs font-semibold border border-slate-100">
+                              <Layers size={12} /> Tipe: {item.tipe}
+                            </span>
+                            <span className="flex items-center gap-1.5 px-2 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-semibold border border-blue-100">
+                              <Scale size={12} /> Satuan: {item.satuan}
+                            </span>
+                            {item.arahPenilaian && (
+                              <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold border ${item.arahPenilaian === 'positif' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
+                                {item.arahPenilaian === 'positif' ? <TrendingUp size={12} /> : <TrendingDown size={12} />} 
+                                Arah: {item.arahPenilaian}
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Skala Penilaian */}
+                          {item.penilaianIndikator && item.penilaianIndikator.length > 0 && (
+                            <div className="mt-4 pt-4 border-t border-slate-100/80">
+                              <p className="text-[11px] uppercase tracking-wider font-bold text-slate-500 mb-2">
+                                Skala Penilaian ({item.penilaianIndikator.length})
+                              </p>
+                              <div className="flex flex-col gap-2">
+                                {item.penilaianIndikator.map((skala) => (
+                                  <div key={skala.id} className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100 group-hover:bg-white group-hover:border-slate-200 transition-colors">
+                                    <span className="text-sm font-medium text-slate-700 capitalize">
+                                      {skala.label || skala.nama}
+                                    </span>
+                                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100/50 px-2 py-1 rounded-md font-mono">
+                                      {skala.nilai}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>

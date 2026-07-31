@@ -1,8 +1,8 @@
-import React, { useState, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useState, useRef, useEffect } from "react";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { indikatorService } from "../../services/master/indikatorService"; // Sesuaikan path
+import { indikatorService } from "../../services/master/indikatorService";
 import {
   ChevronLeft,
   Calculator,
@@ -23,29 +23,30 @@ import {
 const FormFormulaIndicator = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const [searchParams] = useSearchParams();
+  const tahunIdParam = searchParams.get("tahunId");
   const queryClient = useQueryClient();
   const isEditMode = !!id;
 
   const textareaRef = useRef(null);
 
-  // 1. UPDATE STATE FORM SESUAI KEBUTUHAN API BARU
   const [formData, setFormData] = useState({
     nama: "",
     formula: "",
-    tahunIndikatorPerhitunganId: "",
+    tahunIndikatorPerhitunganId: tahunIdParam || "",
   });
 
   const [selectedIndicators, setSelectedIndicators] = useState([]);
   const [searchIndikator, setSearchIndikator] = useState("");
 
-  // Fetch Data Formula (jika Edit Mode)
+  // Fetch Data Formula (Edit Mode)
   const { data: detailDataRes, isLoading: isFetchingDetail } = useQuery({
     queryKey: ["detailFormula", id],
     queryFn: () => indikatorService.getDetailFormula(id),
     enabled: isEditMode,
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isEditMode && detailDataRes) {
       const detail = detailDataRes?.data || detailDataRes;
 
@@ -62,7 +63,7 @@ const FormFormulaIndicator = () => {
     }
   }, [isEditMode, detailDataRes]);
 
-  // Fetch Daftar Indikator Utama (Untuk Panel Kanan)
+  // Fetch Daftar Indikator Utama
   const { data: mainIndicatorsRes } = useQuery({
     queryKey: ["mainIndicators"],
     queryFn: () => indikatorService.getMainIndicator(),
@@ -75,19 +76,48 @@ const FormFormulaIndicator = () => {
       ind.kode?.toLowerCase().includes(searchIndikator.toLowerCase()),
   );
 
-  // MOCK: Fetch Daftar Tahun (SESUAIKAN DENGAN SERVICE ASLI ANDA)
-  const { data: tahunRes } = useQuery({
+  // Fetch Daftar Tahun dari API
+  const { data: tahunRes, isLoading: isLoadingTahun } = useQuery({
     queryKey: ["tahunList"],
-    queryFn: async () => {
-      return {
-        data: [
-          { id: "019d482c-be27-7119-884e-a6950f89c6bd", tahun: "2026" },
-          { id: "2", tahun: "2025" },
-        ],
-      };
-    },
+    queryFn: () => indikatorService.getAllYearIndicator(),
   });
-  const tahunList = tahunRes?.data || [];
+
+  // Sesuaikan dengan struktur respons dari axios (bisa di dalam data.data atau langsung data)
+  const tahunList = tahunRes?.data || tahunRes || [];
+
+  // 1. SINKRONISASI OTOMATIS TEXT EDITOR <-> PAYLOAD
+  useEffect(() => {
+    // Jangan jalankan jika master list belum ready
+    if (!mainIndicatorsList || mainIndicatorsList.length === 0) return;
+
+    const currentFormula = formData.formula || "";
+
+    // Ekstrak semua teks yang berada di dalam kurung kurawal ganda, misal: {{KODE1}}
+    const matches = currentFormula.match(/\{\{([^}]+)\}\}/g) || [];
+    const usedKodes = matches.map((m) => m.replace(/[{}]/g, ""));
+
+    // Gabungkan dengan selectedIndicators lama untuk jaga-jaga ada indikator lama yang tidak ada di list master
+    const availableIndicators = [...mainIndicatorsList, ...selectedIndicators];
+    const uniqueIndicatorsMap = new Map();
+    availableIndicators.forEach((ind) => {
+      if (ind.kode) uniqueIndicatorsMap.set(ind.kode, ind);
+    });
+
+    const activeIndicators = [];
+    const addedIds = new Set();
+
+    // Cocokkan KODE yang ada di dalam text editor dengan data objek indikatornya
+    usedKodes.forEach((kode) => {
+      const ind = uniqueIndicatorsMap.get(kode);
+      if (ind && !addedIds.has(ind.id)) {
+        activeIndicators.push(ind);
+        addedIds.add(ind.id);
+      }
+    });
+
+    // Otomatis update state indikator terpilih
+    setSelectedIndicators(activeIndicators);
+  }, [formData.formula, mainIndicatorsList]); // Trigger setiap kali teks formula berubah
 
   // Mutations
   const mutationConfig = {
@@ -99,7 +129,7 @@ const FormFormulaIndicator = () => {
       console.error("Gagal menyimpan:", error.response?.data);
       alert(
         error.response?.data?.message ||
-          "Terjadi kesalahan saat menyimpan data.",
+        "Terjadi kesalahan saat menyimpan data.",
       );
     },
   };
@@ -138,21 +168,61 @@ const FormFormulaIndicator = () => {
     }, 0);
   };
 
+  // 2. Cukup insert ke text editor, payload otomatis mengikuti berkat useEffect di atas
+  /**
+   * Membungkus teks yang diseleksi dengan fungsi matematika.
+   * Jika ada teks yang diseleksi, hasilnya: fnName(selectedText, ...suffix)
+   * Jika tidak ada seleksi, hasilnya: fnName(|) — cursor diletakkan di dalam kurung.
+   */
+  const wrapWithFunction = (fnPrefix, fnSuffix = "") => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const startPos = textarea.selectionStart;
+    const endPos = textarea.selectionEnd;
+    const currentFormula = formData.formula;
+    const selectedText = currentFormula.substring(startPos, endPos);
+
+    let insertion;
+    let newCursorPos;
+
+    if (selectedText) {
+      // Ada teks yang diseleksi → bungkus
+      insertion = `${fnPrefix}${selectedText}${fnSuffix})`;
+      newCursorPos = startPos + insertion.length;
+    } else {
+      // Tidak ada seleksi → insert placeholder, cursor di dalam kurung
+      insertion = `${fnPrefix}${fnSuffix})`;
+      newCursorPos = startPos + fnPrefix.length; // cursor tepat setelah "("
+    }
+
+    const newFormula =
+      currentFormula.substring(0, startPos) +
+      insertion +
+      currentFormula.substring(endPos);
+
+    setFormData((prev) => ({ ...prev, formula: newFormula }));
+
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+      textarea.focus();
+    }, 0);
+  };
+
+  // 2. FIX: Cukup insert ke text editor, payload otomatis mengikuti berkat useEffect di atas
   const handleIndicatorClick = (indicator) => {
     const formatKode = `{{${indicator.kode}}}`;
     insertAtCursor(formatKode);
-
-    setSelectedIndicators((prev) => {
-      const isExist = prev.find((item) => item.id === indicator.id);
-      if (isExist) return prev;
-      return [...prev, indicator];
-    });
   };
 
-  const removeIndicator = (idToRemove) => {
-    setSelectedIndicators((prev) =>
-      prev.filter((item) => item.id !== idToRemove),
-    );
+  // 3. Hapus teks dari editor, bukan sekedar hapus dari array panel kanan
+  const removeIndicator = (indicator) => {
+    if (!indicator.kode) return;
+    const formatKode = `{{${indicator.kode}}}`;
+
+    // Ini akan menghapus semua instance {{KODE}} tersebut dari teks formula
+    const newFormula = formData.formula.split(formatKode).join("");
+    setFormData((prev) => ({ ...prev, formula: newFormula }));
   };
 
   const clearFormula = () => {
@@ -162,7 +232,6 @@ const FormFormulaIndicator = () => {
     }
   };
 
-  // Submit Handler
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -182,6 +251,7 @@ const FormFormulaIndicator = () => {
       return;
     }
 
+    // PAYLOAD BERSIH SESUAI SKEMA BACKEND
     const payload = {
       nama: formData.nama,
       formula: formData.formula,
@@ -198,13 +268,42 @@ const FormFormulaIndicator = () => {
 
   const isLoading = createMutation.isLoading || updateMutation.isLoading;
 
+  // --- DAFTAR OPERATOR MATEMATIKA DITAMBAHKAN AKAR KUADRAT DLL ---
   const mathOperators = [
     { label: "(", action: " ( " },
     { label: ")", action: " ) " },
     { label: "+", action: " + " },
     { label: "-", action: " - " },
-    { label: "x", action: " * " },
+    { label: "×", action: " * " },
     { label: "÷", action: " / " },
+    { label: "√", action: " sqrt(" },
+    { label: "^", action: " ^ " }, // Ditambahkan: Pangkat
+    { label: "%", action: " % " }, // Ditambahkan: Persentase/Modulo
+    { label: ".", action: "." }, // Ditambahkan: Titik Desimal
+  ];
+
+  // Operator matematika lanjutan (pangkat & akar)
+  const advancedOperators = [
+    {
+      label: "x²",
+      title: "Kuadrat — tambahkan ^2 setelah variabel",
+      onClick: () => insertAtCursor("^2"),
+    },
+    {
+      label: "xⁿ",
+      title: "Pangkat N — tambahkan ^ lalu ketik angkanya",
+      onClick: () => insertAtCursor("^"),
+    },
+    {
+      label: "√x",
+      title: "Akar Kuadrat — bungkus ekspresi terpilih dengan sqrt(...)",
+      onClick: () => wrapWithFunction("sqrt("),
+    },
+    {
+      label: "ⁿ√x",
+      title: "Akar N — bungkus ekspresi terpilih dengan nthRoot(..., n)",
+      onClick: () => wrapWithFunction("nthRoot(", ", n"),
+    },
   ];
 
   return (
@@ -303,10 +402,13 @@ const FormFormulaIndicator = () => {
                               tahunIndikatorPerhitunganId: e.target.value,
                             })
                           }
-                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer"
+                          disabled={isLoadingTahun || !!tahunIdParam} // Disable saat loading atau di-lock
+                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100"
                         >
                           <option value="" disabled>
-                            -- Pilih Tahun --
+                            {isLoadingTahun
+                              ? "Memuat tahun..."
+                              : "-- Pilih Tahun --"}
                           </option>
                           {tahunList.map((thn) => (
                             <option key={thn.id} value={thn.id}>
@@ -334,9 +436,10 @@ const FormFormulaIndicator = () => {
                     {/* Wrapper Editor (Glow Effect) */}
                     <div className="rounded-2xl overflow-hidden shadow-sm border border-slate-200 focus-within:ring-4 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 transition-all duration-300">
                       {/* Math Pad Toolbar */}
-                      <div className="bg-slate-900 px-4 py-3 border-b border-slate-950 flex flex-wrap justify-between items-center gap-2">
+                      <div className="bg-slate-900 px-4 pt-3 pb-2 border-b border-slate-950 flex flex-col gap-2">
+                        {/* Baris 1: Operator Dasar + Clear */}
                         <div className="flex flex-wrap items-center gap-2.5">
-                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1 shrink-0">
                             Operator
                           </span>
                           {mathOperators.map((op, idx) => (
@@ -344,23 +447,40 @@ const FormFormulaIndicator = () => {
                               key={idx}
                               type="button"
                               onClick={() => insertAtCursor(op.action)}
-                              // Styling 3D Keyboard Key
                               className="w-10 h-10 flex items-center justify-center bg-slate-800 text-slate-200 hover:text-white hover:bg-emerald-600 font-mono font-bold text-lg rounded-xl border-b-[3px] border-slate-950 hover:border-emerald-800 active:border-b-0 active:translate-y-[3px] transition-all"
                             >
                               {op.label}
                             </button>
                           ))}
+
+                          {/* Clear Button */}
+                          <button
+                            type="button"
+                            onClick={clearFormula}
+                            className="flex items-center gap-1.5 px-3 h-10 bg-slate-800 hover:bg-red-500 text-slate-300 hover:text-white font-bold text-xs rounded-xl border-b-[3px] border-slate-950 hover:border-red-700 active:border-b-0 active:translate-y-[3px] transition-all ml-auto"
+                            title="Bersihkan Editor"
+                          >
+                            <Eraser size={14} /> Clear
+                          </button>
                         </div>
 
-                        {/* Clear Button */}
-                        <button
-                          type="button"
-                          onClick={clearFormula}
-                          className="flex items-center gap-1.5 px-3 h-10 bg-slate-800 hover:bg-red-500 text-slate-300 hover:text-white font-bold text-xs rounded-xl border-b-[3px] border-slate-950 hover:border-red-700 active:border-b-0 active:translate-y-[3px] transition-all ml-auto"
-                          title="Bersihkan Editor"
-                        >
-                          <Eraser size={14} /> Clear
-                        </button>
+                        {/* Baris 2: Operator Pangkat & Akar */}
+                        <div className="flex flex-wrap items-center gap-2.5 pb-1">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-1 shrink-0">
+                            Pangkat &amp; Akar
+                          </span>
+                          {advancedOperators.map((op, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={op.onClick}
+                              title={op.title}
+                              className="h-10 px-3.5 flex items-center justify-center bg-slate-800 text-amber-300 hover:text-white hover:bg-amber-600 font-bold text-base rounded-xl border-b-[3px] border-slate-950 hover:border-amber-800 active:border-b-0 active:translate-y-[3px] transition-all font-mono"
+                            >
+                              {op.label}
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       {/* Area Teks Terminal-Style */}
@@ -371,7 +491,6 @@ const FormFormulaIndicator = () => {
                         onChange={(e) =>
                           setFormData({ ...formData, formula: e.target.value })
                         }
-                        // Styling mirip Code Editor modern
                         className="w-full px-6 py-6 bg-[#0B1120] text-emerald-400 focus:outline-none resize-none transition-all font-mono text-xl leading-loose custom-scrollbar-dark selection:bg-emerald-900 selection:text-emerald-100 placeholder-slate-700"
                         rows="8"
                         placeholder="Ketik logika rumus matematika Anda di sini..."
@@ -471,7 +590,7 @@ const FormFormulaIndicator = () => {
                         </div>
                         <button
                           type="button"
-                          onClick={() => removeIndicator(ind.id)}
+                          onClick={() => removeIndicator(ind)}
                           className="shrink-0 text-slate-300 hover:text-red-500 hover:bg-red-50 p-2 rounded-lg transition-colors"
                           title="Hapus dari daftar"
                         >

@@ -1,44 +1,48 @@
 import authInstance from "../../api/authInstance";
 import { normalizeCollection, normalizeResource } from "../../utils/apiResponse";
 
-const userService = {
-    async getUser() {
-        const response = await authInstance.get("/users");
-        return normalizeCollection(response);
-    },
+export const userService = {
+  async getUser() {
+    const response = await authInstance.get("/users");
+    return normalizeCollection(response);
+  },
 
-    async getUserById(id) {
-        const response = await authInstance.get(`/users/${id}`);
-        return normalizeResource(response);
-    },
+  async getUserById(id) {
+    const response = await authInstance.get(`/users/${id}`);
+    return normalizeResource(response);
+  },
 
-    async createUser(payload){
-        const response = await authInstance.post(`/users`, payload)
-        return response.data;
-    },
+  async createUser(payload) {
+    const response = await authInstance.post("/users", payload);
+    return response.data;
+  },
 
-    async updateUser(id, payload){
-        const response = await authInstance.put(`/users/${id}`, payload)
-        return response.data;
-    },
+  async updateUser(id, payload) {
+    const response = await authInstance.put(`/users/${id}`, payload);
+    return response.data;
+  },
 
-    async deleteUser(id){
-        const response = await authInstance.delete(`/users/${id}`)
-        return response.data;
-    },
+  async deleteUser(id) {
+    const response = await authInstance.delete(`/users/${id}`);
+    return response.data;
+  },
 
-    async createUserBulk(payload){
-        const response = await authInstance.post(`/users/bulk`, payload)
-        return response.data;
-    },
+  async createUserBulk(payloadArray) {
+    const response = await authInstance.post("/users/bulk", payloadArray);
+    return response.data;
+  },
 
+  async deleteUserBulk(idsArray) {
+    const response = await authInstance.delete("/users/bulk", {
+      data: idsArray,
+    });
+    return response.data;
+  },
 
-    async deleteUserBulk(payload){
-        const response = await authInstance.delete(`/users/bulk`, payload)
-        return response.data;
-    },
-
-
+  async changePassword(payload) {
+    const response = await authInstance.post("/profile/change-password", payload);
+    return response.data;
+  },
 };
 
 export default userService;

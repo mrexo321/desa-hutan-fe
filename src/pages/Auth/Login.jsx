@@ -49,7 +49,6 @@ const Login = () => {
       toast.success("Login berhasil! Selamat datang.");
     },
     onError: (error) => {
-      console.error("Gagal login:", error);
       toast.error(
         error?.response?.data?.message || "Username atau password salah.",
       );

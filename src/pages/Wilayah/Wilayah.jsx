@@ -1,20 +1,27 @@
-import React, { useState, useMemo } from "react";
+﻿import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
-import { Plus, Search, Edit2, Trash2, Map, MapPin } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { Plus, Search, Edit2, Trash2, Map, MapPin, UploadCloud, RefreshCw } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { wilayahDesaService } from "../../services/master/wilayahDesaService";
 import { wilayahHutanService } from "../../services/master/wilayahHutanService";
 import Pagination from "../../components/Pagination";
 import DataTable from "../../components/DataTable"; // <-- Import DataTable
+import ModalUploadChunked from "../../components/ModalUploadChunk";
+import ModalSyncGeom from "../../components/ModalSyncGeom";
 
 // =================================================================
 // 1. KOMPONEN TAB WILAYAH HUTAN
 // =================================================================
 const TabWilayahHutan = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isSyncGeomOpen, setIsSyncGeomOpen] = useState(false);
 
   const {
     data: response,
@@ -33,6 +40,9 @@ const TabWilayahHutan = () => {
     currentPage: 1,
     totalPage: 1,
   };
+
+  console.log(listData);
+
 
   // Mapping data untuk menambahkan nomor urut yang presisi dengan pagination
   const tableData = useMemo(() => {
@@ -162,8 +172,22 @@ const TabWilayahHutan = () => {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all font-medium text-slate-700"
             />
           </div>
-          <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#1E5230] transition-colors shadow-sm">
-            <Plus size={18} strokeWidth={2.5} /> Tambah Data
+          <button
+            onClick={() => navigate("/dashboard/wilayah/hutan/tambah")}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-[#1E5230] transition-colors shadow-sm">
+            <Plus size={18} strokeWidth={2.5} /> Tambah Hutan
+          </button>
+          <button
+            onClick={() => setIsUploadOpen(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 border border-[#2D7344] text-[#2D7344] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-green-50 transition-colors shadow-sm"
+          >
+            <UploadCloud size={18} strokeWidth={2.5} /> Import SHP
+          </button>
+          <button
+            onClick={() => setIsSyncGeomOpen(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 border border-blue-600 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm"
+          >
+            <RefreshCw size={18} strokeWidth={2.5} /> Sync Geom
           </button>
         </div>
       </div>
@@ -189,6 +213,24 @@ const TabWilayahHutan = () => {
           onSizeChange={setSize}
         />
       )}
+      <ModalUploadChunked
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onSuccess={() => {
+          setIsUploadOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["forests"] });
+        }}
+        uploadType="shpWilayahHutan"
+      />
+
+      <ModalSyncGeom
+        isOpen={isSyncGeomOpen}
+        onClose={() => setIsSyncGeomOpen(false)}
+        onSuccess={() => {
+          setIsSyncGeomOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["forests"] });
+        }}
+      />
     </div>
   );
 };
@@ -197,9 +239,12 @@ const TabWilayahHutan = () => {
 // 2. KOMPONEN TAB WILAYAH DESA
 // =================================================================
 const TabWilayahDesa = () => {
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const {
     data: response,
@@ -342,8 +387,16 @@ const TabWilayahDesa = () => {
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/10 transition-all font-medium text-slate-700"
             />
           </div>
-          <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
-            <Plus size={18} strokeWidth={2.5} /> Tambah Data
+          <button
+            onClick={() => navigate("/dashboard/wilayah/desa/tambah")}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm">
+            <Plus size={18} strokeWidth={2.5} /> Tambah Desa
+          </button>
+          <button
+            onClick={() => setIsUploadOpen(true)}
+            className="w-full sm:w-auto flex items-center justify-center gap-2 border border-blue-600 text-blue-600 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-blue-50 transition-colors shadow-sm"
+          >
+            <UploadCloud size={18} strokeWidth={2.5} /> Import SHP
           </button>
         </div>
       </div>
@@ -369,6 +422,15 @@ const TabWilayahDesa = () => {
           onSizeChange={setSize}
         />
       )}
+      <ModalUploadChunked
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onSuccess={() => {
+          setIsUploadOpen(false);
+          queryClient.invalidateQueries({ queryKey: ["villages"] });
+        }}
+        uploadType="shpWilayahDesa"
+      />
     </div>
   );
 };
@@ -398,11 +460,10 @@ const Wilayah = () => {
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${
-                  activeTab === tab
-                    ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
-                }`}
+                className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${activeTab === tab
+                  ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
+                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
+                  }`}
               >
                 Wilayah {tab.toUpperCase()}
               </button>

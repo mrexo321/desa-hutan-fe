@@ -35,6 +35,8 @@ const DetailMainIndikator = () => {
     navigate(-1); // Kembali ke halaman sebelumnya
   };
 
+  console.log(detail);
+
   return (
     <DashboardLayout activeMenu="Indikator">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
@@ -221,12 +223,9 @@ const DetailMainIndikator = () => {
                             <td className="py-3 px-4 text-center text-slate-400">
                               {i + 1}
                             </td>
-                            <td className="py-3 px-4">
-                              {/* Render property dari item. Sesuaikan struktur API-mu */}{" "}
-                              Item Penilaian
-                            </td>
+                            <td className="py-3 px-4">{item.label}</td>
                             <td className="py-3 px-4 text-center font-bold text-[#2D7344]">
-                              100
+                              {item.nilai}
                             </td>
                           </tr>
                         ))}

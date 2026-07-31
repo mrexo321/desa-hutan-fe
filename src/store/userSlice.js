@@ -1,4 +1,4 @@
-import { createSlice, current } from "@reduxjs/toolkit";
+import { createSlice } from "@reduxjs/toolkit";
 
 const emptyUser = {
   id: null,
@@ -8,6 +8,7 @@ const emptyUser = {
   permissions: [],
   accessToken: null,
   refreshToken: null,
+  isSessionExpired: false,
 };
 
 const normalizeList = (value) => {
@@ -31,7 +32,13 @@ const normalizeList = (value) => {
             item.code ??
             item.kode ??
             item.slug ??
-            item.value;
+            item.value ??
+            item.role?.name ??
+            item.role?.nama ??
+            item.permission?.name ??
+            item.permission?.nama ??
+            item.permission?.code ??
+            item.permission?.kode;
 
           return direct ? String(direct) : [];
         })
@@ -41,10 +48,15 @@ const normalizeList = (value) => {
   ];
 };
 
-const getStoredUser = () => {
+const getStoredProfile = () => {
   try {
-    const savedUser = localStorage.getItem("user");
-    return savedUser ? JSON.parse(savedUser) : null;
+    const profile = localStorage.getItem("user_profile");
+    const legacyUser = localStorage.getItem("user");
+    return profile
+      ? JSON.parse(profile)
+      : legacyUser
+        ? JSON.parse(legacyUser)
+        : null;
   } catch {
     return null;
   }
@@ -77,10 +89,12 @@ const normalizeUserPayload = (payload = {}) => {
     }),
   );
 
+  const id = source.id ?? source.userId ?? user.id ?? null;
+
   return {
     ...emptyUser,
     ...source,
-    id: source.id ?? source.userId ?? user.id ?? null,
+    id,
     userId: source.userId ?? source.id ?? user.id ?? null,
     username:
       source.username ??
@@ -95,48 +109,69 @@ const normalizeUserPayload = (payload = {}) => {
     refreshToken: source.refreshToken ?? source.refresh_token ?? null,
     roles: roleNames,
     permissions: normalizeList([rawPermissions, permissionsFromRoles]),
+    isSessionExpired: false,
   };
 };
 
-const initialState = normalizeUserPayload(getStoredUser());
+const initialProfile = normalizeUserPayload(getStoredProfile());
+const initialState = {
+  ...emptyUser,
+  id: initialProfile.id,
+  userId: initialProfile.userId,
+  username: initialProfile.username,
+  roles: initialProfile.roles,
+  permissions: initialProfile.permissions,
+};
 
 const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
     setUserData: (state, action) => {
-      const normalizedPayload = normalizeUserPayload(action.payload);
-      localStorage.setItem("user", JSON.stringify(normalizedPayload));
-      return normalizedPayload;
+      const normalized = normalizeUserPayload(action.payload);
+      const profileData = {
+        id: normalized.id,
+        userId: normalized.userId,
+        username: normalized.username,
+        roles: normalized.roles,
+        permissions: normalized.permissions,
+      };
+
+      Object.assign(state, normalized, { isSessionExpired: false });
+
+      try {
+        localStorage.setItem("user_profile", JSON.stringify(profileData));
+        localStorage.removeItem("user");
+      } catch {
+        // Ignore storage errors.
+      }
     },
-    // Di dalam store/userSlice.js, ubah bagian setToken menjadi seperti ini:
 
     setToken: (state, action) => {
       const { accessToken, refreshToken } = action.payload;
-
-      // Update state jika nilainya dikirimkan
       if (accessToken) state.accessToken = accessToken;
       if (refreshToken) state.refreshToken = refreshToken;
-
-      // Baca data proxy menjadi objek JS biasa
-      const currentState = current(state);
-
-      // Gantikan/Timpa data di localStorage secara utuh
-      localStorage.setItem("user", JSON.stringify(currentState));
+      state.isSessionExpired = false;
     },
+
+    triggerSessionExpired: (state) => {
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isSessionExpired = true;
+    },
+
     clearUserData: () => {
-      localStorage.removeItem("user");
-      return {
-        id: null,
-        username: null,
-        roles: [],
-        permissions: [],
-        accessToken: null,
-        refreshToken: null,
-      };
+      try {
+        localStorage.removeItem("user_profile");
+        localStorage.removeItem("user");
+      } catch {
+        // Ignore storage errors.
+      }
+      return { ...emptyUser };
     },
   },
 });
 
-export const { setUserData, clearUserData, setToken } = userSlice.actions;
+export const { setUserData, clearUserData, setToken, triggerSessionExpired } =
+  userSlice.actions;
 export default userSlice.reducer;

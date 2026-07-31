@@ -30,4 +30,15 @@ export const analystSpatialService = {
     });
     return response.data.data;
   },
+
+  async getRingkasanAnalisis({ provinsi, kabupaten, kecamatan } = {}) {
+    const response = await masterInstance.get(`/analisis-spasial/ringkasan-analisis`, {
+      params: {
+        ...(provinsi && { provinsi }),
+        ...(kabupaten && { kabupaten }),
+        ...(kecamatan && { kecamatan }),
+      },
+    });
+    return response.data.data;
+  },
 };

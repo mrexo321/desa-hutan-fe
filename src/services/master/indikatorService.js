@@ -8,6 +8,12 @@ export const indikatorService = {
     const response = await masterInstance.get("/master-indikator-utama");
     return response.data;
   },
+  async deleteMainIndicator(id) {
+    const response = await masterInstance.delete(
+      `/master-indikator-utama/${id}`,
+    );
+    return response.data;
+  },
   async updateMainIndicator(id, payload) {
     const response = await masterInstance.put(
       `/master-indikator-utama/${id}`,
@@ -66,9 +72,9 @@ export const indikatorService = {
   // ==========================================
 
   // Ambil semua data formula
-  async getAllFormula() {
+  async getAllFormula(params = {}) {
     // Note: Sesuaikan "/master-indikator-perhitungan" dengan route API backend Anda
-    const response = await masterInstance.get("/master-indikator-perhitungan");
+    const response = await masterInstance.get("/master-indikator-perhitungan", { params });
     return response.data;
   },
 
@@ -102,6 +108,59 @@ export const indikatorService = {
   async deleteFormulaIndicator(id) {
     const response = await masterInstance.delete(
       `/master-indikator-perhitungan/${id}`,
+    );
+    return response.data;
+  },
+
+  // ==========================================
+  // Master Tahun Indikator Perhitungan SERVICES
+  // ==========================================
+
+  getAllYearIndicator: async () => {
+    const response = await masterInstance.get(
+      "/master-tahun-indikator-perhitungan",
+    );
+    return response.data;
+  },
+
+  getAllYearIndicatorPublic: async () => {
+    const response = await masterInstance.get(
+      "/public/tahun-indikator-perhitungan",
+    );
+    return response.data;
+  },
+
+  // GET Tahun by ID (untuk kebutuhan Edit Form)
+  getYearIndicatorById: async (id) => {
+    const response = await masterInstance.get(
+      `/master-tahun-indikator-perhitungan/${id}`,
+    );
+    return response.data;
+  },
+
+  // POST Tambah Tahun
+  createYearIndicator: async (data) => {
+    // req body: { tahun: "2024" }
+    const response = await masterInstance.post(
+      "/master-tahun-indikator-perhitungan",
+      data,
+    );
+    return response.data;
+  },
+
+  // PUT/PATCH Update Tahun
+  updateYearIndicator: async ({ id, data }) => {
+    const response = await masterInstance.put(
+      `/master-tahun-indikator-perhitungan/${id}`,
+      data,
+    );
+    return response.data;
+  },
+
+  // DELETE Tahun
+  deleteYearIndicator: async (id) => {
+    const response = await masterInstance.delete(
+      `/master-tahun-indikator-perhitungan/${id}`,
     );
     return response.data;
   },

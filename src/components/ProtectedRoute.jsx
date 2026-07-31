@@ -4,15 +4,28 @@ import { useSelector } from "react-redux";
 import { usePermission } from "../hooks/usePermission";
 import { toast } from "sonner";
 
-// Parameter 'allowedPermissions' ini adalah ARRAY yang dimaksud temanmu
+const hasStoredProfile = () => {
+  try {
+    return Boolean(localStorage.getItem("user_profile"));
+  } catch {
+    return false;
+  }
+};
+
 const ProtectedRoute = ({ children, allowedPermissions }) => {
   const { canAny } = usePermission();
   const user = useSelector((state) => state.user);
+  const isSessionExpired = user?.isSessionExpired;
   const requiredPermissions = Array.isArray(allowedPermissions)
     ? allowedPermissions
     : [];
   const isLoggedIn = Boolean(
-    user?.accessToken || user?.refreshToken || user?.username || user?.id || user?.userId,
+    user?.accessToken ||
+      user?.refreshToken ||
+      user?.username ||
+      user?.id ||
+      user?.userId ||
+      hasStoredProfile(),
   );
   const isAllowed =
     requiredPermissions.length === 0 || canAny(requiredPermissions);
@@ -25,12 +38,14 @@ const ProtectedRoute = ({ children, allowedPermissions }) => {
     }
   }, [isLoggedIn, isAllowed]);
 
+  if (isSessionExpired) return null;
+
   if (!isLoggedIn) {
     return <Navigate to="/login" replace />;
   }
 
   if (!isAllowed) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return children;

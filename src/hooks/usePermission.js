@@ -65,10 +65,6 @@ export const usePermission = () => {
     [userRoles],
   );
 
-  // =========================================================
-  // VARIABEL 1: `can`
-  // Untuk mengecek 1 aksi spesifik. (Contoh: can('role:create'))
-  // =========================================================
   const can = useCallback(
     (action) => {
       if (isSuperadmin) return true;
@@ -78,11 +74,6 @@ export const usePermission = () => {
     [permissionSet, isSuperadmin],
   );
 
-  // =========================================================
-  // VARIABEL 2: `canAny`
-  // Untuk mengecek apakah user punya minimal 1 dari beberapa aksi.
-  // (Contoh: canAny(['role:update', 'role:delete']))
-  // =========================================================
   const canAny = useCallback(
     (actionsArray) => {
       if (isSuperadmin) return true;
@@ -92,6 +83,5 @@ export const usePermission = () => {
     [permissionSet, isSuperadmin],
   );
 
-  // Ekspor agar bisa digunakan secara global
   return { can, canAny, isSuperadmin, userPermissions, userRoles };
 };

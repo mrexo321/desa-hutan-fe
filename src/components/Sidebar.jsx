@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Trees,
@@ -18,13 +18,23 @@ import {
   X,
   Leaf,
   LogOut,
+  Settings2,
+  BrainCircuit,
+  FileSpreadsheet,
 } from "lucide-react";
 import { usePermission } from "../hooks/usePermission";
 
 export default function Sidebar({ activeMenu }) {
   const { canAny } = usePermission();
+  const navigate = useNavigate();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpenMobile, setIsOpenMobile] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    navigate("/");
+  };
 
   // Ukuran ikon disesuaikan agar proporsional
   const iconProps = { size: 20, strokeWidth: 2 };
@@ -48,11 +58,32 @@ export default function Sidebar({ activeMenu }) {
       icon: <LineChart {...iconProps} />,
       permission: "performa_desa_hutan:read",
     },
+    // {
+    //   name: "Potensi Desa",
+    //   path: "/dashboard/potensi-desa",
+    //   icon: <Sprout {...iconProps} />,
+    // },
     {
       name: "Potensi Desa",
       path: "/dashboard/potensi-desa",
       icon: <Sprout {...iconProps} />,
       permission: "analisis_spasial:read",
+    },
+    {
+      name: "Desa PSN",
+      path: "/dashboard/desa-psn",
+      icon: <Layers {...iconProps} />,
+    },
+    {
+      name: "AI Asisten",
+      path: "/dashboard/ai-asisten",
+      icon: <BrainCircuit {...iconProps} />,
+      isNew: true,
+    },
+    {
+      name: "Permintaan Data",
+      path: "/dashboard/permintaan-data",
+      icon: <FileSpreadsheet {...iconProps} />,
     },
   ];
 
@@ -64,8 +95,8 @@ export default function Sidebar({ activeMenu }) {
       permission: "master_indikator_utama:read",
     },
     {
-      name: "Indikator Perhitungan",
-      path: "/dashboard/indikator-perhitungan",
+      name: "Tahun Indikator Perhitungan",
+      path: "/dashboard/tahun-indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
       permission: "master_indikator_perhitungan:read",
     },
@@ -116,6 +147,11 @@ export default function Sidebar({ activeMenu }) {
       path: "/dashboard/master-potensi",
       icon: <Database {...iconProps} />,
       permission: "master_fungsi_kawasan_hutan:read",
+    },
+    {
+      name: "Site Settings",
+      path: "/dashboard/site-settings",
+      icon: <Settings2 {...iconProps} />,
     },
   ];
 
@@ -221,11 +257,10 @@ export default function Sidebar({ activeMenu }) {
                     <Link
                       to={item.path}
                       title={isCollapsed ? item.name : ""}
-                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${
-                        isActive
+                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
                           ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
                           : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
-                      }`}
+                        }`}
                     >
                       <div
                         className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
@@ -234,9 +269,15 @@ export default function Sidebar({ activeMenu }) {
                       </div>
                       {!isCollapsed && (
                         <span
-                          className={`ml-4 text-[15px] tracking-wide ${isActive ? "font-bold" : "font-medium"}`}
+                          className={`ml-4 text-[15px] tracking-wide flex-1 ${isActive ? "font-bold" : "font-medium"}`}
                         >
                           {item.name}
+                        </span>
+                      )}
+                      {/* Badge NEW untuk AI Asisten */}
+                      {item.isNew && !isCollapsed && (
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider flex-shrink-0 ${isActive ? "bg-white/20 text-white" : "bg-[#00C47C]/20 text-[#00C47C]"}`}>
+                          NEW
                         </span>
                       )}
                     </Link>
@@ -265,11 +306,10 @@ export default function Sidebar({ activeMenu }) {
                     <Link
                       to={item.path}
                       title={isCollapsed ? item.name : ""}
-                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${
-                        isActive
+                      className={`relative flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl transition-all duration-300 group ${isActive
                           ? "bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20"
                           : "text-[#7B9E8D] hover:bg-white/5 hover:text-white"
-                      }`}
+                        }`}
                     >
                       <div
                         className={`flex-shrink-0 transition-transform duration-200 ${isActive ? "scale-100" : "group-hover:scale-110"}`}
@@ -295,8 +335,9 @@ export default function Sidebar({ activeMenu }) {
         {/* --- FOOTER SIDEBAR (Tombol Keluar) --- */}
         <div className="p-4 mt-auto border-t border-white/5">
           <button
+            onClick={handleLogout}
             title={isCollapsed ? "Keluar" : ""}
-            className={`w-full flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl text-[#7B9E8D] hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group`}
+            className={`w-full flex items-center ${isCollapsed ? "justify-center px-0" : "px-4"} py-3.5 rounded-2xl text-[#7B9E8D] hover:bg-red-500/10 hover:text-red-400 transition-all duration-300 group cursor-pointer`}
           >
             <div className="flex-shrink-0 transition-transform duration-200 group-hover:-translate-x-1">
               <LogOut size={20} strokeWidth={2} />

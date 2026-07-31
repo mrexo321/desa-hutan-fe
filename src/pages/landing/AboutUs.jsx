@@ -16,30 +16,19 @@ const AboutUs = () => {
           {/* --- BAGIAN KONTEN TEKS --- */}
           <div className="space-y-6 text-sm md:text-base leading-relaxed text-justify mb-12">
             <p>
-              <strong>Direktorat Penggunaan Kawasan Hutan</strong> merupakan
-              bagian dari keluarga besar Direktorat Jenderal Planologi
-              Kehutanan, Kementerian Kehutanan, yang bertugas merumuskan dan
-              melaksanakan kebijakan di bidang penggunaan kawasan hutan secara
-              optimal, sesuai ketentuan peraturan perundang-undangan. Kami
-              berkomitmen mendukung visi Direktorat Jenderal Planologi
-              Kehutanan, yaitu:
+              <strong>Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH)</strong> merupakan unit kerja strategis di bawah naungan Kementerian Kehutanan, yang bertugas merumuskan, mengoordinasikan, dan melaksanakan kebijakan serta strategi di bidang fasilitasi dan pengembangan sosial ekonomi masyarakat di dalam maupun sekitar kawasan hutan, sesuai ketentuan peraturan perundang-undangan. Kami berkomitmen penuh dalam mendukung visi Kementerian Kehutanan, yaitu:
             </p>
 
             <p className="font-bold italic text-gray-900 px-4 py-2 border-l-4 border-[#0B8457] bg-green-50/50">
-              "Memastikan pemantapan dan optimasi kawasan hutan untuk mengawal
-              penguatan fondasi transformasi menuju Indonesia Maju."
+              "Mewujudkan entitas tapak yang mengalirkan manfaat ekologi, ekonomi, sosial, dan berkelanjutan guna mendukung pembangunan ekonomi hijau."
             </p>
 
             <p>
-              Sebagai wujud komitmen tersebut, Direktorat Penggunaan Kawasan
-              Hutan memiliki sasaran utama:{" "}
+              Sebagai wujud komitmen tersebut, Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH) memiliki sasaran utama:{" "}
               <strong>
-                "Mengoptimalkan penggunaan kawasan hutan sesuai ketentuan yang
-                berlaku"
+                "Mengoptimalkan pengembangan sosial ekonomi masyarakat hutan berbasis pengelolaan sumber daya yang inklusif dan lestari"
               </strong>
-              , sehingga penggunaan kawasan hutan dapat memberikan manfaat yang
-              berkelanjutan bagi lingkungan, masyarakat, dan perekonomian
-              nasional.
+              , sehingga pelibatan masyarakat dan pemanfaatan hutan—termasuk di dalamnya pengelolaan Hasil Hutan Bukan Kayu (HHBK) dan jasa lingkungan—dapat memberikan manfaat nyata bagi peningkatan kemandirian ekonomi lokal, kesejahteraan masyarakat tapak, sekaligus menjaga keseimbangan ekologis nasional.
             </p>
 
             <div>
@@ -51,26 +40,22 @@ const AboutUs = () => {
               </p>
               <ul className="list-disc pl-6 space-y-1">
                 <li>
-                  Persentase permohonan penggunaan kawasan hutan yang dilayani
+                  Persentase kelompok masyarakat hutan (seperti Kelompok Tani Hutan/KTH) yang mengalami peningkatan status kelembagaan dan kemandirian skala usaha.
                 </li>
-                <li>Nilai penerimaan PNBP dari penggunaan kawasan hutan</li>
+                <li>Nilai tambah ekonomi yang dihasilkan dari fasilitasi pemanfaatan Hasil Hutan Bukan Kayu (HHBK), ekowisata, dan jasa lingkungan oleh masyarakat.</li>
                 <li>
-                  Persentase pemegang persetujuan yang diverifikasi di wilayah
-                  kerja Balai Pemantapan Kawasan Hutan (BPKH)
+                  Persentase keberhasilan fasilitasi dan pendampingan kemitraan konservasi serta perhutanan sosial antara masyarakat dengan pengelola kawasan hutan.
                 </li>
                 <li>
-                  Persentase pemegang persetujuan yang dimonitoring dan/atau
-                  dievaluasi di wilayah kerja BPKH
+                  Persentase desa atau entitas masyarakat di sekitar kawasan hutan (termasuk Cagar Biosfer) yang terberdayakan secara sosial dan ekonomi.
                 </li>
               </ul>
             </div>
 
             <p>
-              Pelaksanaan tugas dan fungsi Direktorat Penggunaan Kawasan Hutan
-              didukung oleh struktur organisasi yang diatur dalam{" "}
+              Pelaksanaan tugas dan fungsi Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH) didukung oleh struktur organisasi yang diatur dalam{" "}
               <strong>
-                Peraturan Menteri Kehutanan Republik Indonesia Nomor 1 Tahun
-                2024 tentang Organisasi dan Tata Kerja Kementerian Kehutanan
+                Peraturan Menteri Kehutanan Republik Indonesia Nomor 1 Tahun 2024 tentang Organisasi dan Tata Kerja Kementerian Kehutanan
               </strong>
               , sebagai berikut:
             </p>
@@ -80,21 +65,19 @@ const AboutUs = () => {
           <div className="flex justify-center gap-12 border-b border-gray-200 mb-8">
             <button
               onClick={() => setActiveTab("struktur")}
-              className={`pb-2 font-bold text-sm tracking-wide transition-colors ${
-                activeTab === "struktur"
-                  ? "text-[#E5B82A] border-b-2 border-[#E5B82A]"
-                  : "text-[#5E9B79] hover:text-[#0B8457]"
-              }`}
+              className={`pb-2 font-bold text-sm tracking-wide transition-colors ${activeTab === "struktur"
+                ? "text-[#E5B82A] border-b-2 border-[#E5B82A]"
+                : "text-[#5E9B79] hover:text-[#0B8457]"
+                }`}
             >
               STRUKTUR KELOMPOK KERJA
             </button>
             <button
               onClick={() => setActiveTab("video")}
-              className={`pb-2 font-bold text-sm tracking-wide transition-colors ${
-                activeTab === "video"
-                  ? "text-[#E5B82A] border-b-2 border-[#E5B82A]"
-                  : "text-[#5E9B79] hover:text-[#0B8457]"
-              }`}
+              className={`pb-2 font-bold text-sm tracking-wide transition-colors ${activeTab === "video"
+                ? "text-[#E5B82A] border-b-2 border-[#E5B82A]"
+                : "text-[#5E9B79] hover:text-[#0B8457]"
+                }`}
             >
               VIDEO
             </button>
@@ -259,7 +242,7 @@ const AboutUs = () => {
               <div className="w-full h-24 md:h-32 bg-gray-200 rounded-lg overflow-hidden border border-gray-200">
                 {/* Ganti dengan <img src="..." className="w-full h-full object-cover" /> */}
                 <div className="w-full h-full bg-[#E5ECE7] flex items-center justify-center text-sm text-gray-500 italic">
-                  (Gambar Banner Jendral Planologi)
+                  SISTEM A
                 </div>
               </div>
 
@@ -267,9 +250,7 @@ const AboutUs = () => {
               <div className="w-full h-24 md:h-32 bg-gray-200 rounded-lg overflow-hidden border border-gray-200">
                 {/* Ganti dengan <img src="..." className="w-full h-full object-cover" /> */}
                 <div className="w-full h-full bg-[#115C3E] flex items-center px-6 text-white text-sm font-bold">
-                  Direktorat Jenderal Planologi
-                  <br />
-                  Kehutanan dan Tata Lingkungan
+                  SISTEM B
                 </div>
               </div>
 
@@ -277,7 +258,7 @@ const AboutUs = () => {
               <div className="w-full h-24 md:h-32 bg-gray-200 rounded-lg overflow-hidden border border-gray-200">
                 {/* Ganti dengan <img src="..." className="w-full h-full object-cover" /> */}
                 <div className="w-full h-full bg-[#20DA5F] flex items-center justify-center text-white text-xl font-bold tracking-widest">
-                  SIMONTANA
+                  SISTEM C
                 </div>
               </div>
 
@@ -285,7 +266,7 @@ const AboutUs = () => {
               <div className="w-full h-24 md:h-32 bg-gray-200 rounded-lg overflow-hidden border border-gray-200">
                 {/* Ganti dengan <img src="..." className="w-full h-full object-cover" /> */}
                 <div className="w-full h-full bg-orange-100 flex items-center px-6 text-orange-600 font-bold text-xl">
-                  SIGAP KLHK
+                  SISTEM D
                 </div>
               </div>
             </div>

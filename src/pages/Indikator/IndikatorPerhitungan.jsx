@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable"; // Sesuaikan path
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -13,24 +13,35 @@ import {
   Trash2,
   Calendar,
   AlertTriangle,
+  ChevronLeft,
 } from "lucide-react";
 
 const IndikatorPerhitungan = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const tahunIndikatorPerhitunganId = searchParams.get("tahunIndikatorPerhitunganId");
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Fetch All Data
+  // Fetch All Data (filtered by tahunIndikatorPerhitunganId if exists)
   const {
     data: responseData,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["allFormulaIndicators"],
-    queryFn: () => indikatorService.getAllFormula(),
+    queryKey: ["allFormulaIndicators", tahunIndikatorPerhitunganId],
+    queryFn: () => {
+      const params = {};
+      if (tahunIndikatorPerhitunganId) {
+        params.tahunIndikatorPerhitunganId = tahunIndikatorPerhitunganId;
+      }
+      return indikatorService.getAllFormula(params);
+    },
   });
 
   const rawData = responseData?.data || responseData || [];
+
+  console.log(rawData);
 
   // Client-side search filtering
   const filteredData = rawData.filter((item) =>
@@ -169,6 +180,15 @@ const IndikatorPerhitungan = () => {
     <DashboardLayout activeMenu="Indikator Perhitungan">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
+          <div>
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-slate-500 hover:text-emerald-700 font-bold text-sm transition-colors w-fit px-3 py-2 -ml-3 rounded-xl hover:bg-emerald-50"
+            >
+              <ChevronLeft size={18} />
+              Kembali
+            </button>
+          </div>
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
               Indikator Perhitungan
@@ -206,7 +226,13 @@ const IndikatorPerhitungan = () => {
                 </div>
                 <button
                   onClick={() =>
-                    navigate("/dashboard/indikator-perhitungan/tambah")
+                    navigate(
+                      `/dashboard/indikator-perhitungan/tambah${
+                        tahunIndikatorPerhitunganId
+                          ? `?tahunId=${tahunIndikatorPerhitunganId}`
+                          : ""
+                      }`
+                    )
                   }
                   className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md active:scale-[0.98]"
                 >

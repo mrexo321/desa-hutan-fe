@@ -18,10 +18,12 @@ import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable";
 import { indikatorService } from "../../services/master/indikatorService";
 import { useNavigate } from "react-router-dom";
+import DomainDesaIndikatorPage from "../DimensiDesa/DomainDesaIndikatorPage";
+
 
 const Indikator = () => {
   const queryClient = useQueryClient();
-  const navigate = useNavigate(); // <-- TAMBAHAN 2
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("utama");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -46,7 +48,7 @@ const Indikator = () => {
     originalNama: "",
   });
 
-  // State Delete
+  // State Delete (Hanya untuk Kategori Modal)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState(null);
 
@@ -102,7 +104,7 @@ const Indikator = () => {
     );
   }, [activeTab, categoryData, mainIndicatorData, searchQuery]);
 
-  // Mutations ... (Dipersingkat agar fokus pada perubahan navigasi)
+  // Mutations Kategori
   const createCategoryMutation = useMutation({
     mutationFn: (payload) => indikatorService.createCategoryIndicator(payload),
     onSuccess: () => {
@@ -133,18 +135,28 @@ const Indikator = () => {
     },
   });
 
+  // MUTATION BARU: Hapus Indikator Utama
+  const deleteMainMutation = useMutation({
+    mutationFn: (id) => indikatorService.deleteMainIndicator(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["main-indicators"] });
+      toast.success("Data indikator utama berhasil dihapus!");
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Gagal menghapus data indikator utama",
+      );
+    },
+  });
+
   // ==========================================
   // 2. HANDLERS
   // ==========================================
 
   const handlePreviewClick = (row) => {
-    // TAMBAHAN 3: Jika tab Utama, navigasikan ke halaman detail
     if (activeTab === "utama") {
-      // Asumsi route kamu adalah /dashboard/indikator/utama/:id
-      // Sesuaikan path navigasi ini dengan setup react-router kamu!
       navigate(`/dashboard/indikator/utama/${row.id}`);
     } else {
-      // Jika tab Kategori, buka Modal (logika lama)
       setPreviewId(row.id);
       setIsPreviewModalOpen(true);
     }
@@ -157,7 +169,6 @@ const Indikator = () => {
 
   const handleAddClick = () => {
     if (activeTab === "utama") {
-      // Arahkan ke halaman create
       navigate("/dashboard/indikator/utama/create");
       return;
     }
@@ -176,7 +187,7 @@ const Indikator = () => {
 
   const handleEditClick = (row) => {
     if (activeTab === "utama") {
-      toast.info("Fitur Edit Indikator Utama belum tersedia.");
+      navigate(`/dashboard/indikator/utama/edit/${row.id}`);
       return;
     }
     setEditForm({
@@ -207,17 +218,29 @@ const Indikator = () => {
     });
   };
 
+  // Handler Hapus Kategori (Pakai Modal)
   const handleDeleteClick = (row) => {
-    if (activeTab === "utama") {
-      toast.info("Fitur Hapus Indikator Utama belum tersedia.");
-      return;
-    }
     setItemToDelete(row);
     setIsDeleteModalOpen(true);
   };
 
   const handleConfirmDelete = () => {
     if (itemToDelete) deleteCategoryMutation.mutate(itemToDelete.id);
+  };
+
+  // HANDLER BARU: Hapus Indikator Utama (Pakai Sonner Toast)
+  const handleDeleteUtama = (row) => {
+    toast("Konfirmasi Hapus Data", {
+      description: `Apakah Anda yakin ingin menghapus indikator utama "${row.nama}"? Data yang dihapus tidak dapat dikembalikan.`,
+      action: {
+        label: "Ya, Hapus",
+        onClick: () => deleteMainMutation.mutate(row.id),
+      },
+      cancel: {
+        label: "Batal",
+      },
+      duration: 6000, // Durasi lebih lama agar user sempat klik
+    });
   };
 
   // ==========================================
@@ -252,7 +275,6 @@ const Indikator = () => {
 
   const columnsUtama = useMemo(
     () => [
-      // ... (kolom kode, nama, kategori biarkan sama)
       {
         header: "Kode",
         accessor: "kode",
@@ -289,12 +311,9 @@ const Indikator = () => {
         render: (row) => (
           <ActionButtons
             row={row}
-            onPreview={() => navigate(`/dashboard/indikator/utama/${row.id}`)} // Ke halaman Detail
-            onEdit={() => navigate(`/dashboard/indikator/utama/edit/${row.id}`)} // Ke halaman Edit
-            onDelete={() => {
-              // Jika Anda belum punya service delete indikator utama, beri toast info dulu
-              toast.info("Fitur Hapus Indikator Utama belum tersedia.");
-            }}
+            onPreview={() => navigate(`/dashboard/indikator/utama/${row.id}`)}
+            onEdit={() => navigate(`/dashboard/indikator/utama/edit/${row.id}`)}
+            onDelete={() => handleDeleteUtama(row)} // Tautkan handler toast Sonner di sini
           />
         ),
       },
@@ -354,7 +373,7 @@ const Indikator = () => {
           </div>
 
           <div className="flex p-1.5 bg-slate-200/60 backdrop-blur-sm rounded-xl w-max mb-8 border border-slate-200">
-            {["utama", "kategori"].map((tab) => (
+            {["utama", "kategori", "dimensi"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => {
@@ -367,53 +386,61 @@ const Indikator = () => {
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
                 }`}
               >
-                Indikator {tab}
+                {tab === "utama"
+                  ? "Indikator Utama"
+                  : tab === "kategori"
+                  ? "Kategori Indikator"
+                  : "Dimensi Indikator Desa"}
               </button>
             ))}
           </div>
 
-          {/* KONTEN CARD & TABEL */}
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
-            <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/30">
-              <h2 className="text-lg font-bold text-slate-800">
-                {activeTab === "utama"
-                  ? "Tabel Data Indikator Utama"
-                  : "Tabel Data Kategori"}
-              </h2>
-              <div className="flex flex-col sm:flex-row items-center gap-3">
-                <div className="relative w-full sm:w-72 group">
-                  <Search
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2D7344]"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={`Cari ${activeTab} ...`}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344]"
-                  />
+          {activeTab === "dimensi" ? (
+            <DomainDesaIndikatorPage />
+          ) : (
+            /* KONTEN CARD & TABEL */
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+              <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/30">
+                <h2 className="text-lg font-bold text-slate-800">
+                  {activeTab === "utama"
+                    ? "Tabel Data Indikator Utama"
+                    : "Tabel Data Kategori"}
+                </h2>
+                <div className="flex flex-col sm:flex-row items-center gap-3">
+                  <div className="relative w-full sm:w-72 group">
+                    <Search
+                      className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#2D7344]"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      placeholder={`Cari ${activeTab} ...`}
+                      className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-4 focus:ring-green-500/10 focus:border-[#2D7344]"
+                    />
+                  </div>
+                  <button
+                    onClick={handleAddClick}
+                    className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                  >
+                    <Plus size={18} strokeWidth={3} /> Tambah Data
+                  </button>
                 </div>
-                <button
-                  onClick={handleAddClick}
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
-                >
-                  <Plus size={18} strokeWidth={3} /> Tambah Data
-                </button>
               </div>
-            </div>
 
-            <DataTable
-              columns={activeTab === "utama" ? columnsUtama : columnsKategori}
-              data={displayData}
-              isLoading={
-                activeTab === "kategori" ? isLoadingCat : isLoadingMain
-              }
-              isError={activeTab === "kategori" ? isErrorCat : isErrorMain}
-              searchQuery={searchQuery}
-              emptyMessage={`Belum ada data indikator ${activeTab} yang ditambahkan`}
-            />
-          </div>
+              <DataTable
+                columns={activeTab === "utama" ? columnsUtama : columnsKategori}
+                data={displayData}
+                isLoading={
+                  activeTab === "kategori" ? isLoadingCat : isLoadingMain
+                }
+                isError={activeTab === "kategori" ? isErrorCat : isErrorMain}
+                searchQuery={searchQuery}
+                emptyMessage={`Belum ada data indikator ${activeTab} yang ditambahkan`}
+              />
+            </div>
+          )}
         </div>
       </main>
 
@@ -671,7 +698,7 @@ const Indikator = () => {
       )}
 
       {/* ==========================================
-          MODAL DELETE (WARNING)
+          MODAL DELETE (HANYA UNTUK KATEGORI)
       ========================================== */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm transition-opacity">

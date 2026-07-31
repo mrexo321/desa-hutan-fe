@@ -18,6 +18,7 @@ const SearchableDropdown = ({
   placeholder = "Pilih opsi",
   required = false,
   emptyMessage = "Tidak ada hasil ditemukan",
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -77,23 +78,30 @@ const SearchableDropdown = ({
 
       {/* Trigger Button */}
       <div
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${isOpen
-            ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm"
-            : "border-gray-250 shadow-sm"
-          }`}
+        onClick={() => {
+          if (!disabled) setIsOpen((prev) => !prev);
+        }}
+        className={`w-full rounded-xl border flex items-center justify-between px-4 py-2 transition-all h-[42px] select-none ${
+          disabled
+            ? "bg-slate-100/80 text-gray-400 border-gray-200 cursor-not-allowed opacity-70"
+            : isOpen
+            ? "bg-white border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm cursor-pointer"
+            : "bg-white hover:shadow-md hover:border-gray-300 border-gray-250 shadow-sm cursor-pointer"
+        }`}
       >
         <span
-          className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}
+          className={`text-xs font-bold truncate ${disabled ? "text-gray-400" : selectedOption ? "text-gray-800" : "text-gray-400"}`}
         >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
           size={14}
-          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? "transform rotate-180 text-[#2D7344]" : ""
-            }`}
+          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
+            isOpen ? "transform rotate-180 text-[#2D7344]" : ""
+          }`}
         />
       </div>
+
 
       {/* Dropdown Panel */}
       {isOpen && (
@@ -173,10 +181,20 @@ export default function PerformaDesa() {
 
   // ── FETCH FORMULA LIST ──
   const { data: formulaRes } = useQuery({
-    queryKey: ["formula-list"],
-    queryFn: indikatorService.getAllFormula,
+    queryKey: ["formula-list", selectedTahunId],
+    queryFn: () => indikatorService.getAllFormula({ tahunIndikatorPerhitunganId: selectedTahunId }),
+    enabled: !!selectedTahunId,
   });
   const formulaList = formulaRes?.data || formulaRes || [];
+
+  // ── FETCH UPLOAD FORMULA LIST ──
+  const { data: uploadFormulaRes } = useQuery({
+    queryKey: ["upload-formula-list", uploadTahunId],
+    queryFn: () => indikatorService.getAllFormula({ tahunIndikatorPerhitunganId: uploadTahunId }),
+    enabled: !!uploadTahunId,
+  });
+  const uploadFormulaList = uploadFormulaRes?.data || uploadFormulaRes || [];
+
 
   // ── FETCH TAHUN LIST ──
   const { data: tahunRes } = useQuery({
@@ -309,7 +327,20 @@ export default function PerformaDesa() {
         {/* FILTER BAR (Menggunakan grid & z-index agar dropdown melayang dengan indah) */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-30 font-sans">
 
-          {/* Formula Filter */}
+          {/* Tahun Filter (Paling Kiri) */}
+          <SearchableDropdown
+            label="Tahun"
+            value={selectedTahunId}
+            onChange={(val) => {
+              setSelectedTahunId(val);
+              setSelectedFormulaId("");
+            }}
+            options={tahunOptions}
+            placeholder="Pilih Tahun"
+            required={true}
+          />
+
+          {/* Formula Filter (Paling Kanan & Terdisabled bila belum pilih Tahun) */}
           <SearchableDropdown
             label="Formula"
             value={selectedFormulaId}
@@ -318,23 +349,13 @@ export default function PerformaDesa() {
               setPage(1);
             }}
             options={formulaOptions}
-            placeholder="Pilih Formula"
-            required={true}
-          />
-
-          {/* Tahun Filter */}
-          <SearchableDropdown
-            label="Tahun"
-            value={selectedTahunId}
-            onChange={(val) => {
-              setSelectedTahunId(val);
-            }}
-            options={tahunOptions}
-            placeholder="Pilih Tahun"
+            placeholder={selectedTahunId ? "Pilih Formula" : "Pilih Tahun Terlebih Dahulu"}
+            disabled={!selectedTahunId}
             required={true}
           />
 
         </div>
+
 
         {/* TABEL AREA */}
         <div className="flex-1 bg-white rounded-xl flex flex-col border border-gray-100 shadow-sm overflow-hidden">
@@ -417,28 +438,15 @@ export default function PerformaDesa() {
               </div>
 
               <form onSubmit={handleUploadSubmit} className="space-y-4">
-                {/* Formula */}
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Formula</label>
-                  <select
-                    value={uploadFormulaId}
-                    onChange={(e) => setUploadFormulaId(e.target.value)}
-                    className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 focus:outline-none focus:border-[#2D7344]"
-                    required
-                  >
-                    <option value="">-- Pilih Formula --</option>
-                    {formulaList.map((f) => (
-                      <option key={f.id} value={f.id}>{f.nama || f.name}</option>
-                    ))}
-                  </select>
-                </div>
-
                 {/* Tahun */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 mb-1.5">Tahun</label>
                   <select
                     value={uploadTahunId}
-                    onChange={(e) => setUploadTahunId(e.target.value)}
+                    onChange={(e) => {
+                      setUploadTahunId(e.target.value);
+                      setUploadFormulaId("");
+                    }}
                     className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 focus:outline-none focus:border-[#2D7344]"
                     required
                   >
@@ -448,6 +456,25 @@ export default function PerformaDesa() {
                     ))}
                   </select>
                 </div>
+
+                {/* Formula */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Formula</label>
+                  <select
+                    value={uploadFormulaId}
+                    onChange={(e) => setUploadFormulaId(e.target.value)}
+                    disabled={!uploadTahunId}
+                    className="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-700 focus:outline-none focus:border-[#2D7344] disabled:bg-gray-100 disabled:opacity-60 disabled:cursor-not-allowed"
+                    required
+                  >
+                    <option value="">{uploadTahunId ? "-- Pilih Formula --" : "-- Pilih Tahun Terlebih Dahulu --"}</option>
+                    {uploadFormulaList.map((f) => (
+                      <option key={f.id} value={f.id}>{f.nama || f.name}</option>
+                    ))}
+
+                  </select>
+                </div>
+
 
                 {/* File Upload */}
                 <div>

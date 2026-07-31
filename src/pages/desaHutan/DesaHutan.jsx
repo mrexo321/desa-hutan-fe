@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, RotateCcw, Search, X } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
-import SyncButton from "../../components/SyncButton";
 import DataTable from "../../components/DataTable";
+
 import Pagination from "../../components/Pagination";
 import { performaDesaService } from "../../services/master/performaDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
@@ -28,6 +28,7 @@ const SearchableDropdown = ({
   placeholder = "Pilih opsi",
   required = false,
   emptyMessage = "Tidak ada hasil ditemukan",
+  disabled = false,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -87,15 +88,19 @@ const SearchableDropdown = ({
 
       {/* Trigger Button */}
       <div
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full bg-white rounded-xl border flex items-center justify-between px-4 py-2 hover:shadow-md hover:border-gray-300 active:scale-[0.99] transition-all cursor-pointer h-[42px] select-none ${
-          isOpen
-            ? "border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm"
-            : "border-gray-250 shadow-sm"
+        onClick={() => {
+          if (!disabled) setIsOpen((prev) => !prev);
+        }}
+        className={`w-full rounded-xl border flex items-center justify-between px-4 py-2 transition-all h-[42px] select-none ${
+          disabled
+            ? "bg-slate-100/80 text-gray-400 border-gray-200 cursor-not-allowed opacity-70"
+            : isOpen
+            ? "bg-white border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm cursor-pointer"
+            : "bg-white hover:shadow-md hover:border-gray-300 border-gray-250 shadow-sm cursor-pointer"
         }`}
       >
         <span
-          className={`text-xs font-bold truncate ${selectedOption ? "text-gray-800" : "text-gray-400"}`}
+          className={`text-xs font-bold truncate ${disabled ? "text-gray-400" : selectedOption ? "text-gray-800" : "text-gray-400"}`}
         >
           {selectedOption ? selectedOption.label : placeholder}
         </span>
@@ -106,6 +111,7 @@ const SearchableDropdown = ({
           }`}
         />
       </div>
+
 
       {/* Dropdown Panel */}
       {isOpen && (
@@ -172,7 +178,7 @@ const SearchableDropdown = ({
 
 export default function DesaHutan() {
   const [selectedFormulaId, setSelectedFormulaId] = useState("");
-  const [selectedTahun, setSelectedTahun] = useState("");
+  const [selectedTahunId, setSelectedTahunId] = useState("");
   const [selectedProvinsi, setSelectedProvinsi] = useState("");
   const [selectedKabupaten, setSelectedKabupaten] = useState("");
   const [selectedKecamatan, setSelectedKecamatan] = useState("");
@@ -181,6 +187,30 @@ export default function DesaHutan() {
 
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
+
+  // ── FETCH TAHUN LIST (Wajib) ──
+  const { data: tahunRes } = useQuery({
+    queryKey: ["tahun-list"],
+    queryFn: indikatorService.getAllYearIndicator,
+  });
+  const tahunList = useMemo(() => getArrayData(tahunRes), [tahunRes]);
+
+  const selectedTahunObj = useMemo(() => {
+    return tahunList.find((t) => String(t.id) === String(selectedTahunId));
+  }, [tahunList, selectedTahunId]);
+
+  const selectedTahun = selectedTahunObj ? String(selectedTahunObj.tahun) : "";
+
+  // Reset downstream filters when selectedTahunId changes
+  useEffect(() => {
+    setSelectedFormulaId("");
+    setSelectedProvinsi("");
+    setSelectedKabupaten("");
+    setSelectedKecamatan("");
+    setSelectedIndexDesaHutanId("");
+    setSelectedFungsiKawasanIds([]);
+    setPage(1);
+  }, [selectedTahunId]);
 
   // Reset downstream filters
   useEffect(() => {
@@ -192,19 +222,14 @@ export default function DesaHutan() {
     setSelectedKecamatan("");
   }, [selectedKabupaten]);
 
-  // ── FETCH FORMULA LIST (Wajib) ──
+  // ── FETCH FORMULA LIST (Terikat Tahun) ──
   const { data: formulaRes } = useQuery({
-    queryKey: ["formula-list"],
-    queryFn: () => indikatorService.getAllFormula(),
+    queryKey: ["formula-list", selectedTahunId],
+    queryFn: () => indikatorService.getAllFormula({ tahunIndikatorPerhitunganId: selectedTahunId }),
+    enabled: !!selectedTahunId,
   });
   const formulaList = useMemo(() => getArrayData(formulaRes), [formulaRes]);
 
-  // ── FETCH TAHUN LIST (Wajib) ──
-  const { data: tahunRes } = useQuery({
-    queryKey: ["tahun-list"],
-    queryFn: indikatorService.getAllYearIndicator,
-  });
-  const tahunList = useMemo(() => getArrayData(tahunRes), [tahunRes]);
 
   // ── FETCH PROVINSI LIST (Opsional) ──
   const { data: provinsiList = [] } = useQuery({
@@ -361,10 +386,11 @@ export default function DesaHutan() {
 
   const tahunOptions = useMemo(() => {
     return tahunList.map((t) => ({
-      value: t.tahun,
+      value: t.id,
       label: String(t.tahun),
     }));
   }, [tahunList]);
+
 
   const provinsiOptions = useMemo(() => {
     return provinsiList.map((prov) => {
@@ -445,7 +471,7 @@ export default function DesaHutan() {
         render: (row) => <span>{row.indeksDesaHutan || "-"}</span>,
       },
       {
-        header: "Luas Desa (Ha)",
+        header: "Skor",
         render: (row) => (
           <span>{row.luasDesaHa ? Number(row.luasDesaHa).toLocaleString("id-ID") : "-"}</span>
         ),
@@ -469,19 +495,29 @@ export default function DesaHutan() {
 
         {/* JUDUL HALAMAN & GARIS */}
         <div className="flex flex-col items-center mb-6">
-          <div className="w-full flex items-center justify-between mb-3">
-            <div /> {/* spacer kiri */}
-            <h2 className="text-xl font-bold text-[#2D7344] tracking-widest uppercase">
-              Desa Hutan
-            </h2>
-            <SyncButton apiBase="/analisis-spasial" />
-          </div>
+          <h2 className="text-xl font-bold text-[#2D7344] tracking-widest uppercase mb-3">
+            Desa Hutan
+          </h2>
           <div className="w-full h-[2px] bg-[#2D7344]"></div>
         </div>
 
-        {/* PRIMARY FILTER BAR (Formula, Tahun, Indeks Desa Hutan) */}
+
+        {/* PRIMARY FILTER BAR (Tahun, Formula, Klasifikasi Desa Hutan) */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4 bg-slate-50/50 p-4 rounded-2xl border border-slate-100 relative z-30">
-          {/* Formula Filter (Wajib, Searchable) */}
+          {/* Tahun Filter (Wajib, Searchable - Pertama) */}
+          <SearchableDropdown
+            label="Tahun"
+            value={selectedTahunId}
+            onChange={(val) => {
+              setSelectedTahunId(val);
+              setPage(1);
+            }}
+            options={tahunOptions}
+            placeholder="Pilih Tahun"
+            required={true}
+          />
+
+          {/* Formula Filter (Wajib, Searchable - Terdisabled jika belum pilih Tahun) */}
           <SearchableDropdown
             label="Formula"
             value={selectedFormulaId}
@@ -490,33 +526,22 @@ export default function DesaHutan() {
               setPage(1);
             }}
             options={formulaOptions}
-            placeholder="Pilih Formula"
-            required={true}
-          />
-
-          {/* Tahun Filter (Wajib, Searchable) */}
-          <SearchableDropdown
-            label="Tahun"
-            value={selectedTahun}
-            onChange={(val) => {
-              setSelectedTahun(val);
-              setPage(1);
-            }}
-            options={tahunOptions}
-            placeholder="Pilih Tahun"
+            placeholder={selectedTahunId ? "Pilih Formula" : "Pilih Tahun Terlebih Dahulu"}
+            disabled={!selectedTahunId}
             required={true}
           />
 
           {/* Indeks Desa Hutan Filter (Opsional, Searchable) */}
           <SearchableDropdown
-            label="Indeks Desa Hutan"
+            label="Klasifikasi Desa Hutan"
             value={selectedIndexDesaHutanId}
             onChange={(val) => {
               setSelectedIndexDesaHutanId(val);
               setPage(1);
             }}
             options={indexDesaOptions}
-            placeholder="Semua Indeks"
+            placeholder={selectedTahunId ? "Semua Klasifikasi" : "Pilih Tahun Terlebih Dahulu"}
+            disabled={!selectedTahunId}
           />
         </div>
 
@@ -531,7 +556,8 @@ export default function DesaHutan() {
               setPage(1);
             }}
             options={provinsiOptions}
-            placeholder="Semua Provinsi"
+            placeholder={selectedTahunId ? "Semua Provinsi" : "Pilih Tahun Terlebih Dahulu"}
+            disabled={!selectedTahunId}
           />
 
           {/* Kabupaten Filter (Opsional, Searchable) */}
@@ -543,7 +569,14 @@ export default function DesaHutan() {
               setPage(1);
             }}
             options={kabupatenOptions}
-            placeholder="Semua Kabupaten"
+            placeholder={
+              !selectedTahunId
+                ? "Pilih Tahun Terlebih Dahulu"
+                : !selectedProvinsi
+                ? "Pilih Provinsi Terlebih Dahulu"
+                : "Semua Kabupaten"
+            }
+            disabled={!selectedTahunId || !selectedProvinsi}
             emptyMessage={
               !selectedProvinsi ? "Pilih Provinsi Terlebih Dahulu" : "Tidak ada kabupaten ditemukan"
             }
@@ -558,7 +591,14 @@ export default function DesaHutan() {
               setPage(1);
             }}
             options={kecamatanOptions}
-            placeholder="Semua Kecamatan"
+            placeholder={
+              !selectedTahunId
+                ? "Pilih Tahun Terlebih Dahulu"
+                : !selectedKabupaten
+                ? "Pilih Kabupaten Terlebih Dahulu"
+                : "Semua Kecamatan"
+            }
+            disabled={!selectedTahunId || !selectedKabupaten}
             emptyMessage={
               !selectedKabupaten ? "Pilih Kabupaten Terlebih Dahulu" : "Tidak ada kecamatan ditemukan"
             }
@@ -566,7 +606,8 @@ export default function DesaHutan() {
         </div>
 
         {/* FUNGSI KAWASAN INLINE CHECKBOXES */}
-        <div className="mb-6 bg-slate-50/50 border border-slate-100 rounded-2xl p-5 shadow-sm animate-in fade-in duration-300">
+        <div className={`mb-6 bg-slate-50/50 border border-slate-100 rounded-2xl p-5 shadow-sm animate-in fade-in duration-300 ${!selectedTahunId ? "opacity-60 pointer-events-none select-none" : ""}`}>
+
           <span className="text-[10px] text-[#2D7344] font-extrabold uppercase tracking-wider block mb-4">
             Fungsi Kawasan (Opsional)
           </span>
@@ -747,10 +788,13 @@ export default function DesaHutan() {
             isLoading={isLoading}
             isError={isError}
             emptyMessage={
-              !selectedFormulaId || !selectedTahun
-                ? "Silakan pilih Formula dan Tahun terlebih dahulu untuk menampilkan data"
+              !selectedTahunId
+                ? "Silakan pilih Tahun terlebih dahulu untuk memilih Formula dan menampilkan data"
+                : !selectedFormulaId
+                ? "Silakan pilih Formula terlebih dahulu untuk menampilkan data"
                 : "Data Desa Hutan tidak ditemukan"
             }
+
           />
 
           {!isLoading && !isError && tableData.length > 0 && (

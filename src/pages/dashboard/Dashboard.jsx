@@ -172,6 +172,10 @@ const Dashboard = () => {
     tipe_administrasi: null,
   });
 
+  const activeTipeAdmin = filters.tipe_administrasi || appliedApiFilters.tipe_administrasi;
+  const labelTipeAdmin = activeTipeAdmin === "Kelurahan" ? "Kelurahan" : "Desa";
+
+
   // =========================================
   // STATE MATRIKS VISUALISASI & DRILL-DOWN MODAL
   // =========================================
@@ -1375,13 +1379,13 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
               {[
                 {
-                  title: "Total Desa",
+                  title: `Total ${labelTipeAdmin}`,
                   value: ringkasanData?.total_desa || 0,
                   icon: <Home size={22} strokeWidth={2.5} />,
                   color: "blue",
                 },
                 {
-                  title: "Total Desa Memiliki Kawasan Hutan",
+                  title: `Total ${labelTipeAdmin} Terdapat Kawasan Hutan`,
                   value: ringkasanData?.total_desa_hutan ?? ((ringkasanData?.total_desa_dalam || 0) + (ringkasanData?.total_desa_beririsan_sebagian || 0)),
                   pct: ringkasanData?.total_desa ? (((ringkasanData?.total_desa_hutan ?? ((ringkasanData?.total_desa_dalam || 0) + (ringkasanData?.total_desa_beririsan_sebagian || 0))) / ringkasanData.total_desa) * 100).toFixed(1) : 0,
                   icon: <TreePine size={22} strokeWidth={2.5} />,
@@ -1390,13 +1394,14 @@ const Dashboard = () => {
                   isClickable: true,
                 },
                 {
-                  title: "Di Luar Kawasan Hutan",
+                  title: `${labelTipeAdmin} Tidak Terdapat Kawasan Hutan`,
                   value: ringkasanData?.total_desa_luar_kawasan || 0,
                   pct: ringkasanData?.total_desa ? ((ringkasanData.total_desa_luar_kawasan / ringkasanData.total_desa) * 100).toFixed(1) : 0,
                   icon: <Leaf size={22} strokeWidth={2.5} />,
                   color: "emerald",
                 },
               ].map((card, i) => (
+
                 <div
                   key={i}
                   onClick={card.onClick}
@@ -1448,7 +1453,7 @@ const Dashboard = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
               {[
                 {
-                  title: "Total Luas Desa",
+                  title: `Total Luas ${labelTipeAdmin}`,
                   value: ringkasanData?.total_luas_desa_ha || 0,
                   icon: <MapPin size={22} strokeWidth={2.5} />,
                   color: "blue",
@@ -1459,12 +1464,6 @@ const Dashboard = () => {
                   icon: <Trees size={22} strokeWidth={2.5} />,
                   color: "emerald",
                 },
-                // {
-                //   title: "Total Luas Irisan Desa-Hutan",
-                //   value: ringkasanData?.total_luas_irisan_ha || 0,
-                //   icon: <Layers size={22} strokeWidth={2.5} />,
-                //   color: "purple",
-                // },
               ].map((card, i) => (
                 <div
                   key={i}
@@ -1501,7 +1500,7 @@ const Dashboard = () => {
             <div className="bg-white rounded-[24px] shadow-sm border border-gray-100 overflow-hidden mb-8">
               <div className="p-6 border-b border-gray-100 flex items-center justify-between">
                 <h3 className="text-lg font-extrabold text-gray-800">
-                  Desa per Fungsi Kawasan Hutan
+                  {labelTipeAdmin} per Fungsi Kawasan Hutan
                 </h3>
                 <button
                   onClick={() => setIsDesaPerFungsiOpen(!isDesaPerFungsiOpen)}
@@ -1528,9 +1527,10 @@ const Dashboard = () => {
                           <div className="font-extrabold text-gray-800 mb-4 text-base">{row.fungsi_kawasan_hutan}</div>
                           <div className="flex justify-between items-end mb-3">
                             <div>
-                              <div className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-1">Total Desa</div>
+                              <div className="text-[10px] uppercase tracking-widest font-bold text-gray-400 mb-1">Total {labelTipeAdmin}</div>
                               <div className="text-2xl font-extrabold text-emerald-600">{row.total_desa.toLocaleString('id-ID')}</div>
                             </div>
+
                             <div className="text-right">
                               <div className="text-[10px] text-gray-400 font-medium mb-1">Dlm: <span className="font-bold text-gray-700">{row.total_desa_dalam.toLocaleString('id-ID')}</span> | Iris: <span className="font-bold text-gray-700">{row.total_desa_beririsan.toLocaleString('id-ID')}</span></div>
                               <div className="text-[11px] font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md inline-block mt-0.5">{pct}% dr total</div>

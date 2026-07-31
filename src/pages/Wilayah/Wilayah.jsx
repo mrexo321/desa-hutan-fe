@@ -11,7 +11,9 @@ import Pagination from "../../components/Pagination";
 import DataTable from "../../components/DataTable"; // <-- Import DataTable
 import ModalUploadChunked from "../../components/ModalUploadChunk";
 import ModalSyncGeom from "../../components/ModalSyncGeom";
+import SyncButton from "../../components/SyncButton";
 import { usePermission } from "../../hooks/usePermission";
+
 
 // =================================================================
 // 1. KOMPONEN TAB WILAYAH HUTAN
@@ -603,10 +605,49 @@ const TabWilayahDesa = () => {
 };
 
 // =================================================================
-// 3. KOMPONEN UTAMA (PARENT)
+// 3. KOMPONEN TAB ANALISIS SPASIAL
+// =================================================================
+const TabAnalisisSpasial = () => {
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-10 animate-in fade-in duration-300">
+      <div className="max-w-3xl">
+        <div className="flex items-center gap-4 mb-6">
+          <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-[#2D7344] shrink-0">
+            <RefreshCw size={24} />
+          </div>
+          <div>
+            <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
+              Analisis Spasial
+            </h2>
+          </div>
+        </div>
+
+        <div className="bg-slate-50/70 border border-slate-100 rounded-xl p-5 mb-6">
+          <h3 className="text-sm font-bold text-slate-800 mb-1.5 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Proses Sinkronisasi Spasial
+          </h3>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <SyncButton apiBase="/analisis-spasial" />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// =================================================================
+// 4. KOMPONEN UTAMA (PARENT)
 // =================================================================
 const Wilayah = () => {
   const [activeTab, setActiveTab] = useState("hutan");
+
+  const tabs = [
+    { key: "hutan", label: "Wilayah Hutan" },
+    { key: "desa", label: "Wilayah Desa" },
+    { key: "spasial", label: "Analisis Spasial" },
+  ];
 
   return (
     <DashboardLayout activeMenu="Wilayah">
@@ -617,22 +658,22 @@ const Wilayah = () => {
               Manajemen Wilayah
             </h1>
             <p className="text-sm text-slate-500 mt-2 font-medium">
-              Kelola data spasial wilayah hutan dan desa.
+              Kelola data spasial wilayah hutan, desa, dan analisis spasial.
             </p>
           </div>
 
           {/* TABS CONTROLLER */}
           <div className="flex p-1.5 bg-slate-200/60 backdrop-blur-sm rounded-xl w-max mb-8 border border-slate-200">
-            {["hutan", "desa"].map((tab) => (
+            {tabs.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${activeTab === tab
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${activeTab === tab.key
                   ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
                   : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
                   }`}
               >
-                Wilayah {tab.toUpperCase()}
+                {tab.label}
               </button>
             ))}
           </div>
@@ -640,6 +681,7 @@ const Wilayah = () => {
           {/* RENDER TAB SECARA KONDISIONAL */}
           {activeTab === "hutan" && <TabWilayahHutan />}
           {activeTab === "desa" && <TabWilayahDesa />}
+          {activeTab === "spasial" && <TabAnalisisSpasial />}
 
         </div>
       </main>

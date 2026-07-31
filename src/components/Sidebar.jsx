@@ -108,18 +108,6 @@ export default function Sidebar({ activeMenu }) {
       permissions: ["wilayah_hutan:read", "wilayah_desa:read"],
     },
     {
-      name: "Manajemen User",
-      path: "/dashboard/manajemen-user",
-      icon: <Users {...iconProps} />,
-      permission: "user:read",
-    },
-    {
-      name: "Manajemen Role",
-      path: "/dashboard/manajemen-role",
-      icon: <ShieldCheck {...iconProps} />,
-      permission: "role:read",
-    },
-    {
       name: "Wilayah Administrasi",
       path: "/dashboard/master-wilayah",
       icon: <MapPinned {...iconProps} />,
@@ -138,6 +126,18 @@ export default function Sidebar({ activeMenu }) {
       permission: "intervensi_desa:read",
     },
     {
+      name: "Manajemen User",
+      path: "/dashboard/manajemen-user",
+      icon: <Users {...iconProps} />,
+      permission: "user:read",
+    },
+    {
+      name: "Manajemen Role",
+      path: "/dashboard/manajemen-role",
+      icon: <ShieldCheck {...iconProps} />,
+      permission: "role:read",
+    },
+    {
       name: "Site Settings",
       path: "/dashboard/site-settings",
       icon: <Settings2 {...iconProps} />,
@@ -150,6 +150,8 @@ export default function Sidebar({ activeMenu }) {
       isNew: true,
     },
   ];
+
+
 
   // ── FILTER MENU BERDASARKAN PERMISSION ──
   const filterMenuByPermission = (menus) => {

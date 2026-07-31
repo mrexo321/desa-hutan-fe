@@ -29,17 +29,20 @@ import {
   ArrowUpDown,
   Table,
   BarChart3,
-  PieChart as PieChartIcon
+  PieChart as PieChartIcon,
+  Globe,
+  Cpu
 } from "lucide-react";
+
 
 export default function Infografis() {
   // ── States for Dynamic Filters ──
   const [selectedProvinsiId, setSelectedProvinsiId] = useState("");
   const [selectedProvinsiName, setSelectedProvinsiName] = useState("");
-  
+
   const [selectedKabupatenId, setSelectedKabupatenId] = useState("");
   const [selectedKabupatenName, setSelectedKabupatenName] = useState("");
-  
+
   const [selectedKecamatanId, setSelectedKecamatanId] = useState("");
   const [selectedKecamatanName, setSelectedKecamatanName] = useState("");
 
@@ -52,7 +55,7 @@ export default function Infografis() {
   const [showAllFunctions, setShowAllFunctions] = useState(false);
 
   // ── Dynamic Dropdowns Data Fetching (Public APIs) ──
-  
+
   // 1. Fetch Provinces
   const { data: provincesRes, isLoading: isLoadingProvinces } = useQuery({
     queryKey: ["provinces-public-infografis"],
@@ -304,7 +307,7 @@ export default function Infografis() {
 
         {/* Main Content Area */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 -mt-10">
-          
+
           {/* Section: Filters Panel */}
           <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.03)] p-6 mb-8">
             <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-50">
@@ -487,7 +490,7 @@ export default function Infografis() {
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-[#059669]"></div>
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Di Dalam Hutan</p>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Desa Di Dalam Hutan</p>
                       <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesaDalam)}</h3>
                     </div>
                     <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#059669] flex items-center justify-center">
@@ -504,7 +507,7 @@ export default function Infografis() {
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-[#d97706]"></div>
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Beririsan Sebagian</p>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Desa Beririsan Sebagian</p>
                       <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesaBeririsanSebagian)}</h3>
                     </div>
                     <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#d97706] flex items-center justify-center">
@@ -521,7 +524,7 @@ export default function Infografis() {
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-[#4b5563]"></div>
                   <div className="flex justify-between items-start">
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Di Luar Kawasan</p>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Desa Di Luar Kawasan</p>
                       <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesaLuar)}</h3>
                     </div>
                     <div className="w-9 h-9 rounded-xl bg-gray-50 text-[#4b5563] flex items-center justify-center">
@@ -542,7 +545,7 @@ export default function Infografis() {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 tracking-tight">Ringkasan Luas Wilayah</h2>
-                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Statistik Luas Area (Hektar) & Persentase Overlap</p>
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Statistik Luas Desa Hutan</p>
                   </div>
                 </div>
 
@@ -558,15 +561,15 @@ export default function Infografis() {
                   <div className="bg-[#FAFBFC] rounded-2xl p-5 border border-gray-100">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider block mb-1">Total Luas Kawasan Hutan</span>
                     <span className="text-2xl font-extrabold text-gray-900 block">{formatHa(totalLuasHutan)}</span>
-                    <span className="text-xs text-gray-400 mt-2 block font-medium">Luas total spasial kawasan hutan yang terlibat</span>
+                    <span className="text-xs text-gray-400 mt-2 block font-medium">Luas total spasial kawasan hutan</span>
                   </div>
 
                   {/* Luas Irisan */}
                   <div className="bg-[#FAFBFC] rounded-2xl p-5 border border-gray-100 relative overflow-hidden">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full -mr-8 -mt-8 pointer-events-none"></div>
-                    <span className="text-xs font-bold text-[#0B8457] uppercase tracking-wider block mb-1">Luas Irisan (Overlap)</span>
+                    <span className="text-xs font-bold text-[#0B8457] uppercase tracking-wider block mb-1">Luas Irisan </span>
                     <span className="text-2xl font-extrabold text-[#0B8457] block">{formatHa(totalLuasIrisan)}</span>
-                    <span className="text-xs text-gray-400 mt-2 block font-medium">Desa beririsan dengan kawasan hutan</span>
+                    <span className="text-xs text-gray-400 mt-2 block font-medium">Luas Wilayah Desa Yang Terdapat Kawasan Hutan</span>
                   </div>
                 </div>
 
@@ -574,9 +577,9 @@ export default function Infografis() {
                 {totalLuasDesa > 0 && (
                   <div className="bg-green-50/30 rounded-2xl p-5 border border-green-100/30">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <span className="text-sm font-bold text-gray-700">Rasio Luas Irisan terhadap Luas Administrasi Desa</span>
+                      <span className="text-sm font-bold text-gray-700">Rasio Luas Kawasan Hutan Terhadap Administrasi Desa</span>
                       <span className="text-sm font-black text-[#0B8457]">
-                        {((totalLuasIrisan / totalLuasDesa) * 100).toFixed(2)}% Overlap
+                        {((totalLuasIrisan / totalLuasDesa) * 100).toFixed(2)}%
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden shadow-inner">
@@ -586,271 +589,101 @@ export default function Infografis() {
                       ></div>
                     </div>
                     <p className="text-xs text-gray-400 mt-3 leading-relaxed font-semibold">
-                      Analisis spasial menunjukkan bahwa sekitar <span className="text-[#0B8457] font-extrabold">{((totalLuasIrisan / totalLuasDesa) * 100).toFixed(2)}%</span> dari seluruh wilayah administrasi desa yang tercakup dalam filter ini tumpang tindih dengan batas kawasan hutan resmi.
+                      Analisis spasial menunjukkan bahwa sekitar <span className="text-[#0B8457] font-extrabold">{((totalLuasIrisan / totalLuasDesa) * 100).toFixed(2)}%</span> dari seluruh wilayah administrasi desa merupakan kawasan hutan.
                     </p>
                   </div>
                 )}
               </div>
 
-              {/* Section: Charts Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-8">
-                
-                {/* 1. Bar Chart: Breakdown by Forest Function */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.03)] p-6 lg:col-span-8 flex flex-col justify-between">
-                  <div>
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 pb-4 border-b border-gray-50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center text-[#0B8457] shrink-0 shadow-inner">
-                          <BarChart3 size={20} />
-                        </div>
-                        <div>
-                          <h2 className="text-lg font-bold text-gray-900 tracking-tight">Kepadatan Desa per Fungsi Hutan</h2>
-                          <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Perbandingan desa dalam dan beririsan per fungsi</p>
-                        </div>
-                      </div>
-                      
-                      {processedFungsiKawasan.length > 8 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowAllFunctions(!showAllFunctions)}
-                          className="text-xs font-bold text-[#0B8457] bg-green-50 hover:bg-green-100 px-3.5 py-2 rounded-xl border border-green-100 transition-all cursor-pointer self-start sm:self-center"
-                        >
-                          {showAllFunctions ? "Tampilkan Ringkas (Top 7)" : "Tampilkan Semua Fungsi"}
-                        </button>
-                      )}
-                    </div>
 
-                    {chartData.length === 0 ? (
-                      <div className="h-72 flex flex-col items-center justify-center text-gray-400 text-sm">
-                        Tidak ada data fungsi kawasan hutan.
-                      </div>
-                    ) : (
-                      <div className="w-full h-80 text-xs">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart
-                            data={chartData}
-                            margin={{ top: 10, right: 10, left: -10, bottom: 20 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F3F5" />
-                            <XAxis
-                              dataKey="name"
-                              axisLine={false}
-                              tickLine={false}
-                              tick={{ fill: "#6B7280", fontWeight: 500 }}
-                              interval={0}
-                              tickFormatter={(value) =>
-                                value.length > 15 ? value.substring(0, 12) + "..." : value
-                              }
-                            />
-                            <YAxis axisLine={false} tickLine={false} tick={{ fill: "#6B7280" }} />
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "#ffffff",
-                                borderRadius: "16px",
-                                border: "1px solid #E5E7EB",
-                                boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.05)",
-                              }}
-                              itemStyle={{ fontWeight: "bold" }}
-                              formatter={(value, name) => [
-                                formatNumber(value),
-                                name === "dalam" ? "Desa Dalam Hutan" : "Desa Beririsan Sebagian",
-                              ]}
-                            />
-                            <Legend
-                              verticalAlign="top"
-                              height={36}
-                              iconType="circle"
-                              formatter={(value) =>
-                                value === "dalam" ? "Dalam Kawasan Hutan" : "Beririsan Kawasan Hutan"
-                              }
-                            />
-                            <Bar dataKey="dalam" name="dalam" fill="#0B6E48" stackId="a" radius={[0, 0, 0, 0]} />
-                            <Bar dataKey="beririsan" name="beririsan" fill="#80CFA9" stackId="a" radius={[6, 6, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                    )}
-                  </div>
-                  <p className="text-[10px] text-gray-400 font-semibold italic mt-4 text-center">
-                    * Arahkan kursor ke grafik batang untuk detail nominal per fungsi kawasan hutan.
-                  </p>
-                </div>
-
-                {/* 2. Pie Chart: Interaction distribution proportion */}
-                <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.03)] p-6 lg:col-span-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-50">
-                      <div className="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center text-[#0B8457] shrink-0 shadow-inner">
-                        <PieChartIcon size={20} />
-                      </div>
-                      <div>
-                        <h2 className="text-lg font-bold text-gray-900 tracking-tight">Rasio Interaksi Desa</h2>
-                        <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Proporsi status kawasan</p>
-                      </div>
-                    </div>
-
-                    {pieData.length === 0 ? (
-                      <div className="h-72 flex flex-col items-center justify-center text-gray-400 text-sm">
-                        Tidak ada data proporsi interaksi.
-                      </div>
-                    ) : (
-                      <div className="relative w-full h-60 flex items-center justify-center">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <PieChart>
-                            <Pie
-                              data={pieData}
-                              cx="50%"
-                              cy="50%"
-                              innerRadius={65}
-                              outerRadius={85}
-                              paddingAngle={4}
-                              dataKey="value"
-                            >
-                              {pieData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.color} />
-                              ))}
-                            </Pie>
-                            <Tooltip
-                              contentStyle={{
-                                backgroundColor: "#ffffff",
-                                borderRadius: "12px",
-                                border: "1px solid #E5E7EB",
-                              }}
-                              formatter={(value) => [formatNumber(value) + " Desa", "Jumlah"]}
-                            />
-                          </PieChart>
-                        </ResponsiveContainer>
-                        {/* Donut Center Label */}
-                        <div className="absolute flex flex-col items-center justify-center">
-                          <span className="text-[10px] uppercase tracking-widest text-gray-400 font-bold">Total Desa</span>
-                          <span className="text-2xl font-black text-gray-950">{formatNumber(totalDesa)}</span>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Donut Legend */}
-                    <div className="space-y-2 mt-4 text-xs font-semibold">
-                      {pieData.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
-                          <div className="flex items-center gap-2">
-                            <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: item.color }}></span>
-                            <span className="text-gray-500">{item.name}</span>
-                          </div>
-                          <div className="text-right">
-                            <span className="text-gray-900 font-bold block">{formatNumber(item.value)} Desa</span>
-                            <span className="text-[10px] text-gray-400 font-semibold block">{getPercentage(item.value, totalDesa)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
 
               {/* Section: Detailed Table */}
-              <div className="bg-white rounded-3xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.03)] overflow-hidden">
-                <div className="p-6 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-green-50 flex items-center justify-center text-[#0B8457] shrink-0 shadow-inner">
-                      <Table size={20} />
-                    </div>
+
+
+              {/* Section: Sumber Data & Metode Pengolahan Spasial */}
+              <div className="mt-8 bg-white rounded-3xl border border-gray-100 shadow-[0_10px_40px_rgba(0,0,0,0.03)] p-6 sm:p-8">
+                <div className="flex items-center gap-3 mb-6 pb-4 border-b border-gray-100">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 flex items-center justify-center text-[#0B8457] shrink-0 shadow-inner">
+                    <Database size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Sumber Data &amp; Metode Pengolahan Spasial</h2>
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Referensi sumber data peta dan teknologi komputasi GIS</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Card 1: Sumber Data */}
+                  <div className="bg-[#FAFBFC] rounded-2xl p-5 border border-gray-100 flex flex-col justify-between">
                     <div>
-                      <h2 className="text-lg font-bold text-gray-900 tracking-tight">Detail Fungsi Kawasan Hutan</h2>
-                      <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Breakdown statistik detail desa per fungsi</p>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="p-1.5 bg-emerald-100/60 text-[#0B8457] rounded-lg">
+                          <Globe size={16} />
+                        </span>
+                        <h3 className="font-extrabold text-gray-900 text-sm">Sumber Data Spasial &amp; Administrasi</h3>
+                      </div>
+                      <ul className="space-y-3 text-xs text-gray-600 font-medium">
+                        <li className="flex items-start gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800 font-bold block">Peta Kawasan Hutan Desember 2025</strong>
+                            <span>Kementerian Kehutanan RI (Persetujuan &amp; Penetapan Batas Fungsi Kawasan Hutan)</span>
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800 font-bold block">Peta Batas Wilayah Desa</strong>
+                            <span>Badan Informasi Geospasial (BIG - Peta RBI &amp; Vektor Geometri Desa)</span>
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800 font-bold block">Kode &amp; Nama Wilayah Administrasi</strong>
+                            <span>Kementerian Dalam Negeri RI (Permendagri Kode Wilayah Administrasi)</span>
+                          </div>
+                        </li>
+                      </ul>
                     </div>
                   </div>
 
-                  {/* Search inside table */}
-                  <div className="relative max-w-sm w-full">
-                    <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
-                      <Search size={16} />
+                  {/* Card 2: Metode & Teknologi */}
+                  <div className="bg-[#FAFBFC] rounded-2xl p-5 border border-gray-100 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-3">
+                        <span className="p-1.5 bg-blue-100/60 text-blue-700 rounded-lg">
+                          <Cpu size={16} />
+                        </span>
+                        <h3 className="font-extrabold text-gray-900 text-sm">Metode &amp; Teknologi Pengolahan (GIS Stack)</h3>
+                      </div>
+                      <ul className="space-y-3 text-xs text-gray-600 font-medium">
+                        <li className="flex items-start gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800 font-bold block">PostGIS (Spatial Database Engine)</strong>
+                          </div>
+                        </li>
+                        <li className="flex items-start gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800 font-bold block">GeoServer (WMS / Web Map Service)</strong>
+                          </div>
+                        </li>
+                        {/* <li className="flex items-start gap-2.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 mt-1.5 shrink-0"></span>
+                          <div>
+                            <strong className="text-gray-800 font-bold block">React Map GL / Mapbox</strong>
+                          </div>
+                        </li> */}
+                      </ul>
                     </div>
-                    <input
-                      type="text"
-                      placeholder="Cari Fungsi Kawasan..."
-                      value={tableSearch}
-                      onChange={(e) => {
-                        setTableSearch(e.target.value);
-                        setCurrentPage(1);
-                      }}
-                      className="w-full pl-9 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 placeholder-gray-400 font-semibold focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all"
-                    />
                   </div>
                 </div>
-
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-gray-50 text-gray-400 uppercase tracking-widest font-black border-b border-gray-100">
-                        <th className="py-4 px-6 text-center w-16">No</th>
-                        <th className="py-4 px-6">Fungsi Kawasan Hutan</th>
-                        <th className="py-4 px-6 text-center">Total Desa</th>
-                        <th className="py-4 px-6 text-center">Dalam Kawasan</th>
-                        <th className="py-4 px-6 text-center">Beririsan Sebagian</th>
-                        <th className="py-4 px-6 text-center">Rasio Irisan</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100 font-medium text-gray-700">
-                      {paginatedTableData.length === 0 ? (
-                        <tr>
-                          <td colSpan={6} className="py-12 text-center text-gray-400 font-semibold bg-white">
-                            Tidak ditemukan hasil pencarian.
-                          </td>
-                        </tr>
-                      ) : (
-                        paginatedTableData.map((row, idx) => {
-                          const originalIdx = (currentPage - 1) * itemsPerPage + idx + 1;
-                          return (
-                            <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
-                              <td className="py-4 px-6 text-center text-gray-400 font-bold">{originalIdx}</td>
-                              <td className="py-4 px-6 text-gray-900 font-bold">{row.name}</td>
-                              <td className="py-4 px-6 text-center font-bold text-gray-900">{formatNumber(row.total)}</td>
-                              <td className="py-4 px-6 text-center font-bold text-emerald-700">
-                                {formatNumber(row.dalam)}
-                              </td>
-                              <td className="py-4 px-6 text-center font-bold text-amber-700">
-                                {formatNumber(row.beririsan)}
-                              </td>
-                              <td className="py-4 px-6 text-center">
-                                <span className="inline-block bg-green-50 text-[#0B8457] px-2 py-0.5 rounded font-black text-[10px]">
-                                  {getPercentage(row.dalam + row.beririsan, totalDesaBeririsan)}
-                                </span>
-                              </td>
-                            </tr>
-                          );
-                        })
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Table Pagination */}
-                {totalPages > 1 && (
-                  <div className="p-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between text-xs">
-                    <span className="text-gray-400 font-semibold">
-                      Menampilkan Halaman {currentPage} dari {totalPages}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-                        disabled={currentPage === 1}
-                        className="p-2 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                      >
-                        Sebelumnya
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-                        disabled={currentPage === totalPages}
-                        className="p-2 border border-gray-200 rounded-xl bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer transition-colors"
-                      >
-                        Berikutnya
-                      </button>
-                    </div>
-                  </div>
-                )}
               </div>
             </>
           )}
+
         </main>
       </div>
     </HomeLayout>

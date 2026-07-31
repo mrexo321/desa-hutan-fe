@@ -28,7 +28,8 @@ const Indikator = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const tabParam = searchParams.get("tab");
   const { can } = usePermission();
-  const [activeTab, setActiveTab] = useState(tabParam || "utama");
+  const [activeTab, setActiveTab] = useState(tabParam || "dimensi");
+
   const [searchQuery, setSearchQuery] = useState("");
 
   React.useEffect(() => {
@@ -402,7 +403,7 @@ const Indikator = () => {
           </div>
 
           <div className="flex p-1.5 bg-slate-200/60 backdrop-blur-sm rounded-xl w-max mb-8 border border-slate-200">
-            {["utama", "kategori", "dimensi"].map((tab) => (
+            {["dimensi", "kategori", "utama"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => {
@@ -416,11 +417,11 @@ const Indikator = () => {
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
                 }`}
               >
-                {tab === "utama"
-                  ? "Indikator Utama"
+                {tab === "dimensi"
+                  ? "Indikator Desa (Tahun)"
                   : tab === "kategori"
-                  ? "Kategori Indikator"
-                  : "Dimensi Indikator Desa"}
+                  ? "Dimensi"
+                  : "Indikator Rumus Indeks"}
               </button>
             ))}
           </div>

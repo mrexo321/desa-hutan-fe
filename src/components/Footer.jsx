@@ -10,7 +10,7 @@ const Footer = () => {
 
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-6 md:px-8 py-16 grid grid-cols-1 md:grid-cols-12 gap-10 relative z-10">
-        
+
         {/* Column 1: Brand Info */}
         <div className="md:col-span-5 flex flex-col gap-4">
           <Link to="/" className="flex items-center gap-3 w-fit group">
@@ -26,7 +26,7 @@ const Footer = () => {
               </span>
             </div>
           </Link>
-          
+
           <p className="text-xs md:text-sm text-emerald-200/70 leading-relaxed font-medium max-w-sm mt-2">
             Platform pemetaan terpadu spasial dan infografis potensi pengembangan sosial ekonomi masyarakat di sekitar kawasan hutan Indonesia.
           </p>
@@ -55,10 +55,6 @@ const Footer = () => {
             <a href="mailto:p2semh@gmail.com" className="flex items-center gap-2.5 hover:text-white transition-colors">
               <Mail size={16} className="text-emerald-400 shrink-0" />
               <span>p2semh@gmail.com</span>
-            </a>
-            <a href="tel:02193833434233" className="flex items-center gap-2.5 hover:text-white transition-colors">
-              <Phone size={16} className="text-emerald-400 shrink-0" />
-              <span>(021) 93833434233</span>
             </a>
             <div className="flex items-start gap-2.5">
               <MapPin size={16} className="text-emerald-400 shrink-0 mt-0.5" />

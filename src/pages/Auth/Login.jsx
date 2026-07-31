@@ -80,7 +80,7 @@ const Login = () => {
     loginMutation.mutate({
       username,
       password,
-      altcha: altchaPayload,
+    //   altcha: altchaPayload,
     });
   };
 

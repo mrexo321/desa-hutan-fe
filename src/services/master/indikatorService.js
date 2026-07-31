@@ -71,12 +71,18 @@ export const indikatorService = {
   // FORMULA / INDIKATOR PERHITUNGAN SERVICES
   // ==========================================
 
-  // Ambil semua data formula
+  // Ambil semua data formula (opsional param: tahunIndikatorPerhitunganId)
   async getAllFormula(params = {}) {
-    // Note: Sesuaikan "/master-indikator-perhitungan" dengan route API backend Anda
-    const response = await masterInstance.get("/master-indikator-perhitungan", { params });
+    const queryParams =
+      typeof params === "object" && params !== null
+        ? params
+        : { tahunIndikatorPerhitunganId: params };
+    const response = await masterInstance.get("/master-indikator-perhitungan", {
+      params: queryParams,
+    });
     return response.data;
   },
+
 
   // Ambil detail formula berdasarkan ID
   async getDetailFormula(id) {

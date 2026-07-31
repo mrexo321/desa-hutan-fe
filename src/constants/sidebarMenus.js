@@ -13,6 +13,7 @@ import {
   Database,
   BrainCircuit,
   FileSpreadsheet,
+  ClipboardList,
 } from "lucide-react";
 
 
@@ -89,6 +90,13 @@ export const metadataMenus = [
     permission: "wilayah_hutan:read",
   },
   {
+    name: "Wilayah Administrasi",
+    path: "/dashboard/master-wilayah",
+    icon: MapPinned,
+    permission: "master_provinsi:read",
+  },
+
+  {
     name: "Manajemen User",
     path: "/dashboard/manajemen-user",
     icon: Users,
@@ -101,15 +109,15 @@ export const metadataMenus = [
     permission: "role:read",
   },
   {
-    name: "Master Wilayah",
-    path: "/dashboard/master-wilayah",
-    icon: MapPinned,
-    permission: "master_provinsi:read",
-  },
-  {
-    name: "Master Potensi",
+    name: "Potensi",
     path: "/dashboard/master-potensi",
     icon: Database,
     permission: "master_fungsi_kawasan_hutan:read",
+  },
+  {
+    name: "Master Intervensi Desa",
+    path: "/dashboard/master-intervensi-desa",
+    icon: ClipboardList,
+    permission: "intervensi_desa:read",
   },
 ];

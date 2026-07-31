@@ -238,10 +238,10 @@ export default function DataDesaPublic() {
               Portal Layanan Data
             </span>
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-4 uppercase">
-              Permintaan Data Performa Desa
+              Permintaan Data Desa Hutan
             </h1>
             <p className="text-sm sm:text-base text-emerald-100/80 max-w-2xl mx-auto leading-relaxed font-medium">
-              Unduh data indikator performa pembangunan desa hutan terlengkap berformat Microsoft Excel (xlsx) untuk analisis kebijakan daerah Anda.
+              Silahkan diisi formulir berikut untuk permintaan data desa hutan
             </p>
           </div>
         </section>
@@ -259,7 +259,7 @@ export default function DataDesaPublic() {
                 </div>
                 <div>
                   <h2 className="text-xl font-bold text-slate-800 tracking-tight">Formulir Permohonan Data</h2>
-                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">Filter data spasial &amp; administratif</p>
+                  <p className="text-xs text-slate-400 font-bold uppercase tracking-wider mt-0.5">Mohon diisi sesuai dengan kebutuhan anda</p>
                 </div>
               </div>
 
@@ -271,7 +271,7 @@ export default function DataDesaPublic() {
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                       <Calendar size={14} className="text-emerald-600" />
-                      Tahun Indikator
+                      Tahun Data
                     </label>
                     <div className="relative">
                       <select
@@ -517,7 +517,7 @@ export default function DataDesaPublic() {
                   </div>
                   <div className="flex gap-1.5 items-start text-[11px] text-slate-400 font-semibold pl-1.5 mt-1 leading-normal">
                     <Info size={12} className="text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Status verifikasi admin dan tautan unduh berkas xlsx akan dikirimkan serta tercatat pada email ini.</span>
+                    <span>Permintaan data akan dikirimkan melalui email setelah Proses Persetujuan Admin</span>
                   </div>
                 </div>
 

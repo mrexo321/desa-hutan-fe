@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   MapPinned,
   Database,
+  ClipboardList,
   ChevronLeft,
   Menu,
   X,
@@ -117,6 +118,12 @@ export default function Sidebar({ activeMenu }) {
       path: "/dashboard/master-potensi",
       icon: <Database {...iconProps} />,
       permission: "performa_desa_hutan:read",
+    },
+    {
+      name: "Master Intervensi Desa",
+      path: "/dashboard/master-intervensi-desa",
+      icon: <ClipboardList {...iconProps} />,
+      permission: "intervensi_desa:read",
     },
     {
       name: "Manajemen User",

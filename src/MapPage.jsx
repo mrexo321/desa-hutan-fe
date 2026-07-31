@@ -19,6 +19,7 @@ import {
   MapPin,
   Layers,
   Trees,
+  TreePine,
   Home,
   Crosshair,
   X,
@@ -91,11 +92,13 @@ export default function MapPage() {
   // 3. State Visibilitas Layer WMS (ON/OFF)
   const [showLayerHutan, setShowLayerHutan] = useState(false);
   const [showLayerDesa, setShowLayerDesa] = useState(false);
+  const [showLayerDesaHutan, setShowLayerDesaHutan] = useState(false);
   const [showLayerPsn, setShowLayerPsn] = useState(false);
 
   // 4. State Opacity Layer WMS (0 - 100)
   const [opacityHutan, setOpacityHutan] = useState(80);
   const [opacityDesa, setOpacityDesa] = useState(80);
+  const [opacityDesaHutan, setOpacityDesaHutan] = useState(80);
   const [opacityPsn, setOpacityPsn] = useState(80);
 
   // 5. State Filter Tahun WMS PSN
@@ -137,6 +140,12 @@ export default function MapPage() {
     [WMS_BASE],
   );
 
+  const WMS_DESA_HUTAN = useMemo(
+    () =>
+      `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_hutan&styles=&TILED=true`,
+    [WMS_DIRECT],
+  );
+
   const WMS_PSN = useMemo(
     () =>
       `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_psn&styles=desa-gis:desa_psn_style&TILED=true&CQL_FILTER=tahun=${tahunPsn}`,
@@ -154,6 +163,12 @@ export default function MapPage() {
     "raster-fade-duration": 0,
     "raster-resampling": "linear",
   }), [opacityDesa]);
+
+  const paintDesaHutan = useMemo(() => ({
+    "raster-opacity": opacityDesaHutan / 100,
+    "raster-fade-duration": 0,
+    "raster-resampling": "linear",
+  }), [opacityDesaHutan]);
 
   const mapContainerStyle = useMemo(() => ({ width: "100%", height: "100%" }), []);
 
@@ -315,6 +330,23 @@ export default function MapPage() {
               id="layer-desa"
               type="raster"
               paint={paintDesa}
+            />
+          </Source>
+        )}
+
+        {/* --- LAYER WMS: DESA HUTAN --- */}
+        {showLayerDesaHutan && (
+          <Source
+            id="geoserver-desa-hutan"
+            type="raster"
+            tiles={[WMS_DESA_HUTAN]}
+            tileSize={256}
+            scheme="xyz"
+          >
+            <Layer
+              id="layer-desa-hutan"
+              type="raster"
+              paint={paintDesaHutan}
             />
           </Source>
         )}
@@ -688,7 +720,7 @@ export default function MapPage() {
             className={`flex items-center justify-center w-12 h-12 rounded-[16px] backdrop-blur-xl border shadow-[0_8px_20px_rgb(0,0,0,0.08)] transition-all duration-300 focus:outline-none ${activeMenu === "layer" ? "bg-white border-[#2D7344]/50 text-[#2D7344] scale-105" : "bg-white/70 border-white/50 text-gray-600 hover:bg-white hover:text-[#2D7344]"}`}
           >
             <Layers size={22} strokeWidth={1.5} />
-            {(showLayerHutan || showLayerDesa || showLayerPsn) && (
+            {(showLayerHutan || showLayerDesa || showLayerDesaHutan || showLayerPsn) && (
               <div className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm"></div>
             )}
           </button>
@@ -822,6 +854,69 @@ export default function MapPage() {
                           setOpacityDesa(parseInt(e.target.value))
                         }
                         className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* --- KONTROL: LAYER DESA HUTAN --- */}
+                <div
+                  className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerDesaHutan ? "bg-white/90 border-teal-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-xl transition-colors ${showLayerDesaHutan ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-400"}`}
+                      >
+                        <TreePine size={16} strokeWidth={2} />
+                      </div>
+                      <div>
+                        <div
+                          className={`text-sm font-bold transition-colors ${showLayerDesaHutan ? "text-gray-800" : "text-gray-500"}`}
+                        >
+                          Desa Hutan
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-medium">
+                          PETA DESA HUTAN
+                        </div>
+                      </div>
+                    </div>
+                    <label className="cursor-pointer">
+                      <div
+                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerDesaHutan ? "bg-teal-600" : "bg-gray-300"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={showLayerDesaHutan}
+                          onChange={() => setShowLayerDesaHutan(!showLayerDesaHutan)}
+                        />
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-spring ${showLayerDesaHutan ? "translate-x-5" : "translate-x-0"}`}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  {showLayerDesaHutan && (
+                    <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          Transparansi
+                        </span>
+                        <span className="font-mono text-xs font-bold text-teal-600">
+                          {opacityDesaHutan}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={opacityDesaHutan}
+                        onChange={(e) =>
+                          setOpacityDesaHutan(parseInt(e.target.value))
+                        }
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                       />
                     </div>
                   )}

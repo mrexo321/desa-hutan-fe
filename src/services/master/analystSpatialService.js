@@ -48,12 +48,13 @@ export const analystSpatialService = {
     return response.data.data;
   },
 
-  async getInfografisPublic({ provinsi, kabupaten, kecamatan } = {}) {
+  async getInfografisPublic({ provinsi, kabupaten, kecamatan, tipe_administrasi } = {}) {
     const response = await masterInstance.get("/public/infografis", {
       params: {
         ...(provinsi && { provinsi }),
         ...(kabupaten && { kabupaten }),
         ...(kecamatan && { kecamatan }),
+        ...(tipe_administrasi && { tipe_administrasi }),
       },
     });
     return response.data.data;

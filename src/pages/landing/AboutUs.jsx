@@ -1,16 +1,16 @@
 import React, { useState } from "react";
 import HomeLayout from "../../components/HomeLayout";
-import { 
-  Award, 
-  Calendar, 
-  TrendingUp, 
-  Target, 
-  ShieldCheck, 
-  Database, 
-  Users, 
-  Play, 
-  Layers, 
-  BookOpen, 
+import {
+  Award,
+  Calendar,
+  TrendingUp,
+  Target,
+  ShieldCheck,
+  Database,
+  Users,
+  Play,
+  Layers,
+  BookOpen,
   ChevronRight,
   Info,
   Clock,
@@ -177,14 +177,14 @@ const AboutUs = () => {
   return (
     <HomeLayout>
       <div className="bg-slate-50/50 font-sans text-slate-800 pb-20">
-        
+
         {/* HEADER HERO BANNER */}
         <div className="bg-gradient-to-tr from-[#0C2A18] to-[#164E2A] text-white py-20 md:py-28 relative overflow-hidden shadow-lg">
           {/* Subtle grid pattern overlay */}
           <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
           <div className="absolute inset-0 bg-black/10"></div>
           <div className="absolute -bottom-48 -left-48 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
-          
+
           <div className="max-w-5xl mx-auto px-6 relative z-10 text-center md:text-left">
             <span className="text-xs font-bold text-emerald-300 uppercase tracking-widest bg-emerald-900/40 border border-emerald-700/50 px-3.5 py-1.5 rounded-full inline-block mb-4 leading-none">
               Profil Instansi
@@ -200,7 +200,7 @@ const AboutUs = () => {
 
         {/* CONTAINER UTAMA */}
         <div className="max-w-5xl mx-auto px-6 mt-12 md:mt-16">
-          
+
           {/* VISI & PROFIL */}
           <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 md:p-12 shadow-[0_15px_40px_rgba(0,0,0,0.015)] mb-12 space-y-6">
             <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium text-justify">
@@ -222,7 +222,7 @@ const AboutUs = () => {
 
           {/* TWO COLUMN GRID: TUPOKSI & MILITARY HISTORY TIMELINE */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
-            
+
             {/* KIRI: Tugas Pokok & Fungsi (Tupoksi) */}
             <div className="lg:col-span-7 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-[0_10px_35px_rgba(0,0,0,0.01)] flex flex-col justify-between">
               <div>
@@ -232,7 +232,7 @@ const AboutUs = () => {
                   </div>
                   <h3 className="text-lg font-bold text-slate-800">Tugas Pokok &amp; Fungsi</h3>
                 </div>
-                
+
                 <div className="space-y-5">
                   {tupoksi.map((item, idx) => (
                     <div key={idx} className="flex gap-4 items-start">
@@ -258,13 +258,13 @@ const AboutUs = () => {
                   </div>
                   <h3 className="text-lg font-bold text-slate-800">Langkah Strategis</h3>
                 </div>
-                
+
                 <div className="relative border-l-2 border-emerald-100 pl-5 ml-2.5 space-y-6">
                   {milestones.map((ms, idx) => (
                     <div key={idx} className="relative">
                       {/* Timeline Dot */}
                       <span className="absolute -left-[29px] top-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white ring-4 ring-emerald-100"></span>
-                      
+
                       <span className="text-[10px] font-bold px-2 py-0.5 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-md font-mono">
                         {ms.year}
                       </span>
@@ -288,7 +288,7 @@ const AboutUs = () => {
                 Indikator Kinerja Utama
               </h3>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {kpis.map((kpi) => (
                 <div key={kpi.id} className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.015)] hover:shadow-md transition-all duration-300 flex gap-4 items-start">
@@ -349,9 +349,9 @@ const AboutUs = () => {
               <div className="bg-white border border-slate-200/60 rounded-[2rem] p-6 md:p-10 overflow-x-auto shadow-sm custom-scrollbar relative">
                 {/* Organogram wrapper */}
                 <div className="min-w-[850px] flex flex-col items-center py-6 font-sans">
-                  
+
                   {/* Level 1: Direktur */}
-                  <div 
+                  <div
                     onClick={() => setSelectedNode(nodeDetails.direktur)}
                     className="w-60 bg-amber-100 border-2 border-amber-300/70 hover:border-amber-500 p-4 text-center rounded-2xl shadow-sm z-10 relative cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                   >
@@ -377,7 +377,7 @@ const AboutUs = () => {
 
                     <div className="flex flex-col items-center w-1/2 pt-6 relative">
                       <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div 
+                      <div
                         onClick={() => setSelectedNode(nodeDetails.tu)}
                         className="w-52 bg-white border border-slate-200 hover:border-emerald-500/40 p-3.5 text-center rounded-xl shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                       >
@@ -392,7 +392,7 @@ const AboutUs = () => {
 
                     <div className="flex flex-col items-center w-1/2 pt-6 relative">
                       <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div 
+                      <div
                         onClick={() => setSelectedNode(nodeDetails.fungsional)}
                         className="w-52 bg-amber-50/50 border border-amber-200/60 hover:border-amber-400 p-3.5 text-center rounded-xl shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                       >
@@ -419,7 +419,7 @@ const AboutUs = () => {
                     {/* Kiri: Subdit Penyiapan */}
                     <div className="flex flex-col items-center w-1/2 pt-6 relative">
                       <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div 
+                      <div
                         onClick={() => setSelectedNode(nodeDetails.subdit_penyiapan)}
                         className="w-80 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600 p-4 text-center rounded-2xl shadow-md mb-6 z-10 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                       >
@@ -441,7 +441,7 @@ const AboutUs = () => {
 
                         <div className="flex flex-col items-center relative pt-4">
                           <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div 
+                          <div
                             onClick={() => setSelectedNode(nodeDetails.tim_timur)}
                             className="w-40 bg-emerald-50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
                           >
@@ -454,7 +454,7 @@ const AboutUs = () => {
 
                         <div className="flex flex-col items-center relative pt-4">
                           <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div 
+                          <div
                             onClick={() => setSelectedNode(nodeDetails.tim_barat)}
                             className="w-40 bg-emerald-50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
                           >
@@ -471,7 +471,7 @@ const AboutUs = () => {
                     {/* Kanan: Subdit Pemantauan */}
                     <div className="flex flex-col items-center w-1/2 pt-6 relative">
                       <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div 
+                      <div
                         onClick={() => setSelectedNode(nodeDetails.subdit_pemantauan)}
                         className="w-80 bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-700 p-4 text-center rounded-2xl shadow-md mb-6 z-10 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
                       >
@@ -495,7 +495,7 @@ const AboutUs = () => {
 
                         <div className="flex flex-col items-center relative pt-4">
                           <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div 
+                          <div
                             onClick={() => setSelectedNode(nodeDetails.tim_kewajiban)}
                             className="w-32 bg-emerald-50/50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
                           >
@@ -508,7 +508,7 @@ const AboutUs = () => {
 
                         <div className="flex flex-col items-center relative pt-4">
                           <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div 
+                          <div
                             onClick={() => setSelectedNode(nodeDetails.tim_pnbp)}
                             className="w-32 bg-emerald-50/50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
                           >
@@ -521,7 +521,7 @@ const AboutUs = () => {
 
                         <div className="flex flex-col items-center relative pt-4">
                           <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div 
+                          <div
                             onClick={() => setSelectedNode(nodeDetails.tim_data)}
                             className="w-32 bg-emerald-50/50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
                           >
@@ -542,13 +542,13 @@ const AboutUs = () => {
           {/* VIDEO TAB CONTENT WITH SIMULATED PLAYER */}
           {activeTab === "video" && (
             <div className="bg-white border border-slate-100 rounded-[2rem] p-8 md:p-12 shadow-[0_15px_40px_rgba(0,0,0,0.01)] flex flex-col items-center justify-center min-h-[350px]">
-              <div 
+              <div
                 onClick={() => setIsPlayingVideo(true)}
                 className="group relative w-full max-w-xl h-64 bg-slate-900 rounded-3xl overflow-hidden shadow-lg border border-slate-800 flex items-center justify-center cursor-pointer"
               >
                 {/* Simulated Thumbnail */}
                 <div className="absolute inset-0 bg-cover bg-center brightness-[0.4] group-hover:brightness-[0.3] group-hover:scale-105 transition-all duration-700" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=800')" }}></div>
-                
+
                 {/* Centered Play Button */}
                 <div className="w-16 h-16 rounded-full bg-[#2D7344]/90 text-white flex items-center justify-center border border-emerald-400/20 group-hover:bg-[#2D7344] group-hover:scale-110 transition-all duration-300 shadow-2xl relative z-10">
                   <Play size={26} fill="currentColor" className="ml-1" />
@@ -567,7 +567,7 @@ const AboutUs = () => {
           )}
 
           {/* SISTEM INFORMASI TERKAIT */}
-          <div className="mt-20">
+          {/* <div className="mt-20">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
                 <Layers size={18} strokeWidth={2.5} />
@@ -579,7 +579,7 @@ const AboutUs = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {systems.map((sys) => (
-                <div 
+                <div
                   key={sys.name}
                   className={`p-6 rounded-[2rem] border transition-all duration-300 hover:shadow-lg cursor-pointer flex flex-col justify-between ${sys.themeClass}`}
                 >
@@ -596,7 +596,7 @@ const AboutUs = () => {
                 </div>
               ))}
             </div>
-          </div>
+          </div> */}
 
         </div>
       </div>
@@ -615,7 +615,7 @@ const AboutUs = () => {
                   </span>
                   <h3 className="text-lg font-extrabold text-slate-800 mt-2 leading-snug">{selectedNode.title}</h3>
                 </div>
-                <button 
+                <button
                   onClick={() => setSelectedNode(null)}
                   className="p-1.5 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-xl transition-colors cursor-pointer"
                 >
@@ -648,7 +648,7 @@ const AboutUs = () => {
       {isPlayingVideo && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
           <div className="bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-800 animate-in zoom-in-95 duration-200 relative">
-            <button 
+            <button
               onClick={() => setIsPlayingVideo(false)}
               className="absolute top-4 right-4 z-50 p-2 bg-black/60 hover:bg-black text-slate-400 hover:text-white rounded-full transition-colors cursor-pointer"
               aria-label="Tutup Pemutar"

@@ -651,6 +651,7 @@ const Dashboard = () => {
     });
     setShowDropdown(false);
 
+    // Centered with vertical offset [0, -140] so popup card is centered in viewport
     mapRef.current?.flyTo({
       center: [lngLat.lng, lngLat.lat],
       offset: [0, -140],
@@ -676,6 +677,51 @@ const Dashboard = () => {
         essential: true,
       });
       setClickedLocation({ longitude: lng, latitude: lat });
+    }
+  };
+
+  const handleFlyToDesaOnMap = async (row) => {
+    setIsSpatialHutanModalOpen(false);
+    setIsMatrixHutanModalOpen(false);
+    setIsModalOpen(false);
+
+    let lat = row.centroid?.lat || row.lat || row.latitude;
+    let lng = row.centroid?.lng || row.lng || row.longitude;
+    const kode = row.kode_kemendagri || row.kodeKemendagri || row.kode;
+    const nama = row.nama || row.namaDesa || row.nama_desa;
+
+    if (!lat || !lng) {
+      if (kode || nama) {
+        try {
+          const res = await wilayahDesaService.searchMap(kode || nama, 1);
+          const results = res?.data || [];
+          const found = results[0];
+          if (found?.centroid?.lat && found?.centroid?.lng) {
+            lat = found.centroid.lat;
+            lng = found.centroid.lng;
+          }
+        } catch (err) {
+          console.error("Gagal mencari koordinat desa:", err);
+        }
+      }
+    }
+
+    if (lat && lng) {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+
+      mapRef.current?.flyTo({
+        center: [lng, lat],
+        offset: [0, -140],
+        zoom: 14,
+        duration: 2500,
+        essential: true,
+      });
+
+      setClickedLocation({
+        longitude: lng,
+        latitude: lat,
+      });
+      if (nama) setSearchQuery(nama);
     }
   };
 
@@ -854,6 +900,17 @@ const Dashboard = () => {
                               <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
                                 {detailData.desa?.nama || 'Area Tidak Diketahui'}
                               </h3>
+                              {detailData.desa && (
+                                <p className="text-xs text-gray-500 font-medium mt-1 leading-snug">
+                                  {[
+                                    detailData.desa.kecamatan && (typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan.nama : detailData.desa.kecamatan),
+                                    detailData.desa.kabupaten && (typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten.nama : detailData.desa.kabupaten),
+                                    detailData.desa.provinsi && (typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi.nama : detailData.desa.provinsi),
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" • ")}
+                                </p>
+                              )}
                             </div>
 
                             <div className="grid grid-cols-2 gap-3">
@@ -2452,13 +2509,18 @@ const Dashboard = () => {
                         return (
                           <tr
                             key={row.id || idx}
-                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors"
+                            onClick={() => handleFlyToDesaOnMap(row)}
+                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors cursor-pointer group"
+                            title="Klik untuk lihat lokasi di Peta"
                           >
                             <td className="py-3 px-6 text-center text-gray-400 font-bold">
                               {absoluteNo}
                             </td>
                             <td className="py-3 px-4">
-                              <span className="font-extrabold text-[#00B67A]">{nama}</span>
+                              <span className="font-extrabold text-[#00B67A] group-hover:underline flex items-center gap-1.5">
+                                {nama}
+                                <MapPin size={12} className="text-[#00B67A] opacity-70 group-hover:opacity-100" />
+                              </span>
                             </td>
                             <td className="py-3 px-4 font-mono text-gray-500">
                               {kode}
@@ -2676,13 +2738,18 @@ const Dashboard = () => {
                         return (
                           <tr
                             key={row.id || idx}
-                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors"
+                            onClick={() => handleFlyToDesaOnMap(row)}
+                            className="border-b border-gray-50 hover:bg-[#F8FAFC] transition-colors cursor-pointer group"
+                            title="Klik untuk lihat lokasi di Peta"
                           >
                             <td className="py-3 px-6 text-center text-gray-400 font-bold">
                               {absoluteNo}
                             </td>
                             <td className="py-3 px-4">
-                              <span className="font-extrabold text-[#00B67A]">{nama}</span>
+                              <span className="font-extrabold text-[#00B67A] group-hover:underline flex items-center gap-1.5">
+                                {nama}
+                                <MapPin size={12} className="text-[#00B67A] opacity-70 group-hover:opacity-100" />
+                              </span>
                             </td>
                             <td className="py-3 px-4 font-mono text-gray-500">
                               {kode}

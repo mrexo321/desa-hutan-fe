@@ -50,6 +50,7 @@ import AiAsisten from "./pages/AiAsisten/AiAsisten";
 import Profile from "./pages/dashboard/Profile";
 import DataDesaPublic from "./pages/landing/DataDesaPublic";
 import PermintaanData from "./pages/dashboard/PermintaanData";
+import ManajemenSitus from "./pages/ManajemenSitus/ManajemenSitus";
 
 const App = () => {
   return (
@@ -246,6 +247,16 @@ const App = () => {
         element={
           <ProtectedRoute allowedPermissions={["intervensi_desa:read"]}>
             <MasterIntervensiDesa />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --- MANAJEMEN SITUS TERKAIT --- */}
+      <Route
+        path="/dashboard/manajemen-situs"
+        element={
+          <ProtectedRoute>
+            <ManajemenSitus />
           </ProtectedRoute>
         }
       />

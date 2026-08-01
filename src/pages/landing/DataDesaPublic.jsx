@@ -12,7 +12,11 @@ import {
   ArrowRight,
   Info,
   Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  User,
+  Phone,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import HomeLayout from "../../components/HomeLayout";
@@ -29,12 +33,15 @@ const WILAYAH_LEVELS = [
 ];
 
 export default function DataDesaPublic() {
+  const [nama, setNama] = useState("");
+  const [noHp, setNoHp] = useState("");
   const [email, setEmail] = useState("");
   const [selectedTahunId, setSelectedTahunId] = useState("");
   const [selectedWilayahLevel, setSelectedWilayahLevel] = useState("");
   const [selectedProvinsiId, setSelectedProvinsiId] = useState("");
   const [selectedKabupatenId, setSelectedKabupatenId] = useState("");
   const [selectedKecamatanId, setSelectedKecamatanId] = useState("");
+  const [selectedJenisData, setSelectedJenisData] = useState([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -62,6 +69,32 @@ export default function DataDesaPublic() {
     retry: 1,
   });
   const years = Array.isArray(yearsRes) ? yearsRes : [];
+
+  // Get numerical tahun value for label query
+  const selectedTahunObj = years.find((y) => String(y.id) === String(selectedTahunId));
+  const selectedTahunVal = selectedTahunObj?.tahun
+    ? Number(selectedTahunObj.tahun)
+    : (selectedTahunId && !isNaN(Number(selectedTahunId)) ? Number(selectedTahunId) : null);
+
+  // ── Fetch Labels (Indikator & Dimensi) via Endpoint #2 ──
+  const { data: labelOptionsRes, isLoading: isLoadingLabels } = useQuery({
+    queryKey: ["request-excel-labels", selectedTahunVal],
+    queryFn: async () => {
+      if (!selectedTahunVal) return [];
+      try {
+        const res = await performaDesaService.getRequestExcelLabels(selectedTahunVal);
+        return res?.data?.data || res?.data || res || [];
+      } catch (err) {
+        console.error("Gagal mengambil label indikator/dimensi:", err);
+        return [];
+      }
+    },
+    enabled: !!selectedTahunVal,
+    retry: 1,
+  });
+  const labelOptions = Array.isArray(labelOptionsRes)
+    ? labelOptionsRes
+    : (Array.isArray(labelOptionsRes?.data) ? labelOptionsRes.data : []);
 
   // ── Fetch Provinces via useQuery ──
   const { data: provincesRes, isLoading: isLoadingProvinces } = useQuery({
@@ -114,8 +147,9 @@ export default function DataDesaPublic() {
   });
   const kecamatans = Array.isArray(kecamatansRes) ? kecamatansRes : [];
 
-  // Reset downstream when tahun changes
+  // Reset downstream & jenisData when tahun changes
   useEffect(() => {
+    setSelectedJenisData([]);
     if (!selectedTahunId) {
       setSelectedWilayahLevel("");
       setSelectedProvinsiId("");
@@ -146,24 +180,83 @@ export default function DataDesaPublic() {
     }
   }, [selectedKabupatenId]);
 
-  // Submit request
+  // Handle Checkbox Toggles
+  const handleToggleJenisData = (item) => {
+    const exists = selectedJenisData.some(
+      (j) => String(j.id) === String(item.id) && j.tipe === item.tipe
+    );
+    if (exists) {
+      setSelectedJenisData(
+        selectedJenisData.filter(
+          (j) => !(String(j.id) === String(item.id) && j.tipe === item.tipe)
+        )
+      );
+    } else {
+      setSelectedJenisData([
+        ...selectedJenisData,
+        { id: item.id, tipe: item.tipe },
+      ]);
+    }
+  };
+
+  const isJenisDataChecked = (item) => {
+    return selectedJenisData.some(
+      (j) => String(j.id) === String(item.id) && j.tipe === item.tipe
+    );
+  };
+
+  const handleSelectAllJenisData = () => {
+    if (selectedJenisData.length === labelOptions.length) {
+      setSelectedJenisData([]);
+    } else {
+      setSelectedJenisData(
+        labelOptions.map((opt) => ({ id: opt.id, tipe: opt.tipe }))
+      );
+    }
+  };
+
+  // Submit request (Endpoint #3)
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate based on wilayah level
-    const missingBasic = !selectedTahunId || !selectedWilayahLevel || !email;
+    // Validate based on basic requirements
+    if (!selectedTahunId || !selectedWilayahLevel) {
+      toast.warning("Harap pilih Tahun Data dan Tingkat Administrasi!");
+      return;
+    }
+
     const missingProvinsi = showProvinsi && !selectedProvinsiId;
     const missingKabupaten = showKabupaten && !selectedKabupatenId;
     const missingKecamatan = showKecamatan && !selectedKecamatanId;
 
-    if (missingBasic || missingProvinsi || missingKabupaten || missingKecamatan) {
-      toast.warning("Harap lengkapi semua field formulir!");
+    if (missingProvinsi || missingKabupaten || missingKecamatan) {
+      toast.warning("Harap lengkapi seluruh pilihan wilayah!");
+      return;
+    }
+
+    if (!selectedJenisData || selectedJenisData.length === 0) {
+      toast.warning("Harap pilih minimal 1 Indikator / Dimensi Data (Jenis Data)!");
+      return;
+    }
+
+    if (!nama.trim()) {
+      toast.warning("Harap isi Nama Pemohon!");
+      return;
+    }
+
+    if (!noHp.trim()) {
+      toast.warning("Harap isi No. Handphone / WhatsApp!");
+      return;
+    }
+
+    if (!email.trim()) {
+      toast.warning("Harap isi Email Penerima Data!");
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!emailRegex.test(email.trim())) {
       toast.error("Format email tidak valid!");
       return;
     }
@@ -175,24 +268,22 @@ export default function DataDesaPublic() {
 
     setIsSubmitting(true);
 
-    // Get names for payload
-    const selectedTahunObj = years.find((y) => String(y.id) === String(selectedTahunId));
-    const selectedProvObj = provinces.find((p) => String(p.id) === String(selectedProvinsiId));
-    const selectedKabObj = kabupatens.find((k) => String(k.id) === String(selectedKabupatenId));
-    const selectedKecObj = kecamatans.find((kc) => String(kc.id) === String(selectedKecamatanId));
-
     const payload = {
-      tahun: Number(selectedTahunObj?.tahun || selectedTahunId),
-      email,
-      provinsi: selectedWilayahLevel === "nasional" ? "Nasional" : (selectedProvObj?.name || selectedProvObj?.nama || selectedProvObj?.provinsi || ""),
-      kabupaten: ["kabupaten", "kecamatan"].includes(selectedWilayahLevel) ? (selectedKabObj?.name || selectedKabObj?.nama || selectedKabObj?.kabupaten || null) : null,
-      kecamatan: selectedWilayahLevel === "kecamatan" ? (selectedKecObj?.name || selectedKecObj?.nama || selectedKecObj?.kecamatan || null) : null,
-    //   altchaPayload,
+      tahun: Number(selectedTahunVal),
+      tingkatAdministrasi: selectedWilayahLevel,
+      provinsiId: showProvinsi && selectedProvinsiId ? selectedProvinsiId : null,
+      kabupatenId: showKabupaten && selectedKabupatenId ? selectedKabupatenId : null,
+      kecamatanId: showKecamatan && selectedKecamatanId ? selectedKecamatanId : null,
+      desaId: null,
+      jenisData: selectedJenisData,
+      email: email.trim(),
+      nama: nama.trim(),
+      noHp: noHp.trim(),
       altcha: altchaPayload,
     };
 
     try {
-      const response = await performaDesaService.createRequestExcel(payload);
+      const response = await performaDesaService.createPublicRequestExcel(payload);
 
       if (response?.success === false) {
         toast.error(response?.message || "Gagal mengirim permohonan data.");
@@ -201,23 +292,30 @@ export default function DataDesaPublic() {
         return;
       }
 
-      if (response?.success || response?.id || response?.data) {
-        toast.success("Permintaan ekspor Excel performa berhasil dikirim!", {
+      toast.success(
+        response?.message || "Berhasil mengirim permintaan data, mohon tunggu persetujuan Admin",
+        {
           description: "Anda dapat memantau status permohonan ini di dashboard dengan email tersebut.",
-        });
-        // Clear fields
-        setSelectedTahunId("");
-        setSelectedWilayahLevel("");
-        setSelectedProvinsiId("");
-        setSelectedKabupatenId("");
-        setSelectedKecamatanId("");
-        setEmail("");
-        setAltchaPayload("");
-        altchaRef.current?.reset();
-      }
+        }
+      );
+
+      // Clear fields
+      setSelectedTahunId("");
+      setSelectedWilayahLevel("");
+      setSelectedProvinsiId("");
+      setSelectedKabupatenId("");
+      setSelectedKecamatanId("");
+      setSelectedJenisData([]);
+      setNama("");
+      setNoHp("");
+      setEmail("");
+      setAltchaPayload("");
+      altchaRef.current?.reset();
     } catch (err) {
       console.error("Gagal mengirim permintaan:", err);
-      toast.error(err.response?.data?.message || err?.message || "Gagal mengirim permohonan data.");
+      toast.error(
+        err.response?.data?.message || err?.message || "Gagal mengirim permohonan data."
+      );
       setAltchaPayload("");
       altchaRef.current?.reset();
     } finally {
@@ -271,7 +369,7 @@ export default function DataDesaPublic() {
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                       <Calendar size={14} className="text-emerald-600" />
-                      Tahun Data
+                      Tahun Data <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <select
@@ -305,7 +403,7 @@ export default function DataDesaPublic() {
                   <div className="space-y-2">
                     <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                       <Globe size={14} className="text-emerald-600" />
-                      Tingkat Administrasi
+                      Tingkat Administrasi <span className="text-rose-500">*</span>
                     </label>
                     <div className="relative">
                       <select
@@ -381,7 +479,7 @@ export default function DataDesaPublic() {
                     <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                         <MapPin size={14} className="text-emerald-600" />
-                        Pilih Provinsi
+                        Pilih Provinsi <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <select
@@ -417,7 +515,7 @@ export default function DataDesaPublic() {
                     <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                         <MapPin size={14} className="text-emerald-600" />
-                        Pilih Kabupaten / Kota
+                        Pilih Kabupaten / Kota <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <select
@@ -457,7 +555,7 @@ export default function DataDesaPublic() {
                     <div className="space-y-2 animate-in slide-in-from-top-2 duration-200">
                       <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
                         <MapPin size={14} className="text-emerald-600" />
-                        Pilih Kecamatan
+                        Pilih Kecamatan <span className="text-rose-500">*</span>
                       </label>
                       <div className="relative">
                         <select
@@ -493,31 +591,156 @@ export default function DataDesaPublic() {
                   )}
                 </div>
 
+                {/* CHECKBOXES: JENIS DATA (INDIKATOR / DIMENSI) */}
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
+                      <Layers size={14} className="text-emerald-600" />
+                      Jenis Data (Indikator / Dimensi) <span className="text-rose-500">*</span>
+                    </label>
+                    {labelOptions.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleSelectAllJenisData}
+                        className="text-xs font-bold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer transition-colors"
+                      >
+                        {selectedJenisData.length === labelOptions.length ? "Batal Pilih Semua" : "Pilih Semua"}
+                      </button>
+                    )}
+                  </div>
+
+                  {!selectedTahunId ? (
+                    <div className="text-xs text-amber-800 bg-amber-50 border border-amber-200/60 rounded-xl p-3.5 flex items-center gap-2 font-medium">
+                      <Info size={16} className="text-amber-600 shrink-0" />
+                      <span>Pilih <strong>Tahun Data</strong> terlebih dahulu untuk memuat pilihan indikator dan dimensi.</span>
+                    </div>
+                  ) : isLoadingLabels ? (
+                    <div className="flex items-center gap-2 p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-500 text-xs font-semibold">
+                      <Loader2 size={16} className="animate-spin text-emerald-600" />
+                      Memuat daftar Indikator / Dimensi...
+                    </div>
+                  ) : labelOptions.length === 0 ? (
+                    <div className="text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl p-4 text-center font-medium">
+                      Tidak ada data indikator atau dimensi tersedia untuk tahun yang dipilih.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-60 overflow-y-auto pr-1 custom-scrollbar">
+                      {labelOptions.map((item) => {
+                        const checked = isJenisDataChecked(item);
+                        return (
+                          <label
+                            key={`${item.tipe}-${item.id}`}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handleToggleJenisData(item);
+                            }}
+                            className={`flex items-center gap-3 p-3 rounded-xl border transition-all cursor-pointer select-none ${
+                              checked
+                                ? "bg-emerald-50/70 border-emerald-500 text-slate-800 shadow-sm"
+                                : "bg-slate-50/80 border-slate-200 text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={() => {}}
+                              className="h-4 w-4 rounded border-slate-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer pointer-events-none"
+                            />
+                            <div className="flex-1 min-w-0 flex items-center justify-between gap-2">
+                              <span className="text-xs font-bold truncate text-slate-800">{item.nama}</span>
+                              <span
+                                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full shrink-0 ${
+                                  item.tipe === "indexDesa"
+                                    ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                                    : "bg-blue-100 text-blue-700 border border-blue-200"
+                                }`}
+                              >
+                                {item.tipe === "indexDesa" ? "Index Desa" : "Indikator Desa"}
+                              </span>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
                 <hr className="border-slate-100" />
 
-                {/* EMAIL INPUT */}
-                <div className="space-y-2">
-                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
-                    <Mail size={14} className="text-emerald-600" />
-                    Email Penerima Data
-                  </label>
-                  <div className="relative group">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
-                      <Mail size={18} />
+                {/* PEMOHON DATA SECTION */}
+                <div className="space-y-4">
+                  <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                    <User size={14} className="text-emerald-600" />
+                    Informasi Pemohon Data
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* NAMA PEMOHON */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
+                        Nama Pemohon <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                          <User size={16} />
+                        </div>
+                        <input
+                          type="text"
+                          id="input-nama"
+                          placeholder="Masukkan nama lengkap"
+                          value={nama}
+                          onChange={(e) => setNama(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                          required
+                        />
+                      </div>
                     </div>
-                    <input
-                      type="email"
-                      id="input-email"
-                      placeholder="contoh: nama@instansi.go.id"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-bold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
-                      required
-                    />
+
+                    {/* NO HP */}
+                    <div className="space-y-2">
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
+                        No. Handphone / WA <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative group">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                          <Phone size={16} />
+                        </div>
+                        <input
+                          type="tel"
+                          id="input-nohp"
+                          placeholder="081234567890"
+                          value={noHp}
+                          onChange={(e) => setNoHp(e.target.value)}
+                          className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                          required
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex gap-1.5 items-start text-[11px] text-slate-400 font-semibold pl-1.5 mt-1 leading-normal">
-                    <Info size={12} className="text-emerald-600 shrink-0 mt-0.5" />
-                    <span>Permintaan data akan dikirimkan melalui email setelah Proses Persetujuan Admin</span>
+
+                  {/* EMAIL INPUT */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
+                      Email Penerima Data <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                        <Mail size={16} />
+                      </div>
+                      <input
+                        type="email"
+                        id="input-email"
+                        placeholder="contoh: nama@instansi.go.id"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        required
+                      />
+                    </div>
+                    <div className="flex gap-1.5 items-start text-[11px] text-slate-400 font-semibold pl-1.5 mt-1 leading-normal">
+                      <Info size={12} className="text-emerald-600 shrink-0 mt-0.5" />
+                      <span>Permintaan data akan dikirimkan melalui email setelah proses persetujuan Admin</span>
+                    </div>
                   </div>
                 </div>
 
@@ -560,3 +783,4 @@ export default function DataDesaPublic() {
     </HomeLayout>
   );
 }
+

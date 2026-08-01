@@ -415,7 +415,7 @@ export default function ManajemenSitus() {
                     <th className="py-4 px-4 w-20">Logo</th>
                     <th className="py-4 px-5">Nama Situs</th>
                     <th className="py-4 px-5">URL Tujuan</th>
-                    <th className="py-4 px-5">Dibuat Pada</th>
+                    <th className="py-4 px-5">Di input Pada</th>
                     <th className="py-4 px-5 text-right w-36">Aksi</th>
                   </tr>
                 </thead>
@@ -470,9 +470,6 @@ export default function ManajemenSitus() {
                         <td className="py-4 px-5 font-bold text-slate-800">
                           <div className="flex flex-col">
                             <span className="text-slate-900 text-sm font-extrabold">{item.nama}</span>
-                            <span className="text-[11px] font-semibold text-slate-400 font-mono mt-0.5">
-                              ID: {item.id ? item.id.substring(0, 18) : "-"}...
-                            </span>
                           </div>
                         </td>
 

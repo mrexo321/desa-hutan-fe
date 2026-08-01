@@ -630,7 +630,7 @@ export default function Infografis() {
                         <li className="flex items-start gap-2.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
-                            <strong className="text-gray-800 font-bold block">Peta Kawasan Hutan Desember 2025</strong>
+                            <strong className="text-gray-800 font-bold block">Peta Kawasan Hutan Indonesia</strong>
                             <span> Kementerian Kehutanan (Desember 2025)</span>
                           </div>
                         </li>

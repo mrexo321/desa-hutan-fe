@@ -23,6 +23,7 @@ import HomeLayout from "../../components/HomeLayout";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { indikatorService } from "../../services/master/indikatorService";
 import { performaDesaService } from "../../services/master/performaDesaService";
+import SearchableSelect from "../../components/SearchableSelect";
 import AltchaCaptcha from "../../components/AltchaCaptcha";
 
 const WILAYAH_LEVELS = [
@@ -268,17 +269,34 @@ export default function DataDesaPublic() {
 
     setIsSubmitting(true);
 
+    const selectedProvObj = showProvinsi && selectedProvinsiId
+      ? provinces.find((p) => String(p.id) === String(selectedProvinsiId))
+      : null;
+    const selectedKabObj = showKabupaten && selectedKabupatenId
+      ? kabupatens.find((k) => String(k.id) === String(selectedKabupatenId))
+      : null;
+    const selectedKecObj = showKecamatan && selectedKecamatanId
+      ? kecamatans.find((k) => String(k.id) === String(selectedKecamatanId))
+      : null;
+
     const payload = {
       tahun: Number(selectedTahunVal),
       tingkatAdministrasi: selectedWilayahLevel,
-      provinsiId: showProvinsi && selectedProvinsiId ? selectedProvinsiId : null,
-      kabupatenId: showKabupaten && selectedKabupatenId ? selectedKabupatenId : null,
-      kecamatanId: showKecamatan && selectedKecamatanId ? selectedKecamatanId : null,
-      desaId: null,
+      provinsi: selectedProvObj
+        ? { id: selectedProvObj.id, nama: selectedProvObj.nama || selectedProvObj.name }
+        : null,
+      kabupaten: selectedKabObj
+        ? { id: selectedKabObj.id, nama: selectedKabObj.nama || selectedKabObj.name }
+        : null,
+      kecamatan: selectedKecObj
+        ? { id: selectedKecObj.id, nama: selectedKecObj.nama || selectedKecObj.name }
+        : null,
       jenisData: selectedJenisData,
       email: email.trim(),
       nama: nama.trim(),
       noHp: noHp.trim(),
+      // instansi: "nama instansi",
+      // tujuan: "tujuan",
       altcha: altchaPayload,
     };
 
@@ -481,32 +499,16 @@ export default function DataDesaPublic() {
                         <MapPin size={14} className="text-emerald-600" />
                         Pilih Provinsi <span className="text-rose-500">*</span>
                       </label>
-                      <div className="relative">
-                        <select
-                          id="select-provinsi"
-                          value={selectedProvinsiId}
-                          onChange={(e) => setSelectedProvinsiId(e.target.value)}
-                          disabled={isLoadingProvinces}
-                          className="w-full px-4 py-3 bg-slate-50 disabled:bg-slate-100 disabled:opacity-75 disabled:cursor-not-allowed border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer appearance-none"
-                          required
-                        >
-                          <option value="" disabled>
-                            {isLoadingProvinces ? "Memuat Provinsi..." : "-- Pilih Provinsi --"}
-                          </option>
-                          {provinces && Array.isArray(provinces) && provinces.map((p) => (
-                            <option key={p.id} value={p.id}>
-                              {p.name || p.nama || p.provinsi}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                          {isLoadingProvinces ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <ChevronDown size={16} />
-                          )}
-                        </div>
-                      </div>
+                      <SearchableSelect
+                        id="select-provinsi"
+                        value={selectedProvinsiId}
+                        onChange={(val) => setSelectedProvinsiId(val)}
+                        options={provinces}
+                        placeholder="-- Pilih Provinsi --"
+                        searchPlaceholder="Cari nama provinsi..."
+                        isLoading={isLoadingProvinces}
+                        noOptionsText="Provinsi tidak ditemukan."
+                      />
                     </div>
                   )}
 
@@ -517,36 +519,18 @@ export default function DataDesaPublic() {
                         <MapPin size={14} className="text-emerald-600" />
                         Pilih Kabupaten / Kota <span className="text-rose-500">*</span>
                       </label>
-                      <div className="relative">
-                        <select
-                          id="select-kabupaten"
-                          value={selectedKabupatenId}
-                          onChange={(e) => setSelectedKabupatenId(e.target.value)}
-                          disabled={!selectedProvinsiId || isLoadingKabupatens}
-                          className="w-full px-4 py-3 bg-slate-50 disabled:bg-slate-100 disabled:opacity-75 disabled:cursor-not-allowed border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer appearance-none"
-                          required
-                        >
-                          <option value="" disabled>
-                            {isLoadingKabupatens
-                              ? "Memuat Kabupaten..."
-                              : !selectedProvinsiId
-                              ? "Pilih Provinsi Terlebih Dahulu"
-                              : "-- Pilih Kabupaten --"}
-                          </option>
-                          {kabupatens && Array.isArray(kabupatens) && kabupatens.map((k) => (
-                            <option key={k.id} value={k.id}>
-                              {k.name || k.nama || k.kabupaten}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                          {isLoadingKabupatens ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <ChevronDown size={16} />
-                          )}
-                        </div>
-                      </div>
+                      <SearchableSelect
+                        id="select-kabupaten"
+                        value={selectedKabupatenId}
+                        onChange={(val) => setSelectedKabupatenId(val)}
+                        options={kabupatens}
+                        placeholder="-- Pilih Kabupaten --"
+                        searchPlaceholder="Cari nama kabupaten..."
+                        disabled={!selectedProvinsiId}
+                        disabledText="Pilih Provinsi Terlebih Dahulu"
+                        isLoading={isLoadingKabupatens}
+                        noOptionsText="Kabupaten tidak ditemukan."
+                      />
                     </div>
                   )}
 
@@ -557,36 +541,18 @@ export default function DataDesaPublic() {
                         <MapPin size={14} className="text-emerald-600" />
                         Pilih Kecamatan <span className="text-rose-500">*</span>
                       </label>
-                      <div className="relative">
-                        <select
-                          id="select-kecamatan"
-                          value={selectedKecamatanId}
-                          onChange={(e) => setSelectedKecamatanId(e.target.value)}
-                          disabled={!selectedKabupatenId || isLoadingKecamatans}
-                          className="w-full px-4 py-3 bg-slate-50 disabled:bg-slate-100 disabled:opacity-75 disabled:cursor-not-allowed border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all cursor-pointer appearance-none"
-                          required
-                        >
-                          <option value="" disabled>
-                            {isLoadingKecamatans
-                              ? "Memuat Kecamatan..."
-                              : !selectedKabupatenId
-                              ? "Pilih Kabupaten Terlebih Dahulu"
-                              : "-- Pilih Kecamatan --"}
-                          </option>
-                          {kecamatans && Array.isArray(kecamatans) && kecamatans.map((kc) => (
-                            <option key={kc.id} value={kc.id}>
-                              {kc.name || kc.nama || kc.kecamatan}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                          {isLoadingKecamatans ? (
-                            <Loader2 size={16} className="animate-spin" />
-                          ) : (
-                            <ChevronDown size={16} />
-                          )}
-                        </div>
-                      </div>
+                      <SearchableSelect
+                        id="select-kecamatan"
+                        value={selectedKecamatanId}
+                        onChange={(val) => setSelectedKecamatanId(val)}
+                        options={kecamatans}
+                        placeholder="-- Pilih Kecamatan --"
+                        searchPlaceholder="Cari nama kecamatan..."
+                        disabled={!selectedKabupatenId}
+                        disabledText="Pilih Kabupaten Terlebih Dahulu"
+                        isLoading={isLoadingKecamatans}
+                        noOptionsText="Kecamatan tidak ditemukan."
+                      />
                     </div>
                   )}
                 </div>

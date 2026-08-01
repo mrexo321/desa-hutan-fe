@@ -131,6 +131,7 @@ const Dashboard = () => {
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11");
   const [activeMenu, setActiveMenu] = useState(null);
   const [clickedLocation, setClickedLocation] = useState(null);
+  const [popupActiveTab, setPopupActiveTab] = useState("spasial"); // "spasial" | "potensi"
 
   // =========================================
   // 2. STATE LAYER WMS
@@ -794,16 +795,37 @@ const Dashboard = () => {
                   maxWidth="320px"
                 >
                   <div className="bg-white/95 backdrop-blur-xl border border-white rounded-[20px] shadow-2xl overflow-hidden w-[280px] sm:w-[320px]">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 bg-gray-50/50">
-                      <div className="flex items-center gap-2 text-[#00B67A]">
-                        <Activity size={16} strokeWidth={2.5} />
-                        <span className="font-bold text-xs uppercase tracking-widest">
-                          Detail Spasial
-                        </span>
+                    {/* Header Tab Bar */}
+                    <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 bg-gray-50/70">
+                      <div className="flex items-center gap-1 bg-gray-200/60 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setPopupActiveTab("spasial")}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            popupActiveTab === "spasial"
+                              ? "bg-white text-[#00B67A] shadow-sm"
+                              : "text-gray-500 hover:text-gray-800"
+                          }`}
+                        >
+                          <Activity size={14} strokeWidth={2.5} />
+                          <span>Detail Spasial</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPopupActiveTab("potensi")}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            popupActiveTab === "potensi"
+                              ? "bg-white text-[#00B67A] shadow-sm"
+                              : "text-gray-500 hover:text-gray-800"
+                          }`}
+                        >
+                          <Zap size={14} strokeWidth={2.5} />
+                          <span>Potensi</span>
+                        </button>
                       </div>
                       <button
                         onClick={() => setClickedLocation(null)}
-                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors"
+                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors ml-1"
                       >
                         <X size={16} />
                       </button>
@@ -818,83 +840,97 @@ const Dashboard = () => {
                           </span>
                         </div>
                       ) : detailData ? (
-                        <div className="flex flex-col gap-4">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
-                                {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
-                              </span>
-                              <span className="font-mono text-xs font-semibold text-gray-400">
-                                {detailData.desa?.kodeKemendagri || '-'}
-                              </span>
+                        popupActiveTab === "spasial" ? (
+                          <div className="flex flex-col gap-4">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
+                                  {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
+                                </span>
+                                <span className="font-mono text-xs font-semibold text-gray-400">
+                                  {detailData.desa?.kodeKemendagri || '-'}
+                                </span>
+                              </div>
+                              <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
+                                {detailData.desa?.nama || 'Area Tidak Diketahui'}
+                              </h3>
                             </div>
-                            <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
-                              {detailData.desa?.nama || 'Area Tidak Diketahui'}
-                            </h3>
-                          </div>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                Luas Desa
-                              </p>
-                              <p className="font-bold text-gray-800 text-sm">
-                                {detailData.desa?.luasDesaHa || '-'}{" "}
-                                {detailData.desa?.luasDesaHa && (
-                                  <span className="text-xs text-gray-500 font-medium">Ha</span>
-                                )}
-                              </p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                  Luas Desa
+                                </p>
+                                <p className="font-bold text-gray-800 text-sm">
+                                  {detailData.desa?.luasDesaHa || '-'}{" "}
+                                  {detailData.desa?.luasDesaHa && (
+                                    <span className="text-xs text-gray-500 font-medium">Ha</span>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                  Kawasan Hutan
+                                </p>
+                                <p
+                                  className="font-bold text-gray-800 text-sm"
+                                  title={detailData.hutan?.fungsiKawasan?.nama}
+                                >
+                                  {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
+                                </p>
+                              </div>
                             </div>
-                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                Kawasan Hutan
-                              </p>
-                              <p
-                                className="font-bold text-gray-800 text-sm"
-                                title={detailData.hutan?.fungsiKawasan?.nama}
-                              >
-                                {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
-                              </p>
-                            </div>
-                          </div>
 
-                          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
-                            <div className="relative z-10">
-                              <div className="flex justify-between items-end mb-3">
-                                <div>
-                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                    Status Interaksi
-                                  </p>
-                                  <div className="flex flex-col">
-                                    <span className="font-bold text-[#2D7344] capitalize text-sm">
-                                      {detailData.status?.replace('_', ' ') || '-'}
-                                    </span>
-                                    <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
-                                      {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                              <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
+                              <div className="relative z-10">
+                                <div className="flex justify-between items-end mb-3">
+                                  <div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                      Status Interaksi
+                                    </p>
+                                    <div className="flex flex-col">
+                                      <span className="font-bold text-[#2D7344] capitalize text-sm">
+                                        {detailData.status?.replace('_', ' ') || '-'}
+                                      </span>
+                                      <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
+                                        {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-xl font-extrabold text-gray-800">
+                                      {detailData.irisan?.luasPersen ?? 0}%
                                     </span>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <span className="text-xl font-extrabold text-gray-800">
-                                    {detailData.irisan?.luasPersen ?? 0}%
-                                  </span>
+                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
+                                    style={{
+                                      width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
+                                    }}
+                                  ></div>
                                 </div>
+                                <p className="text-[10px] text-gray-400 mt-2 font-medium">
+                                  Persentase wilayah masuk kawasan hutan
+                                </p>
                               </div>
-                              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
-                                  style={{
-                                    width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
-                                  }}
-                                ></div>
-                              </div>
-                              <p className="text-[10px] text-gray-400 mt-2 font-medium">
-                                Persentase wilayah masuk kawasan hutan
-                              </p>
                             </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#00B67A] flex items-center justify-center mb-3 border border-emerald-100 shadow-inner">
+                              <Zap size={22} strokeWidth={2} />
+                            </div>
+                            <h4 className="font-extrabold text-gray-800 text-sm mb-1">
+                              Potensi Desa
+                            </h4>
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[240px]">
+                              Belum terdapat data potensi desa pada desa ini
+                            </p>
+                          </div>
+                        )
                       ) : (
                         <div className="text-center py-6 text-gray-500 text-xs">
                           Tidak ada data di titik ini.

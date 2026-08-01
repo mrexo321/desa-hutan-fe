@@ -77,7 +77,7 @@ export default function MapPage() {
   // --- FETCHING SEARCH-MAP DARI API ---
   const { data: searchResponse, isFetching: isFetchingSearch } = useQuery({
     queryKey: ["searchMapDesa", debouncedQuery],
-    queryFn: () => wilayahDesaService.searchMapPublic(debouncedQuery, 5),
+    queryFn: () => wilayahDesaService.searchMapPublic(debouncedQuery, 50),
     enabled: debouncedQuery.trim().length >= 2,
     staleTime: 30000,
   });
@@ -486,7 +486,7 @@ export default function MapPage() {
                           </div>
                           <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
                             <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                              Kawasan Hutan
+                              Nama Kawasan (Sesuai titik)
                             </p>
                             <p
                               className="font-bold text-gray-800 text-sm"
@@ -500,25 +500,33 @@ export default function MapPage() {
                         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
                           <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
                           <div className="relative z-10">
-                            <div className="flex justify-between items-end mb-3">
+                            <div className="flex justify-between items-start mb-3">
                               <div>
                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                  Status Interaksi
+                                  Luas Kawasan
                                 </p>
-                                <div className="flex flex-col">
-                                  <span className="font-bold text-[#2D7344] capitalize text-sm">
-                                    {detailData.status?.replace('_', ' ') || '-'}
+                                {/* <div className="flex flex-col">
+                                  <span className="font-extrabold text-[#2D7344] text-sm">
+                                    {detailData.irisan?.jenisInteraksi || detailData.status?.replace('_', ' ') || '-'}
                                   </span>
-                                  <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
-                                    {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
-                                  </span>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <span className="text-xl font-extrabold text-gray-800">
+                                  {detailData.status && detailData.status !== detailData.irisan?.jenisInteraksi && (
+                                    <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
+                                      {detailData.status.replace('_', ' ')}
+                                    </span>
+                                  )}
+                                </div> */}
+                                <div className="text-left shrink-0 flex justify-between items-center">
+                                <span className="text-xl font-extrabold text-gray-800 block leading-none">
                                   {detailData.irisan?.luasPersen ?? 0}%
                                 </span>
+                                {detailData.irisan?.luasHa != null && (
+                                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 mt-1 inline-block">
+                                    {Number(detailData.irisan.luasHa).toLocaleString("id-ID")} Ha
+                                  </span>
+                                )}
                               </div>
+                              </div>
+
                             </div>
                             <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
                               <div
@@ -528,9 +536,12 @@ export default function MapPage() {
                                 }}
                               ></div>
                             </div>
-                            <p className="text-[10px] text-gray-400 mt-2 font-medium">
-                              Persentase wilayah masuk kawasan hutan
-                            </p>
+                            <div className="flex justify-between items-center mt-2 text-[10px] text-gray-400 font-medium">
+                              {/* <span>Luas Irisan Kawasan:</span>
+                              <span className="font-extrabold text-gray-700">
+                                {detailData.irisan?.luasHa != null ? `${Number(detailData.irisan.luasHa).toLocaleString("id-ID")} Ha (${detailData.irisan?.luasPersen ?? 0}%)` : '-'}
+                              </span> */}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -820,7 +831,7 @@ export default function MapPage() {
                           Batas Desa
                         </div>
                         <div className="text-[10px] text-gray-400 font-medium">
-                          PETA BIG (Badan Informasi Geospasial)
+                          PETA RBI 2026 (BIG)
                         </div>
                       </div>
                     </div>

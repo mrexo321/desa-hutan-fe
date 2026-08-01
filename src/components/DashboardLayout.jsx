@@ -3,7 +3,7 @@ import { useBackgroundRefresh } from "../hooks/useBakgroundRefresh";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
-export default function DashboardLayout({ children, activeMenu }) {
+export default function DashboardLayout({ children, activeMenu, noScroll = false, noPadding = false }) {
   // Background token refresh: setiap 15 menit + setiap pindah halaman
   useBackgroundRefresh();
 
@@ -17,8 +17,16 @@ export default function DashboardLayout({ children, activeMenu }) {
         <Header />
 
         {/* Area Konten Utama */}
-        <main className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar">
-          <div className="max-w-[1600px] mx-auto">{children}</div>
+        <main
+          className={`flex-1 ${
+            noScroll
+              ? "overflow-hidden flex flex-col min-h-0"
+              : "overflow-y-auto p-6 md:p-8 custom-scrollbar"
+          } ${noPadding ? "!p-0" : ""}`}
+        >
+          <div className={`${noScroll ? "h-full flex flex-col min-h-0 w-full" : "max-w-[1600px] mx-auto"}`}>
+            {children}
+          </div>
         </main>
       </div>
     </div>

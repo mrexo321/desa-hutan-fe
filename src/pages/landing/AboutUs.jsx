@@ -8,7 +8,6 @@ import {
   ShieldCheck,
   Database,
   Users,
-  Play,
   Layers,
   BookOpen,
   ChevronRight,
@@ -21,9 +20,7 @@ import {
 } from "lucide-react";
 
 const AboutUs = () => {
-  const [activeTab, setActiveTab] = useState("struktur");
   const [selectedNode, setSelectedNode] = useState(null);
-  const [isPlayingVideo, setIsPlayingVideo] = useState(false);
 
   // KPIs
   const kpis = [
@@ -312,35 +309,8 @@ const AboutUs = () => {
             Pelaksanaan tugas dan fungsi didukung oleh struktur kelompok kerja yang dinamis. Silakan klik kotak kelompok kerja di bawah untuk membaca wewenang departemen secara terperinci.
           </p>
 
-          {/* TABS SEGMENTED CONTROL */}
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex p-1 bg-slate-200/60 rounded-2xl border border-slate-300/40">
-              <button
-                onClick={() => setActiveTab("struktur")}
-                className={`px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all ${
-                  activeTab === "struktur"
-                    ? "bg-[#2D7344] text-white shadow-md shadow-emerald-800/10"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-300/30"
-                }`}
-              >
-                STRUKTUR KELOMPOK KERJA
-              </button>
-              <button
-                onClick={() => setActiveTab("video")}
-                className={`px-6 py-2.5 rounded-xl font-bold text-xs md:text-sm tracking-wide transition-all ${
-                  activeTab === "video"
-                    ? "bg-[#2D7344] text-white shadow-md shadow-emerald-800/10"
-                    : "text-slate-600 hover:text-slate-800 hover:bg-slate-300/30"
-                }`}
-              >
-                VIDEO
-              </button>
-            </div>
-          </div>
-
           {/* BAGAN STRUKTUR ORGANISASI */}
-          {activeTab === "struktur" && (
-            <div className="relative">
+          <div className="relative">
               {/* Swipe Helper Badge on Mobile */}
               <div className="md:hidden flex items-center justify-center gap-1.5 text-[10px] font-bold text-[#2D7344] bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5 w-fit mx-auto mb-4 animate-bounce">
                 <Info size={12} /> Geser Kanan-Kiri untuk melihat bagan
@@ -537,34 +507,6 @@ const AboutUs = () => {
                 </div>
               </div>
             </div>
-          )}
-
-          {/* VIDEO TAB CONTENT WITH SIMULATED PLAYER */}
-          {activeTab === "video" && (
-            <div className="bg-white border border-slate-100 rounded-[2rem] p-8 md:p-12 shadow-[0_15px_40px_rgba(0,0,0,0.01)] flex flex-col items-center justify-center min-h-[350px]">
-              <div
-                onClick={() => setIsPlayingVideo(true)}
-                className="group relative w-full max-w-xl h-64 bg-slate-900 rounded-3xl overflow-hidden shadow-lg border border-slate-800 flex items-center justify-center cursor-pointer"
-              >
-                {/* Simulated Thumbnail */}
-                <div className="absolute inset-0 bg-cover bg-center brightness-[0.4] group-hover:brightness-[0.3] group-hover:scale-105 transition-all duration-700" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=800')" }}></div>
-
-                {/* Centered Play Button */}
-                <div className="w-16 h-16 rounded-full bg-[#2D7344]/90 text-white flex items-center justify-center border border-emerald-400/20 group-hover:bg-[#2D7344] group-hover:scale-110 transition-all duration-300 shadow-2xl relative z-10">
-                  <Play size={26} fill="currentColor" className="ml-1" />
-                </div>
-
-                {/* Subtitle bottom banner */}
-                <div className="absolute bottom-4 left-4 right-4 bg-slate-950/80 backdrop-blur-md px-4 py-3.5 rounded-2xl border border-slate-800 z-10 flex justify-between items-center text-left">
-                  <div>
-                    <h5 className="text-white text-xs font-bold uppercase tracking-wider">Video Profil Pendampingan KTH</h5>
-                    <p className="text-[10px] text-slate-400 font-medium">Durasi: 3 Menit 14 Detik</p>
-                  </div>
-                  <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/50 border border-emerald-900 px-2 py-1 rounded">HD</span>
-                </div>
-              </div>
-            </div>
-          )}
 
           {/* SISTEM INFORMASI TERKAIT */}
           {/* <div className="mt-20">
@@ -638,30 +580,6 @@ const AboutUs = () => {
                 >
                   Tutup Rincian
                 </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* MOCK VIDEO PLAYER DIALOG */}
-      {isPlayingVideo && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-800 animate-in zoom-in-95 duration-200 relative">
-            <button
-              onClick={() => setIsPlayingVideo(false)}
-              className="absolute top-4 right-4 z-50 p-2 bg-black/60 hover:bg-black text-slate-400 hover:text-white rounded-full transition-colors cursor-pointer"
-              aria-label="Tutup Pemutar"
-            >
-              <X size={18} />
-            </button>
-            <div className="aspect-video w-full relative flex items-center justify-center bg-black">
-              {/* Simulated Loading/Playing */}
-              <div className="absolute inset-0 bg-cover bg-center brightness-[0.2]" style={{ backgroundImage: "url('https://images.unsplash.com/photo-1448375240586-882707db888b?q=80&w=800')" }}></div>
-              <div className="flex flex-col items-center gap-3 relative z-10 text-white">
-                <Loader2 size={36} className="animate-spin text-emerald-400" />
-                <span className="text-xs font-bold uppercase tracking-widest text-emerald-300">Menghubungkan ke Stream...</span>
-                <span className="text-[10px] text-slate-400 font-medium px-4 text-center mt-1">Ini adalah simulasi pemutaran video dokumentasi kelompok tani hutan binaan P2SEMH.</span>
               </div>
             </div>
           </div>

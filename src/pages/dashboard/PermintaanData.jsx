@@ -387,7 +387,7 @@ export default function PermintaanData() {
                     <th className="py-4 px-6">Pemohon</th>
                     <th className="py-4 px-6">Tipe Ekspor</th>
                     <th className="py-4 px-6 text-center">Tahun</th>
-                    <th className="py-4 px-6">Tingkat Admin</th>
+                    <th className="py-4 px-6">Tingkat Daerah</th>
                     <th className="py-4 px-6">Detail Wilayah</th>
                     <th className="py-4 px-6">Jenis Data</th>
                     <th className="py-4 px-6 text-center">Status</th>

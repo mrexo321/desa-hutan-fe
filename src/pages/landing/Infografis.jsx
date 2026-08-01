@@ -573,7 +573,7 @@ export default function Infografis() {
                     <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full -mr-8 -mt-8 pointer-events-none"></div>
                     <span className="text-xs font-bold text-[#0B8457] uppercase tracking-wider block mb-1">Luas Irisan </span>
                     <span className="text-2xl font-extrabold text-[#0B8457] block">{formatHa(totalLuasIrisan)}</span>
-                    <span className="text-xs text-gray-400 mt-2 block font-medium capitalize">Luas wilayah desa yang terdapat kawasan hutan</span>
+                    <span className="text-xs text-gray-400 mt-2 block font-medium">Luas wilayah desa yang terdapat kawasan hutan</span>
                   </div>
                 </div>
 

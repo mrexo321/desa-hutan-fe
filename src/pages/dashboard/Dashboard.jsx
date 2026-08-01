@@ -586,7 +586,6 @@ const Dashboard = () => {
               mapRef.current.flyTo({
                 center: [desa.centroid.lng, desa.centroid.lat],
                 offset: [0, -140],
-                offset: [0, -140],
                 zoom: 14,
                 duration: 2500,
                 essential: true,
@@ -646,10 +645,7 @@ const Dashboard = () => {
 
   const handleMapClick = useCallback((evt) => {
     const { lngLat } = evt;
-    const { lngLat } = evt;
     setClickedLocation({
-      longitude: lngLat.lng,
-      latitude: lngLat.lat,
       longitude: lngLat.lng,
       latitude: lngLat.lat,
     });
@@ -675,7 +671,6 @@ const Dashboard = () => {
     if (lat && lng) {
       mapRef.current?.flyTo({
         center: [lng, lat],
-        offset: [0, -140],
         offset: [0, -140],
         zoom: 14,
         duration: 2500,
@@ -891,31 +886,32 @@ const Dashboard = () => {
                           </span>
                         </div>
                       ) : detailData ? (
-                        <div className="flex flex-col gap-4">
-                          <div>
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
-                                {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
-                              </span>
-                              <span className="font-mono text-xs font-semibold text-gray-400">
-                                {detailData.desa?.kodeKemendagri || '-'}
-                              </span>
+                        popupActiveTab === "spasial" ? (
+                          <div className="flex flex-col gap-4">
+                            <div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
+                                  {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
+                                </span>
+                                <span className="font-mono text-xs font-semibold text-gray-400">
+                                  {detailData.desa?.kodeKemendagri || '-'}
+                                </span>
+                              </div>
+                              <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
+                                {detailData.desa?.nama || 'Area Tidak Diketahui'}
+                              </h3>
+                              {detailData.desa && (
+                                <p className="text-xs text-gray-500 font-medium mt-1 leading-snug">
+                                  {[
+                                    detailData.desa.kecamatan && (typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan.nama : detailData.desa.kecamatan),
+                                    detailData.desa.kabupaten && (typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten.nama : detailData.desa.kabupaten),
+                                    detailData.desa.provinsi && (typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi.nama : detailData.desa.provinsi),
+                                  ]
+                                    .filter(Boolean)
+                                    .join(" • ")}
+                                </p>
+                              )}
                             </div>
-                            <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
-                              {detailData.desa?.nama || 'Area Tidak Diketahui'}
-                            </h3>
-                            {detailData.desa && (
-                              <p className="text-xs text-gray-500 font-medium mt-1 leading-snug">
-                                {[
-                                  detailData.desa.kecamatan && (typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan.nama : detailData.desa.kecamatan),
-                                  detailData.desa.kabupaten && (typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten.nama : detailData.desa.kabupaten),
-                                  detailData.desa.provinsi && (typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi.nama : detailData.desa.provinsi),
-                                ]
-                                  .filter(Boolean)
-                                  .join(" • ")}
-                              </p>
-                            )}
-                          </div>
 
                             <div className="grid grid-cols-2 gap-3">
                               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">

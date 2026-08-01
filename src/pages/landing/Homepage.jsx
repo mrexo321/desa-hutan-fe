@@ -13,6 +13,7 @@ import {
   MapPin,
   Share2,
   Instagram,
+  Facebook,
   Youtube,
   Globe,
   Map,
@@ -398,19 +399,19 @@ const Homepage = () => {
                     <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
                   </a>
 
-                  {/* YouTube */}
+                  {/* Facebook */}
                   <a
-                    href="https://www.youtube.com/@kementeriankehutananri"
+                    href="https://www.facebook.com/kementeriankehutanan"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
                   >
-                    <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <Youtube size={18} />
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Facebook size={18} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="text-xs font-extrabold text-slate-800 truncate">YouTube</div>
-                      <div className="text-[11px] font-semibold text-slate-400 truncate">Kemenhut RI</div>
+                      <div className="text-xs font-extrabold text-slate-800 truncate">Facebook</div>
+                      <div className="text-[11px] font-semibold text-slate-400 truncate">Kementerian Kehutanan</div>
                     </div>
                     <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
                   </a>
@@ -420,22 +421,49 @@ const Homepage = () => {
             </div>
 
             {/* SEBELAH KANAN (50%): CARD SITUS TERKAIT */}
-            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
-                  <Globe size={20} />
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-[0_4px_25px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-emerald-950/5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+              {/* Top decorative gradient glow */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none"></div>
+
+              <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100/80 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 text-[#2D7344] border border-emerald-200/60 flex items-center justify-center shrink-0 shadow-xs">
+                    <Globe size={22} className="stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-slate-800 text-base sm:text-lg tracking-tight">Situs Terkait</h3>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Mitra
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Tautan resmi portal &amp; lembaga mitra kehutanan</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-800 text-base">Situs Terkait</h3>
-                  <p className="text-xs text-slate-400 font-medium">Tautan resmi portal &amp; lembaga mitra kehutanan</p>
-                </div>
+                {Array.isArray(situsTerkaitList) && situsTerkaitList.length > 0 && (
+                  <span className="hidden sm:inline-flex items-center text-[10px] font-extrabold text-slate-500 bg-slate-100/80 px-2.5 py-1 rounded-full border border-slate-200/60 shrink-0">
+                    {situsTerkaitList.length} Portal
+                  </span>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1 items-center">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 flex-1 items-center relative z-10">
                 {situsTerkaitLoading ? (
-                  <div className="sm:col-span-2 py-8 flex flex-col items-center justify-center text-slate-400 gap-2">
-                    <Loader2 size={24} className="animate-spin text-emerald-600" />
-                    <span className="text-xs font-semibold">Memuat situs terkait...</span>
+                  <>
+                    {[1, 2, 3, 4].map((n) => (
+                      <div key={n} className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 animate-pulse">
+                        <div className="w-11 h-11 rounded-xl bg-slate-200 shrink-0"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+                          <div className="h-2.5 bg-slate-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : situsTerkaitList.length === 0 ? (
+                  <div className="sm:col-span-2 py-10 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Globe size={32} className="text-slate-300 stroke-[1.5]" />
+                    <span className="text-xs font-semibold">Belum ada situs terkait terdaftar.</span>
                   </div>
                 ) : (
                   situsTerkaitList.map((situs) => {
@@ -450,33 +478,46 @@ const Homepage = () => {
                         href={situs.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group h-full"
+                        className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white via-slate-50/40 to-emerald-50/20 hover:from-white hover:to-emerald-50/80 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-950/5 hover:-translate-y-0.5 transition-all duration-300 group h-full relative overflow-hidden"
                       >
-                        <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform overflow-hidden p-1">
+                        {/* Subtle glow accent on hover */}
+                        <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-400/10 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
+
+                        <div className="w-11 h-11 rounded-xl bg-white text-emerald-700 border border-slate-200/80 group-hover:border-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300 overflow-hidden p-1.5 shadow-xs">
                           {imgUrl ? (
                             <img
                               src={imgUrl}
                               alt={situs.nama}
-                              className="w-full h-full object-contain"
+                              className="w-full h-full object-contain transition-transform group-hover:scale-110"
                               onError={(e) => {
                                 e.target.onerror = null;
                                 e.target.style.display = "none";
-                                e.target.parentElement.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+                                if (e.target.parentElement) {
+                                  e.target.parentElement.innerHTML = '<svg class="w-5 h-5 text-emerald-600 stroke-[2]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+                                }
                               }}
                             />
                           ) : (
-                            <Globe size={20} />
+                            <Globe size={20} className="stroke-[2]" />
                           )}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-xs font-extrabold text-slate-800 truncate">
+                          <div
+                            className="text-xs font-extrabold text-slate-800 group-hover:text-emerald-900 truncate leading-snug transition-colors"
+                            title={situs.nama}
+                          >
                             {situs.nama}
                           </div>
-                          <div className="text-[11px] font-semibold text-emerald-700 truncate">
-                            {domainDisplay || situs.url}
+                          <div
+                            className="text-[10px] font-bold text-emerald-700 truncate mt-1 inline-flex items-center gap-1 bg-emerald-50/80 group-hover:bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-100 transition-colors"
+                            title={situs.url}
+                          >
+                            <span>{domainDisplay || situs.url}</span>
                           </div>
                         </div>
-                        <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                        <div className="w-7 h-7 rounded-lg bg-slate-100/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-400 flex items-center justify-center shrink-0 transition-all duration-300">
+                          <ExternalLink size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </div>
                       </a>
                     );
                   })

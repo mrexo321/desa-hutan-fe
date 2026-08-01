@@ -91,13 +91,12 @@ const SearchableDropdown = ({
         onClick={() => {
           if (!disabled) setIsOpen((prev) => !prev);
         }}
-        className={`w-full rounded-xl border flex items-center justify-between px-4 py-2 transition-all h-[42px] select-none ${
-          disabled
-            ? "bg-slate-100/80 text-gray-400 border-gray-200 cursor-not-allowed opacity-70"
-            : isOpen
+        className={`w-full rounded-xl border flex items-center justify-between px-4 py-2 transition-all h-[42px] select-none ${disabled
+          ? "bg-slate-100/80 text-gray-400 border-gray-200 cursor-not-allowed opacity-70"
+          : isOpen
             ? "bg-white border-[#2D7344]/50 ring-2 ring-[#2D7344]/10 shadow-sm cursor-pointer"
             : "bg-white hover:shadow-md hover:border-gray-300 border-gray-250 shadow-sm cursor-pointer"
-        }`}
+          }`}
       >
         <span
           className={`text-xs font-bold truncate ${disabled ? "text-gray-400" : selectedOption ? "text-gray-800" : "text-gray-400"}`}
@@ -106,9 +105,8 @@ const SearchableDropdown = ({
         </span>
         <ChevronDown
           size={14}
-          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${
-            isOpen ? "transform rotate-180 text-[#2D7344]" : ""
-          }`}
+          className={`text-gray-500 transition-transform duration-200 flex-shrink-0 ml-2 ${isOpen ? "transform rotate-180 text-[#2D7344]" : ""
+            }`}
         />
       </div>
 
@@ -155,11 +153,10 @@ const SearchableDropdown = ({
                       onChange(opt.value);
                       setIsOpen(false);
                     }}
-                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${
-                      isActive
-                        ? "bg-green-50 text-[#2D7344] font-extrabold"
-                        : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
-                    }`}
+                    className={`w-full text-left px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 flex items-center justify-between ${isActive
+                      ? "bg-green-50 text-[#2D7344] font-extrabold"
+                      : "text-gray-700 hover:bg-slate-50 hover:text-[#2D7344]"
+                      }`}
                   >
                     <span className="truncate">{opt.label}</span>
                     {isActive && (
@@ -473,7 +470,7 @@ export default function DesaHutan() {
       {
         header: "Skor",
         render: (row) => (
-          <span>{row.luasDesaHa ? Number(row.luasDesaHa).toLocaleString("id-ID") : "-"}</span>
+          <span>{row.indeksDesaHutanSkor ? Number(row.indeksDesaHutanSkor).toLocaleString("id-ID") : "-"}</span>
         ),
       },
     ],
@@ -573,8 +570,8 @@ export default function DesaHutan() {
               !selectedTahunId
                 ? "Pilih Tahun Terlebih Dahulu"
                 : !selectedProvinsi
-                ? "Pilih Provinsi Terlebih Dahulu"
-                : "Semua Kabupaten"
+                  ? "Pilih Provinsi Terlebih Dahulu"
+                  : "Semua Kabupaten"
             }
             disabled={!selectedTahunId || !selectedProvinsi}
             emptyMessage={
@@ -595,8 +592,8 @@ export default function DesaHutan() {
               !selectedTahunId
                 ? "Pilih Tahun Terlebih Dahulu"
                 : !selectedKabupaten
-                ? "Pilih Kabupaten Terlebih Dahulu"
-                : "Semua Kecamatan"
+                  ? "Pilih Kabupaten Terlebih Dahulu"
+                  : "Semua Kecamatan"
             }
             disabled={!selectedTahunId || !selectedKabupaten}
             emptyMessage={
@@ -630,11 +627,10 @@ export default function DesaHutan() {
                       return (
                         <label
                           key={fk.id}
-                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${
-                            isChecked
-                              ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
-                              : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-                          }`}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
+                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                            : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -674,11 +670,10 @@ export default function DesaHutan() {
                       return (
                         <label
                           key={fk.id}
-                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${
-                            isChecked
-                              ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
-                              : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-                          }`}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
+                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                            : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -718,11 +713,10 @@ export default function DesaHutan() {
                       return (
                         <label
                           key={fk.id}
-                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${
-                            isChecked
-                              ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
-                              : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
-                          }`}
+                          className={`flex items-center gap-2 px-3 py-1.5 border rounded-xl cursor-pointer text-[11px] font-bold select-none transition-all duration-200 ${isChecked
+                            ? "bg-green-50 border-[#2D7344]/40 text-[#2D7344] shadow-sm scale-[1.01]"
+                            : "bg-white border-gray-250 text-gray-600 hover:bg-gray-50 hover:border-gray-300"
+                            }`}
                         >
                           <input
                             type="checkbox"
@@ -756,16 +750,16 @@ export default function DesaHutan() {
           selectedKecamatan ||
           selectedIndexDesaHutanId ||
           selectedFungsiKawasanIds.length > 0) && (
-          <div className="flex justify-end gap-3 mb-6 animate-in fade-in duration-200">
-            <button
-              onClick={handleResetFilters}
-              className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-350 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all cursor-pointer"
-            >
-              <RotateCcw size={14} />
-              Reset Filter Opsional
-            </button>
-          </div>
-        )}
+            <div className="flex justify-end gap-3 mb-6 animate-in fade-in duration-200">
+              <button
+                onClick={handleResetFilters}
+                className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 active:bg-slate-350 text-slate-700 rounded-xl text-xs font-bold border border-slate-200 shadow-sm transition-all cursor-pointer"
+              >
+                <RotateCcw size={14} />
+                Reset Filter Opsional
+              </button>
+            </div>
+          )}
 
         {/* AREA TABEL */}
         <div className="flex-1 bg-white rounded-xl overflow-hidden flex flex-col border border-gray-100 shadow-sm">
@@ -791,8 +785,8 @@ export default function DesaHutan() {
               !selectedTahunId
                 ? "Silakan pilih Tahun terlebih dahulu untuk memilih Formula dan menampilkan data"
                 : !selectedFormulaId
-                ? "Silakan pilih Formula terlebih dahulu untuk menampilkan data"
-                : "Data Desa Hutan tidak ditemukan"
+                  ? "Silakan pilih Formula terlebih dahulu untuk menampilkan data"
+                  : "Data Desa Hutan tidak ditemukan"
             }
 
           />

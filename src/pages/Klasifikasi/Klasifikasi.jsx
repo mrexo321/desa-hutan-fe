@@ -227,7 +227,6 @@ const Klasifikasi = () => {
     if (!addForm.nama || !addForm.warna) return toast.warning("Nama dan Warna wajib diisi!");
     if (activeTab === "desa") {
       createDesaMutation.mutate({
-        kode: addForm.kode,
         nama: addForm.nama,
         warna: addForm.warna,
         nilaiMin: Number(addForm.nilaiMin),
@@ -262,7 +261,6 @@ const Klasifikasi = () => {
       updateDesaMutation.mutate({
         id: editForm.id,
         payload: {
-          kode: editForm.kode,
           nama: editForm.nama,
           warna: editForm.warna,
           nilaiMin: Number(editForm.nilaiMin),
@@ -717,15 +715,17 @@ const Klasifikasi = () => {
               ) : previewData ? (
                 // TAMPILAN DATA PREVIEW
                 <div className="space-y-6">
-                  {/* Blok Kode */}
-                  <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Kode Klasifikasi
-                    </p>
-                    <p className="text-lg font-mono font-bold text-slate-900">
-                      {previewData.kode || "-"}
-                    </p>
-                  </div>
+                  {/* Blok Kode — hanya untuk tab hutan */}
+                  {activeTab === "hutan" && (
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Kode Klasifikasi
+                      </p>
+                      <p className="text-lg font-mono font-bold text-slate-900">
+                        {previewData.kode || "-"}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Blok Nama */}
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
@@ -818,13 +818,15 @@ const Klasifikasi = () => {
 
             <form onSubmit={handleAddSubmit} className="p-6">
               <div className="space-y-5">
-                {/* Kode */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kode Klasifikasi</label>
-                  <input type="text" value={addForm.kode} onChange={(e) => setAddForm({ ...addForm, kode: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
-                    placeholder={`Masukkan kode klasifikasi ${activeTab}...`} />
-                </div>
+                {/* Kode — hanya untuk tab hutan */}
+                {activeTab === "hutan" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kode Klasifikasi</label>
+                    <input type="text" value={addForm.kode} onChange={(e) => setAddForm({ ...addForm, kode: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
+                      placeholder={`Masukkan kode klasifikasi ${activeTab}...`} />
+                  </div>
+                )}
 
                 {/* Nama */}
                 <div>
@@ -914,13 +916,15 @@ const Klasifikasi = () => {
 
             <form onSubmit={handleUpdateSubmit} className="p-6">
               <div className="space-y-5">
-                {/* Kode */}
-                <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kode Klasifikasi</label>
-                  <input type="text" value={editForm.kode} onChange={(e) => setEditForm({ ...editForm, kode: e.target.value })}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
-                    placeholder={`Masukkan kode klasifikasi ${activeTab}...`} />
-                </div>
+                {/* Kode — hanya untuk tab hutan */}
+                {activeTab === "hutan" && (
+                  <div>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1.5">Kode Klasifikasi</label>
+                    <input type="text" value={editForm.kode} onChange={(e) => setEditForm({ ...editForm, kode: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
+                      placeholder={`Masukkan kode klasifikasi ${activeTab}...`} />
+                  </div>
+                )}
 
                 {/* Nama */}
                 <div>

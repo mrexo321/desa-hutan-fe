@@ -131,15 +131,18 @@ const Dashboard = () => {
   const [mapStyle, setMapStyle] = useState("mapbox://styles/mapbox/light-v11");
   const [activeMenu, setActiveMenu] = useState(null);
   const [clickedLocation, setClickedLocation] = useState(null);
+  const [popupActiveTab, setPopupActiveTab] = useState("spasial"); // "spasial" | "potensi"
 
   // =========================================
   // 2. STATE LAYER WMS
   // =========================================
   const [showLayerHutan, setShowLayerHutan] = useState(false);
   const [showLayerDesa, setShowLayerDesa] = useState(false);
+  const [showLayerDesaHutan, setShowLayerDesaHutan] = useState(false);
   const [showLayerPsn, setShowLayerPsn] = useState(false);
   const [opacityHutan, setOpacityHutan] = useState(80);
   const [opacityDesa, setOpacityDesa] = useState(80);
+  const [opacityDesaHutan, setOpacityDesaHutan] = useState(80);
   const [opacityPsn, setOpacityPsn] = useState(80);
   const [tahunPsn, setTahunPsn] = useState(2025);
 
@@ -540,6 +543,12 @@ const Dashboard = () => {
     [WMS_BASE],
   );
 
+  const WMS_DESA_HUTAN = useMemo(
+    () =>
+      `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_hutan&styles=&TILED=true`,
+    [WMS_DIRECT],
+  );
+
   const WMS_PSN = useMemo(
     () =>
       `${WMS_DIRECT}?bbox={bbox-epsg-3857}&format=image/png8&service=WMS&version=1.1.1&request=GetMap&srs=EPSG:3857&transparent=true&width=256&height=256&layers=desa-gis:mv_desa_psn&styles=desa-gis:desa_psn_style&TILED=true&CQL_FILTER=tahun=${tahunPsn}`,
@@ -576,6 +585,7 @@ const Dashboard = () => {
               setSearchQuery(desa.nama || flyToKode);
               mapRef.current.flyTo({
                 center: [desa.centroid.lng, desa.centroid.lat],
+                offset: [0, -140],
                 offset: [0, -140],
                 zoom: 14,
                 duration: 2500,
@@ -636,7 +646,10 @@ const Dashboard = () => {
 
   const handleMapClick = useCallback((evt) => {
     const { lngLat } = evt;
+    const { lngLat } = evt;
     setClickedLocation({
+      longitude: lngLat.lng,
+      latitude: lngLat.lat,
       longitude: lngLat.lng,
       latitude: lngLat.lat,
     });
@@ -662,6 +675,7 @@ const Dashboard = () => {
     if (lat && lng) {
       mapRef.current?.flyTo({
         center: [lng, lat],
+        offset: [0, -140],
         offset: [0, -140],
         zoom: 14,
         duration: 2500,
@@ -776,6 +790,20 @@ const Dashboard = () => {
                 />
               </Source>
             )}
+            {showLayerDesaHutan && (
+              <Source
+                id="geoserver-desa-hutan"
+                type="raster"
+                tiles={[WMS_DESA_HUTAN]}
+                tileSize={256}
+              >
+                <Layer
+                  id="layer-desa-hutan"
+                  type="raster"
+                  paint={{ "raster-opacity": opacityDesaHutan / 100 }}
+                />
+              </Source>
+            )}
             {showLayerPsn && (
               <Source
                 id="geoserver-psn"
@@ -818,16 +846,37 @@ const Dashboard = () => {
                   maxWidth="320px"
                 >
                   <div className="bg-white/95 backdrop-blur-xl border border-white rounded-[20px] shadow-2xl overflow-hidden w-[280px] sm:w-[320px]">
-                    <div className="px-4 py-3 flex items-center justify-between border-b border-gray-100 bg-gray-50/50">
-                      <div className="flex items-center gap-2 text-[#00B67A]">
-                        <Activity size={16} strokeWidth={2.5} />
-                        <span className="font-bold text-xs uppercase tracking-widest">
-                          Detail Spasial
-                        </span>
+                    {/* Header Tab Bar */}
+                    <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 bg-gray-50/70">
+                      <div className="flex items-center gap-1 bg-gray-200/60 p-1 rounded-xl">
+                        <button
+                          type="button"
+                          onClick={() => setPopupActiveTab("spasial")}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            popupActiveTab === "spasial"
+                              ? "bg-white text-[#00B67A] shadow-sm"
+                              : "text-gray-500 hover:text-gray-800"
+                          }`}
+                        >
+                          <Activity size={14} strokeWidth={2.5} />
+                          <span>Detail Spasial</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setPopupActiveTab("potensi")}
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            popupActiveTab === "potensi"
+                              ? "bg-white text-[#00B67A] shadow-sm"
+                              : "text-gray-500 hover:text-gray-800"
+                          }`}
+                        >
+                          <Zap size={14} strokeWidth={2.5} />
+                          <span>Potensi</span>
+                        </button>
                       </div>
                       <button
                         onClick={() => setClickedLocation(null)}
-                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors"
+                        className="text-gray-400 hover:text-red-500 hover:bg-red-50 p-1 rounded-md transition-colors ml-1"
                       >
                         <X size={16} />
                       </button>
@@ -868,68 +917,81 @@ const Dashboard = () => {
                             )}
                           </div>
 
-                          <div className="grid grid-cols-2 gap-3">
-                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                Luas Desa
-                              </p>
-                              <p className="font-bold text-gray-800 text-sm">
-                                {detailData.desa?.luasDesaHa || '-'}{" "}
-                                {detailData.desa?.luasDesaHa && (
-                                  <span className="text-xs text-gray-500 font-medium">Ha</span>
-                                )}
-                              </p>
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                  Luas Desa
+                                </p>
+                                <p className="font-bold text-gray-800 text-sm">
+                                  {detailData.desa?.luasDesaHa || '-'}{" "}
+                                  {detailData.desa?.luasDesaHa && (
+                                    <span className="text-xs text-gray-500 font-medium">Ha</span>
+                                  )}
+                                </p>
+                              </div>
+                              <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                  Kawasan Hutan
+                                </p>
+                                <p
+                                  className="font-bold text-gray-800 text-sm"
+                                  title={detailData.hutan?.fungsiKawasan?.nama}
+                                >
+                                  {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
+                                </p>
+                              </div>
                             </div>
-                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                Kawasan Hutan
-                              </p>
-                              <p
-                                className="font-bold text-gray-800 text-sm"
-                                title={detailData.hutan?.fungsiKawasan?.nama}
-                              >
-                                {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
-                              </p>
-                            </div>
-                          </div>
 
-                          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
-                            <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
-                            <div className="relative z-10">
-                              <div className="flex justify-between items-end mb-3">
-                                <div>
-                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                    Status Interaksi
-                                  </p>
-                                  <div className="flex flex-col">
-                                    <span className="font-bold text-[#2D7344] capitalize text-sm">
-                                      {detailData.status?.replace('_', ' ') || '-'}
-                                    </span>
-                                    <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
-                                      {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
+                            <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                              <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
+                              <div className="relative z-10">
+                                <div className="flex justify-between items-end mb-3">
+                                  <div>
+                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                      Status Interaksi
+                                    </p>
+                                    <div className="flex flex-col">
+                                      <span className="font-bold text-[#2D7344] capitalize text-sm">
+                                        {detailData.status?.replace('_', ' ') || '-'}
+                                      </span>
+                                      <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
+                                        {detailData.irisan?.jenisInteraksi?.replace('_', ' ') || '-'}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <span className="text-xl font-extrabold text-gray-800">
+                                      {detailData.irisan?.luasPersen ?? 0}%
                                     </span>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <span className="text-xl font-extrabold text-gray-800">
-                                    {detailData.irisan?.luasPersen ?? 0}%
-                                  </span>
+                                <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
+                                    style={{
+                                      width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
+                                    }}
+                                  ></div>
                                 </div>
+                                <p className="text-[10px] text-gray-400 mt-2 font-medium">
+                                  Persentase wilayah masuk kawasan hutan
+                                </p>
                               </div>
-                              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
-                                  style={{
-                                    width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
-                                  }}
-                                ></div>
-                              </div>
-                              <p className="text-[10px] text-gray-400 mt-2 font-medium">
-                                Persentase wilayah masuk kawasan hutan
-                              </p>
                             </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#00B67A] flex items-center justify-center mb-3 border border-emerald-100 shadow-inner">
+                              <Zap size={22} strokeWidth={2} />
+                            </div>
+                            <h4 className="font-extrabold text-gray-800 text-sm mb-1">
+                              Potensi Desa
+                            </h4>
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[240px]">
+                              Belum terdapat data potensi desa pada desa ini
+                            </p>
+                          </div>
+                        )
                       ) : (
                         <div className="text-center py-6 text-gray-500 text-xs">
                           Tidak ada data di titik ini.
@@ -1104,7 +1166,7 @@ const Dashboard = () => {
                   className={`flex items-center justify-center w-11 h-11 rounded-[14px] backdrop-blur-xl border shadow-lg transition-all ${activeMenu === "layer" ? "bg-white border-[#00B67A]/50 text-[#00B67A] scale-105" : "bg-white/80 border-white/50 text-gray-700 hover:bg-white hover:text-[#00B67A]"}`}
                 >
                   <Layers size={20} strokeWidth={2} />
-                  {(showLayerHutan || showLayerDesa || showLayerPsn) && (
+                  {(showLayerHutan || showLayerDesa || showLayerDesaHutan || showLayerPsn) && (
                     <div className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></div>
                   )}
                 </button>
@@ -1206,6 +1268,54 @@ const Dashboard = () => {
                                 setOpacityDesa(parseInt(e.target.value))
                               }
                               className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-500"
+                            />
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        className={`p-3.5 rounded-[14px] border transition-all ${showLayerDesaHutan ? "bg-white border-teal-100 shadow-sm" : "bg-gray-50 border-transparent opacity-70"}`}
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`p-1.5 rounded-lg ${showLayerDesaHutan ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-400"}`}
+                            >
+                              <TreePine size={14} />
+                            </div>
+                            <div
+                              className={`text-xs font-bold ${showLayerDesaHutan ? "text-gray-800" : "text-gray-500"}`}
+                            >
+                              Desa Hutan
+                            </div>
+                          </div>
+                          <label className="cursor-pointer relative inline-flex items-center">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={showLayerDesaHutan}
+                              onChange={() =>
+                                setShowLayerDesaHutan(!showLayerDesaHutan)
+                              }
+                            />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+                          </label>
+                        </div>
+                        {showLayerDesaHutan && (
+                          <div>
+                            <div className="flex justify-between text-[9px] font-bold text-gray-400 mb-1">
+                              <span>TRANSPARANSI</span>
+                              <span>{opacityDesaHutan}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="10"
+                              max="100"
+                              value={opacityDesaHutan}
+                              onChange={(e) =>
+                                setOpacityDesaHutan(parseInt(e.target.value))
+                              }
+                              className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
                             />
                           </div>
                         )}

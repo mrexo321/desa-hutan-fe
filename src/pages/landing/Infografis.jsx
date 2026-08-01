@@ -31,7 +31,9 @@ import {
   BarChart3,
   PieChart as PieChartIcon,
   Globe,
-  Cpu
+  Cpu,
+  Home,
+  Leaf
 } from "lucide-react";
 
 
@@ -45,6 +47,10 @@ export default function Infografis() {
 
   const [selectedKecamatanId, setSelectedKecamatanId] = useState("");
   const [selectedKecamatanName, setSelectedKecamatanName] = useState("");
+
+  const [selectedTipeAdministrasi, setSelectedTipeAdministrasi] = useState("");
+
+  const labelTipeAdmin = selectedTipeAdministrasi === "Kelurahan" ? "Kelurahan" : selectedTipeAdministrasi === "Desa" ? "Desa" : "Desa / Kelurahan";
 
   // Table pagination & search state
   const [tableSearch, setTableSearch] = useState("");
@@ -169,6 +175,7 @@ export default function Infografis() {
     setSelectedKabupatenName("");
     setSelectedKecamatanId("");
     setSelectedKecamatanName("");
+    setSelectedTipeAdministrasi("");
     setTableSearch("");
     setCurrentPage(1);
   };
@@ -185,12 +192,14 @@ export default function Infografis() {
       selectedProvinsiName,
       selectedKabupatenName,
       selectedKecamatanName,
+      selectedTipeAdministrasi,
     ],
     queryFn: async () => {
       const data = await analystSpatialService.getInfografisPublic({
         provinsi: selectedProvinsiName,
         kabupaten: selectedKabupatenName,
         kecamatan: selectedKecamatanName,
+        tipe_administrasi: selectedTipeAdministrasi,
       });
       return data;
     },
@@ -223,6 +232,7 @@ export default function Infografis() {
   const totalDesaBeririsan = infoData?.total_desa_beririsan || 0;
   const totalDesaDalam = infoData?.total_desa_dalam || 0;
   const totalDesaBeririsanSebagian = infoData?.total_desa_beririsan_sebagian || 0;
+  const totalDesaHutan = infoData?.total_desa_hutan ?? (totalDesaDalam + totalDesaBeririsanSebagian);
   const totalDesaLuar = infoData?.total_desa_luar_kawasan || 0;
 
   const totalLuasDesa = infoData?.total_luas_desa_ha || 0;
@@ -320,7 +330,7 @@ export default function Infografis() {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
               {/* Provinsi */}
               <div className="space-y-1.5">
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Provinsi</label>
@@ -393,6 +403,25 @@ export default function Infografis() {
                 </div>
               </div>
 
+              {/* Tipe Administrasi */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider">Tipe Administrasi</label>
+                <div className="relative">
+                  <select
+                    value={selectedTipeAdministrasi}
+                    onChange={(e) => {
+                      setSelectedTipeAdministrasi(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm text-gray-800 placeholder-gray-400 font-medium focus:bg-white focus:outline-none focus:border-[#0B8457] focus:ring-4 focus:ring-green-500/10 transition-all cursor-pointer"
+                  >
+                    <option value="">Semua Tipe</option>
+                    <option value="Desa">Desa</option>
+                    <option value="Kelurahan">Kelurahan</option>
+                  </select>
+                </div>
+              </div>
+
               {/* Reset Action */}
               <button
                 type="button"
@@ -405,7 +434,7 @@ export default function Infografis() {
             </div>
 
             {/* Filter Badge Display */}
-            {(selectedProvinsiName || selectedKabupatenName || selectedKecamatanName) && (
+            {(selectedProvinsiName || selectedKabupatenName || selectedKecamatanName || selectedTipeAdministrasi) && (
               <div className="flex flex-wrap items-center gap-2 mt-4 pt-3 border-t border-gray-50 text-xs">
                 <span className="text-gray-400 font-medium">Filter Aktif:</span>
                 {selectedProvinsiName && (
@@ -421,6 +450,11 @@ export default function Infografis() {
                 {selectedKecamatanName && (
                   <span className="bg-green-50 text-[#0B8457] px-2.5 py-1 rounded-lg font-bold border border-green-100">
                     Kecamatan: {selectedKecamatanName}
+                  </span>
+                )}
+                {selectedTipeAdministrasi && (
+                  <span className="bg-green-50 text-[#0B8457] px-2.5 py-1 rounded-lg font-bold border border-green-100">
+                    Tipe: {selectedTipeAdministrasi}
                   </span>
                 )}
               </div>
@@ -452,88 +486,58 @@ export default function Infografis() {
           ) : (
             <>
               {/* Section: Summary Metrics Cards */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-5 mb-8">
-                {/* 1. Total Desa */}
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0B8457]"></div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total Desa</p>
-                      <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesa)}</h3>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-green-50 text-[#0B8457] flex items-center justify-center">
-                      <Database size={18} />
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-gray-400 mt-4 font-medium">Seluruh desa di wilayah terfilter</p>
-                </div>
-
-                {/* 2. Desa Beririsan */}
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                {/* 1. Total Desa / Kelurahan */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-[#0284c7]"></div>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Desa Beririsan</p>
-                      <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesaBeririsan)}</h3>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total {labelTipeAdmin}</p>
+                      <h3 className="text-3xl font-extrabold text-gray-900">{formatNumber(totalDesa)}</h3>
                     </div>
-                    <div className="w-9 h-9 rounded-xl bg-sky-50 text-[#0284c7] flex items-center justify-center">
-                      <Layers size={18} />
+                    <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center">
+                      <Home size={22} strokeWidth={2.5} />
                     </div>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-4 font-bold text-sky-700 bg-sky-50/50 px-2 py-0.5 rounded-md inline-block">
-                    {getPercentage(totalDesaBeririsan, totalDesa)} dari total desa
-                  </p>
+                  <p className="text-xs text-gray-400 font-medium">Seluruh {labelTipeAdmin.toLowerCase()} di wilayah terfilter</p>
                 </div>
 
-                {/* 3. Desa Dalam Kawasan */}
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-[#059669]"></div>
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Desa Di Dalam Hutan</p>
-                      <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesaDalam)}</h3>
-                    </div>
-                    <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#059669] flex items-center justify-center">
-                      <TreePine size={18} />
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-gray-500 mt-4 font-bold text-emerald-700 bg-emerald-50/50 px-2 py-0.5 rounded-md inline-block">
-                    {getPercentage(totalDesaDalam, totalDesa)} dari total desa
-                  </p>
-                </div>
-
-                {/* 4. Desa Beririsan Sebagian */}
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
+                {/* 2. Total Desa Hutan (Terdapat Kawasan Hutan) */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm relative overflow-hidden group">
                   <div className="absolute top-0 left-0 w-1.5 h-full bg-[#d97706]"></div>
-                  <div className="flex justify-between items-start">
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Desa Beririsan Sebagian</p>
-                      <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesaBeririsanSebagian)}</h3>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Total {labelTipeAdmin} Terdapat Kawasan Hutan</p>
+                      <h3 className="text-3xl font-extrabold text-gray-900">{formatNumber(totalDesaHutan)}</h3>
                     </div>
-                    <div className="w-9 h-9 rounded-xl bg-amber-50 text-[#d97706] flex items-center justify-center">
-                      <Compass size={18} />
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 text-[#d97706] flex items-center justify-center">
+                      <TreePine size={22} strokeWidth={2.5} />
                     </div>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-4 font-bold text-amber-700 bg-amber-50/50 px-2 py-0.5 rounded-md inline-block">
-                    {getPercentage(totalDesaBeririsanSebagian, totalDesa)} dari total desa
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-extrabold px-3 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200/50">
+                      {getPercentage(totalDesaHutan, totalDesa)} dari total {labelTipeAdmin.toLowerCase()}
+                    </span>
+                  </div>
                 </div>
 
-                {/* 5. Desa Luar Kawasan */}
-                <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 w-1.5 h-full bg-[#4b5563]"></div>
-                  <div className="flex justify-between items-start">
+                {/* 3. Total Desa Tidak Memiliki Kawasan Hutan */}
+                <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm relative overflow-hidden group">
+                  <div className="absolute top-0 left-0 w-1.5 h-full bg-[#059669]"></div>
+                  <div className="flex justify-between items-start mb-3">
                     <div>
-                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Desa Di Luar Kawasan</p>
-                      <h3 className="text-3xl font-extrabold text-gray-950">{formatNumber(totalDesaLuar)}</h3>
+                      <p className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">{labelTipeAdmin} Tidak Terdapat Kawasan Hutan</p>
+                      <h3 className="text-3xl font-extrabold text-gray-900">{formatNumber(totalDesaLuar)}</h3>
                     </div>
-                    <div className="w-9 h-9 rounded-xl bg-gray-50 text-[#4b5563] flex items-center justify-center">
-                      <LandPlot size={18} />
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#059669] flex items-center justify-center">
+                      <Leaf size={22} strokeWidth={2.5} />
                     </div>
                   </div>
-                  <p className="text-[10px] text-gray-500 mt-4 font-bold text-gray-700 bg-gray-50/50 px-2 py-0.5 rounded-md inline-block">
-                    {getPercentage(totalDesaLuar, totalDesa)} dari total desa
-                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] font-extrabold px-3 py-1 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200/50">
+                      {getPercentage(totalDesaLuar, totalDesa)} dari total {labelTipeAdmin.toLowerCase()}
+                    </span>
+                  </div>
                 </div>
               </div>
 

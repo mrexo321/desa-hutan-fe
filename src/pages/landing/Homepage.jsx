@@ -188,9 +188,12 @@ const Homepage = () => {
               ) : (
                 <div className="space-y-6">
                   {/* Badge */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/15 border border-emerald-400/30 rounded-full text-emerald-200 text-xs font-bold uppercase tracking-widest leading-none animate-fade-in-up">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                    PUSAT PENGEMBANGAN SOSIAL EKONOMI MASYARAKAT HUTAN Kementerian Kehutanan
+                  <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/15 border border-emerald-400/30 rounded-2xl text-emerald-200 text-xs font-bold uppercase tracking-widest animate-fade-in-up">
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0"></span>
+                    <div className="flex flex-col text-left leading-snug">
+                      <span>PUSAT PENGEMBANGAN SOSIAL EKONOMI MASYARAKAT HUTAN</span>
+                      <span className="text-[11px] text-emerald-300 font-semibold tracking-wider uppercase mt-0.5">Kementerian Kehutanan</span>
+                    </div>
                   </div>
 
                   {/* Headline */}
@@ -342,42 +345,42 @@ const Homepage = () => {
                 </div>
 
                 <div className="space-y-4">
-                    <a
-                  href="#"
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 transition-all group/item"
-                >
-                  <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover/item:scale-105 transition-transform">
-                    <Mail size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold text-slate-900 truncate">Email Layanan Publik</span>
-                      <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
-                        Utama
-                      </span>
+                  <a
+                    href="#"
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 transition-all group/item"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover/item:scale-105 transition-transform">
+                      <Mail size={20} />
                     </div>
-                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">p2semh.kehutanan@gmail.com </div>
-                  </div>
-                  <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
-                </a>
-                <a
-                  href="#"
-                  className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 transition-all group/item"
-                >
-                  <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover/item:scale-105 transition-transform">
-                    <Mail size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-extrabold text-slate-900 truncate">Email Layanan Publik</span>
-                      <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
-                        Utama
-                      </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-extrabold text-slate-900 truncate">Email Layanan Publik</span>
+                        <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
+                          Utama
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">p2semh.kehutanan@gmail.com </div>
                     </div>
-                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">puspsemh@kehutanan.go.id</div>
-                  </div>
-                  <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
-                </a>
+                    <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
+                  </a>
+                  <a
+                    href="#"
+                    className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 transition-all group/item"
+                  >
+                    <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover/item:scale-105 transition-transform">
+                      <Mail size={20} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-extrabold text-slate-900 truncate">Email Layanan Publik</span>
+                        <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
+                          Utama
+                        </span>
+                      </div>
+                      <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">puspsemh@kehutanan.go.id</div>
+                    </div>
+                    <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
+                  </a>
                 </div>
               </div>
 

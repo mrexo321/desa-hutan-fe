@@ -282,15 +282,6 @@ export default function DataDesaPublic() {
     const payload = {
       tahun: Number(selectedTahunVal),
       tingkatAdministrasi: selectedWilayahLevel,
-      provinsi: selectedProvObj
-        ? { id: selectedProvObj.id, nama: selectedProvObj.nama || selectedProvObj.name }
-        : null,
-      kabupaten: selectedKabObj
-        ? { id: selectedKabObj.id, nama: selectedKabObj.nama || selectedKabObj.name }
-        : null,
-      kecamatan: selectedKecObj
-        ? { id: selectedKecObj.id, nama: selectedKecObj.nama || selectedKecObj.name }
-        : null,
       jenisData: selectedJenisData,
       email: email.trim(),
       nama: nama.trim(),
@@ -299,6 +290,36 @@ export default function DataDesaPublic() {
       // tujuan: "tujuan",
       altcha: altchaPayload,
     };
+
+    if (
+      (selectedWilayahLevel === "provinsi" ||
+        selectedWilayahLevel === "kabupaten" ||
+        selectedWilayahLevel === "kecamatan") &&
+      selectedProvObj
+    ) {
+      payload.provinsi = {
+        id: String(selectedProvObj.id),
+        nama: String(selectedProvObj.nama || selectedProvObj.name),
+      };
+    }
+
+    if (
+      (selectedWilayahLevel === "kabupaten" ||
+        selectedWilayahLevel === "kecamatan") &&
+      selectedKabObj
+    ) {
+      payload.kabupaten = {
+        id: String(selectedKabObj.id),
+        nama: String(selectedKabObj.nama || selectedKabObj.name),
+      };
+    }
+
+    if (selectedWilayahLevel === "kecamatan" && selectedKecObj) {
+      payload.kecamatan = {
+        id: String(selectedKecObj.id),
+        nama: String(selectedKecObj.nama || selectedKecObj.name),
+      };
+    }
 
     try {
       const response = await performaDesaService.createPublicRequestExcel(payload);

@@ -127,11 +127,6 @@ export default function Sidebar({ activeMenu }) {
       permission: "intervensi_desa:read",
     },
     {
-      name: "Manajemen Situs",
-      path: "/dashboard/manajemen-situs",
-      icon: <Globe {...iconProps} />,
-    },
-    {
       name: "Manajemen User",
       path: "/dashboard/manajemen-user",
       icon: <Users {...iconProps} />,

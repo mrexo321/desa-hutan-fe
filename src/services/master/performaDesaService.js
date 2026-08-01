@@ -231,30 +231,86 @@ export const performaDesaService = {
   },
 
   /**
-   * POST /performa-desa-hutan/request-excel/:id
-   * Update status permohonan excel performa (approve / reject).
+   * POST /request-excel/:requestExcelId/approve
+   * Setujui permohonan excel.
    */
-  async updateRequestExcelStatus(id, payload) {
+  async approveRequestExcel(id, payload = {}) {
     try {
-      const response = await masterInstance.post(`/performa-desa-hutan/request-excel/${id}`, payload);
+      const response = await masterInstance.post(`/request-excel/${id}/approve`, payload);
       return response.data;
     } catch (error) {
-      console.warn(`Using localStorage fallback to update status for performa request ${id}`, error);
+      if (error.response?.status === 404) {
+        try {
+          const response = await masterInstance.post(`/performa-desa-hutan/request-excel/${id}/approve`, payload);
+          return response.data;
+        } catch (err2) {
+          if (err2.response?.status === 404) {
+            const response = await axiosInstance.post(`/api/request-excel/${id}/approve`, payload);
+            return response.data;
+          }
+          throw err2;
+        }
+      }
+      if (error.response) {
+        throw error;
+      }
+      console.warn(`Using localStorage fallback to approve request ${id}`, error);
       const local = getLocalPerformaRequests();
       const index = local.findIndex((r) => String(r.id) === String(id));
       if (index !== -1) {
-        local[index].status = payload.status; // approved, rejected, failed
-        local[index].message = payload.message || null;
-        if (payload.status === "rejected") {
-          local[index].reject_reason = payload.message || payload.reject_reason || null;
-        } else if (payload.status === "failed") {
-          local[index].error_message = payload.message || payload.error_message || null;
-        }
+        local[index].status = "approved";
         saveLocalPerformaRequests(local);
         return { success: true, data: local[index] };
       }
       throw error;
     }
+  },
+
+  /**
+   * POST /request-excel/:requestExcelId/reject
+   * Tolak permohonan excel.
+   */
+  async rejectRequestExcel(id, payload = {}) {
+    try {
+      const response = await masterInstance.post(`/request-excel/${id}/reject`, payload);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        try {
+          const response = await masterInstance.post(`/performa-desa-hutan/request-excel/${id}/reject`, payload);
+          return response.data;
+        } catch (err2) {
+          if (err2.response?.status === 404) {
+            const response = await axiosInstance.post(`/api/request-excel/${id}/reject`, payload);
+            return response.data;
+          }
+          throw err2;
+        }
+      }
+      if (error.response) {
+        throw error;
+      }
+      console.warn(`Using localStorage fallback to reject request ${id}`, error);
+      const local = getLocalPerformaRequests();
+      const index = local.findIndex((r) => String(r.id) === String(id));
+      if (index !== -1) {
+        local[index].status = "rejected";
+        local[index].reject_reason = payload.reject_reason || payload.message || "Ditolak oleh admin";
+        saveLocalPerformaRequests(local);
+        return { success: true, data: local[index] };
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * Update status permohonan excel performa (approve / reject).
+   */
+  async updateRequestExcelStatus(id, payload) {
+    if (payload?.status === "rejected") {
+      return this.rejectRequestExcel(id, payload);
+    }
+    return this.approveRequestExcel(id, payload);
   },
 };
 

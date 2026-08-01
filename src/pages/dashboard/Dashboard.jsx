@@ -504,7 +504,7 @@ const Dashboard = () => {
   // --- SEARCH MAP API ---
   const { data: searchResponse, isFetching: isFetchingSearch } = useQuery({
     queryKey: ["searchMapDesaDashboard", debouncedQuery],
-    queryFn: () => wilayahDesaService.searchMap(debouncedQuery, 5),
+    queryFn: () => wilayahDesaService.searchMap(debouncedQuery, 50),
     enabled: debouncedQuery.trim().length >= 2,
     staleTime: 30000,
   });
@@ -564,6 +564,18 @@ const Dashboard = () => {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
+
+  // --- TRIGGER MAPBOX RESIZE UPON FULLSCREEN TOGGLE ---
+  useEffect(() => {
+    const t1 = setTimeout(() => mapRef.current?.resize(), 50);
+    const t2 = setTimeout(() => mapRef.current?.resize(), 300);
+    const t3 = setTimeout(() => mapRef.current?.resize(), 600);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isFullscreen]);
 
   // --- FLY-TO FROM DETAIL DESA (via location.state.flyToKode) ---
   useEffect(() => {
@@ -736,7 +748,7 @@ const Dashboard = () => {
       ========================================= */}
       <div
         className={`transition-all duration-500 ease-in-out ${isFullscreen
-          ? "fixed inset-0 z-[100] w-screen h-screen bg-[#E8EDE9]"
+          ? "fixed inset-0 z-[99999] w-screen h-screen bg-[#E8EDE9]"
           : "relative w-full h-[500px] md:h-[600px] rounded-[32px] overflow-hidden mb-8 shadow-sm border border-gray-200 bg-[#E8EDE9] shrink-0"
           }`}
       >

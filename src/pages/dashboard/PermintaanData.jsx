@@ -60,24 +60,82 @@ const StatusBadge = ({ status }) => {
 };
 
 // ── Helpers ──
-const getFilterValue = (filters, key, fallback = "-") => {
-  if (!filters) return fallback;
-  return filters[key] || fallback;
+const extractWilayahName = (val) => {
+  if (!val) return null;
+  if (typeof val === "string") return val;
+  if (typeof val === "object") {
+    return val.nama || val.name || val.label || null;
+  }
+  return null;
+};
+
+const getProvinsiName = (filters) => {
+  if (!filters) return null;
+  if (filters.provinsi) return extractWilayahName(filters.provinsi);
+  if (filters.provinsiNama) return filters.provinsiNama;
+  if (filters.provinsiId) return `Prov: ${String(filters.provinsiId).substring(0, 8)}...`;
+  return null;
+};
+
+const getKabupatenName = (filters) => {
+  if (!filters) return null;
+  if (filters.kabupaten) return extractWilayahName(filters.kabupaten);
+  if (filters.kabupatenNama) return filters.kabupatenNama;
+  if (filters.kabupatenId) return `Kab: ${String(filters.kabupatenId).substring(0, 8)}...`;
+  return null;
+};
+
+const getKecamatanName = (filters) => {
+  if (!filters) return null;
+  if (filters.kecamatan) return extractWilayahName(filters.kecamatan);
+  if (filters.kecamatanNama) return filters.kecamatanNama;
+  if (filters.kecamatanId) return `Kec: ${String(filters.kecamatanId).substring(0, 8)}...`;
+  return null;
+};
+
+const getDesaName = (filters) => {
+  if (!filters) return null;
+  if (filters.desa) return extractWilayahName(filters.desa);
+  if (filters.desaNama) return filters.desaNama;
+  if (filters.desaId) return `Desa: ${String(filters.desaId).substring(0, 8)}...`;
+  return null;
 };
 
 const getWilayahLabel = (filters) => {
   if (!filters) return "-";
-  const parts = [];
-  const prov = filters.provinsi || filters.provinsiNama || (filters.provinsiId ? `Prov: ${String(filters.provinsiId).substring(0, 8)}...` : null);
-  const kab = filters.kabupaten || filters.kabupatenNama || (filters.kabupatenId ? `Kab: ${String(filters.kabupatenId).substring(0, 8)}...` : null);
-  const kec = filters.kecamatan || filters.kecamatanNama || (filters.kecamatanId ? `Kec: ${String(filters.kecamatanId).substring(0, 8)}...` : null);
+  const tingkat = String(filters.tingkatAdministrasi || filters.tingkat_administrasi || "").toLowerCase();
 
-  if (prov) parts.push(prov);
-  if (kab) parts.push(kab);
-  if (kec) parts.push(kec);
+  if (tingkat === "nasional") {
+    return "-";
+  }
 
-  if (parts.length === 0) return "-";
-  return parts.join(" • ");
+  if (tingkat === "provinsi") {
+    return getProvinsiName(filters) || "-";
+  }
+
+  if (tingkat === "kabupaten") {
+    return getKabupatenName(filters) || "-";
+  }
+
+  if (tingkat === "kecamatan") {
+    return getKecamatanName(filters) || "-";
+  }
+
+  if (tingkat === "desa") {
+    return getDesaName(filters) || "-";
+  }
+
+  // Fallback jika tingkatAdministrasi tidak terdefinisi:
+  const kec = getKecamatanName(filters);
+  if (kec) return kec;
+  const kab = getKabupatenName(filters);
+  if (kab) return kab;
+  const prov = getProvinsiName(filters);
+  if (prov) return prov;
+  const desa = getDesaName(filters);
+  if (desa) return desa;
+
+  return "-";
 };
 
 const formatJenisDataBadges = (jenisData) => {
@@ -157,9 +215,10 @@ export default function PermintaanData() {
         const tahunVal = String(r.filters?.tahun || "").toLowerCase();
         const exportType = String(r.export_type || "").toLowerCase();
         const tingkatVal = String(r.filters?.tingkatAdministrasi || r.filters?.tingkat_administrasi || "").toLowerCase();
-        const prov = String(r.filters?.provinsi || r.filters?.provinsiNama || r.filters?.provinsiId || "").toLowerCase();
-        const kab = String(r.filters?.kabupaten || r.filters?.kabupatenNama || r.filters?.kabupatenId || "").toLowerCase();
-        const kec = String(r.filters?.kecamatan || r.filters?.kecamatanNama || r.filters?.kecamatanId || "").toLowerCase();
+        const prov = String(getProvinsiName(r.filters) || "").toLowerCase();
+        const kab = String(getKabupatenName(r.filters) || "").toLowerCase();
+        const kec = String(getKecamatanName(r.filters) || "").toLowerCase();
+        const desa = String(getDesaName(r.filters) || "").toLowerCase();
 
         return (
           namaVal.includes(q) ||
@@ -171,7 +230,8 @@ export default function PermintaanData() {
           tingkatVal.includes(q) ||
           prov.includes(q) ||
           kab.includes(q) ||
-          kec.includes(q)
+          kec.includes(q) ||
+          desa.includes(q)
         );
       });
     }
@@ -222,11 +282,7 @@ export default function PermintaanData() {
 
   // ── Mutations ──
   const approveMutation = useMutation({
-    mutationFn: (id) =>
-      performaDesaService.updateRequestExcelStatus(id, {
-        status: "approved",
-        message: null,
-      }),
+    mutationFn: (id) => performaDesaService.approveRequestExcel(id, {}),
     onSuccess: () => {
       toast.success("Permintaan data berhasil disetujui!");
       queryClient.invalidateQueries({ queryKey: ["request-excel-list"] });
@@ -240,11 +296,9 @@ export default function PermintaanData() {
 
   const rejectMutation = useMutation({
     mutationFn: ({ id, alasan }) =>
-      performaDesaService.updateRequestExcelStatus(id, {
-        status: "rejected",
-        message: alasan,
+      performaDesaService.rejectRequestExcel(id, {
         reject_reason: alasan,
-        rejectReason: alasan,
+        message: alasan,
       }),
     onSuccess: () => {
       toast.success("Permintaan data berhasil ditolak.");
@@ -622,17 +676,17 @@ export default function PermintaanData() {
                     </span>
                   }
                 />
-                {selectedRequest.filters?.provinsiId && (
-                  <DetailRow label="Provinsi ID" value={selectedRequest.filters.provinsiId} mono />
+                {getProvinsiName(selectedRequest.filters) && (
+                  <DetailRow label="Provinsi" value={getProvinsiName(selectedRequest.filters)} bold />
                 )}
-                {selectedRequest.filters?.kabupatenId && (
-                  <DetailRow label="Kabupaten ID" value={selectedRequest.filters.kabupatenId} mono />
+                {getKabupatenName(selectedRequest.filters) && (
+                  <DetailRow label="Kabupaten" value={getKabupatenName(selectedRequest.filters)} bold />
                 )}
-                {selectedRequest.filters?.kecamatanId && (
-                  <DetailRow label="Kecamatan ID" value={selectedRequest.filters.kecamatanId} mono />
+                {getKecamatanName(selectedRequest.filters) && (
+                  <DetailRow label="Kecamatan" value={getKecamatanName(selectedRequest.filters)} bold />
                 )}
-                {selectedRequest.filters?.desaId && (
-                  <DetailRow label="Desa ID" value={selectedRequest.filters.desaId} mono />
+                {getDesaName(selectedRequest.filters) && (
+                  <DetailRow label="Desa" value={getDesaName(selectedRequest.filters)} bold />
                 )}
                 <DetailRow
                   label="Jenis Data"

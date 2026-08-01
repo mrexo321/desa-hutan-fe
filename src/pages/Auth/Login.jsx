@@ -31,16 +31,14 @@ const Login = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
-  // PERBAIKAN: Gunakan accessToken
   const token = useSelector((state) => state.user.accessToken);
 
   useEffect(() => {
-    if (token) {
-      // Beri sedikit jeda agar redux selesai menyimpan ke localstorage
-      const timer = setTimeout(() => {
-        navigate("/dashboard", { replace: true });
-      }, 300);
-      return () => clearTimeout(timer);
+    const profileString = localStorage.getItem("user_profile");
+    const refreshToken = sessionStorage.getItem("_rt");
+
+    if (token || profileString || refreshToken) {
+      navigate("/dashboard", { replace: true });
     }
   }, [token, navigate]);
 

@@ -1,6 +1,7 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GuestRoute from "./components/GuestRoute";
 import ChatWidget from "./components/ChatWidget";
 
 // Import halaman Landing & Auth
@@ -61,7 +62,14 @@ const App = () => {
         {/* ======================================================= */}
         <Route path="/" element={<Homepage />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <Login />
+            </GuestRoute>
+          }
+        />
         <Route path="/infografis" element={<Infografis />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/unauthorized" element={<Unauthorized />} />

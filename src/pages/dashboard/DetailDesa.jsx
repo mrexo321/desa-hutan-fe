@@ -82,7 +82,7 @@ const DesaDetail = () => {
     isError: isErrorDetailIndikator,
   } = useQuery({
     queryKey: ["dimensiDesaDetailById", selectedIndikatorId],
-    queryFn: () => dimensiDesaService.getDimensiDesaById(selectedIndikatorId),
+    queryFn: () => dimensiDesaService.getDimensiDesaByDesaId(selectedIndikatorId, desaId),
     enabled: isAuthReady && !!selectedIndikatorId,
   });
 
@@ -548,14 +548,17 @@ const DesaDetail = () => {
         </div>
       </main>
 
-      {/* MODAL DETAIL INDIKATOR DIMENSI DESA (/v1/dimensi-desa/:id) */}
+      {/* MODAL DETAIL INDIKATOR DIMENSI DESA (/v1/dimensi-desa/:id/desa/:desaId) */}
       {selectedIndikatorId && (() => {
-        const targetItem = detailData?.items?.find(
-          it => it.desaId === desaId || it.desa?.id === desaId || (desa?.kodeKemendagri && it.desa?.kodeKemendagri === desa.kodeKemendagri)
-        ) || detailData?.items?.[0];
+        const metadataItem = detailData?.metadata?.[0];
+        const detailItem = detailData?.detail?.[0];
+        const nilaiList = detailItem?.dimensi || [];
+        const selectedIndikatorItem = indikatorItems.find((item) => item.id === selectedIndikatorId);
 
-        const nilaiList = targetItem?.nilai || [];
-        const columns = detailData?.column || [];
+        const formatNilai = (val) => {
+          const num = Number(val);
+          return !isNaN(num) && val !== "" && val !== null ? num.toFixed(2) : val;
+        };
 
         // Extract highlight cards
         const idmStatus = nilaiList.find(n => n.kode?.toLowerCase().includes("status") || n.nama?.toLowerCase().includes("status")) || (nilaiList.length > 0 ? nilaiList[0] : null);
@@ -576,15 +579,22 @@ const DesaDetail = () => {
                     Rincian Dimensi Pembangunan
                   </span>
                   <h3 className="text-xl font-bold text-slate-800 mt-1.5">
-                    {detailData?.dimensiDesa?.nama || "Detail Indikator Dimensi"}
+                    {selectedIndikatorItem?.nama || "Detail Indikator Dimensi"}
                   </h3>
                 </div>
-                <button
-                  onClick={() => setSelectedIndikatorId(null)}
-                  className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
-                >
-                  <X size={20} />
-                </button>
+                <div className="flex items-center gap-3">
+                  {metadataItem?.tahun && (
+                    <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100/80 px-3 py-1.5 rounded-lg">
+                      Tahun {metadataItem.tahun}
+                    </span>
+                  )}
+                  <button
+                    onClick={() => setSelectedIndikatorId(null)}
+                    className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
               </div>
 
               {/* Body */}
@@ -636,7 +646,7 @@ const DesaDetail = () => {
                             <span className="text-[10px] font-bold uppercase tracking-wider">{idmNilai.nama}</span>
                           </div>
                           <div className="text-4xl font-black text-slate-800 relative z-10 flex items-baseline">
-                            {typeof idmNilai.nilai === 'number' ? idmNilai.nilai.toFixed(2) : idmNilai.nilai}
+                            {formatNilai(idmNilai.nilai)}
                             <span className="text-xs text-slate-400 font-bold ml-1">Poin</span>
                           </div>
                         </div>
@@ -652,7 +662,10 @@ const DesaDetail = () => {
                       {remainingDims.length > 0 ? (
                         <div className="grid grid-cols-1 gap-4">
                           {remainingDims.map((dim, idx) => {
-                            const isNumeric = typeof dim.nilai === 'number';
+                            const numericNilai = Number(dim.nilai);
+                            const isNumeric = dim.nilai !== null && dim.nilai !== "" && !isNaN(numericNilai);
+                            // Skala 0-1 (mis. 0.x) dikonversi ke persen; skala puluhan (0-100) dipakai langsung
+                            const percentValue = numericNilai > 0 && numericNilai < 1 ? numericNilai * 100 : numericNilai;
                             return (
                               <div
                                 key={idx}
@@ -671,12 +684,12 @@ const DesaDetail = () => {
                                   {isNumeric ? (
                                     <div className="flex flex-col items-end gap-1">
                                       <span className="text-sm font-black text-slate-800 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100">
-                                        {dim.nilai.toFixed(2)}
+                                        {numericNilai.toFixed(2)}
                                       </span>
                                       <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden mt-1">
                                         <div
                                           className="h-full bg-emerald-500 rounded-full"
-                                          style={{ width: `${Math.min(dim.nilai * 100, 100)}%` }}
+                                          style={{ width: `${Math.min(Math.max(percentValue, 0), 100)}%` }}
                                         />
                                       </div>
                                     </div>

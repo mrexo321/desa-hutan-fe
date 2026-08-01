@@ -13,6 +13,7 @@ import {
   MapPin,
   Share2,
   Instagram,
+  Facebook,
   Youtube,
   Globe,
   Map,
@@ -24,6 +25,20 @@ import {
 
 import { Link } from "react-router-dom";
 import defaultHeroBg from '../../../public/HeroBackground.png';
+import { situsTerkaitService } from "../../services/master/situsTerkaitService";
+import environment from "../../config/environment";
+
+/**
+ * Helper untuk menyusun URL gambar logo dari path relatif / uploads
+ */
+const resolveImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith("http://") || path.startsWith("https://")) return path;
+  const baseUrl = environment.API_URL || "http://localhost:3001";
+  const cleanBase = baseUrl.replace(/\/$/, "");
+  const cleanPath = path.startsWith("/") ? path : `/${path}`;
+  return `${cleanBase}${cleanPath}`;
+};
 
 // ─────────────────────────────────────────
 // HELPER: HighlightedText with premium typography
@@ -98,6 +113,25 @@ const Homepage = () => {
     staleTime,
   });
 
+  const { data: rawSitusTerkait = [], isLoading: situsTerkaitLoading } = useQuery({
+    queryKey: ["situsTerkaitPublic"],
+    queryFn: async () => {
+      const res = await situsTerkaitService.getAll();
+      return res?.data || res || [];
+    },
+    staleTime,
+  });
+
+  // Default fallback data if API returns empty
+  const situsTerkaitList = Array.isArray(rawSitusTerkait) && rawSitusTerkait.length > 0
+    ? rawSitusTerkait
+    : [
+        { id: "1", nama: "Kementerian Kehutanan", url: "https://www.menhut.go.id", logo: null },
+        { id: "2", nama: "Badan Informasi Geospasial", url: "https://www.big.go.id", logo: null },
+        { id: "3", nama: "Kementerian Dalam Negeri", url: "https://www.kemendagri.go.id", logo: null },
+        { id: "4", nama: "SIPSN Kemenhut", url: "https://sipsn.menhut.go.id", logo: null },
+      ];
+
   const hero = siteSettingService.toMap(heroArr);
   const profil = siteSettingService.toMap(profilArr);
   const features = siteSettingService.toMap(featuresArr);
@@ -164,11 +198,11 @@ const Homepage = () => {
                   {/* Badge */}
                   <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/15 border border-emerald-400/30 rounded-full text-emerald-200 text-xs font-bold uppercase tracking-widest leading-none animate-fade-in-up">
                     <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                    Kementerian Kehutanan RI
+                    PUSAT PENGEMBANGAN SOSIAL EKONOMI MASYARAKAT HUTAN Kementerian Kehutanan
                   </div>
 
                   {/* Headline */}
-                  <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[56px] font-light text-white leading-[1.25] tracking-tight mb-4 animate-fade-in-up animate-delay-1">
+                  <h1 className="text-xl sm:text-2xl md:text-2xl lg:text-[30px] font-light text-white leading-[1.25] tracking-tight mb-4 animate-fade-in-up animate-delay-1">
                     {hero.hero_headline_normal || "Demi mewujudkan kemandirian desa melalui pemetaan untuk"}
                     <br className="hidden sm:inline" />
                     <span className="font-black bg-gradient-to-r from-emerald-200 to-emerald-400 bg-clip-text text-transparent">
@@ -277,67 +311,6 @@ const Homepage = () => {
           </div>
         </section>
 
-        {/* ─────────────────────────────────────────── */}
-        {/* 3. MAP & HUBUNGI KAMI SECTION               */}
-        {/* ─────────────────────────────────────────── */}
-        <section id="contact-section" className="py-20 bg-white border-y border-slate-100">
-          <div className="max-w-7xl mx-auto px-6">
-            {/* Header */}
-            <div className="text-center max-w-2xl mx-auto mb-16">
-              <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-full inline-block mb-3">
-                Hubungi Kami
-              </span>
-              <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight uppercase">
-                LOKASI &amp; KONTAK KEMENTERIAN KEHUTANAN
-              </h2>
-              <p className="text-sm text-slate-500 mt-2 font-medium">
-                Kantor Pusat Kementerian Kehutanan Republik Indonesia siap melayani informasi publik dan konsultasi perhutanan sosial. Silakan akses peta dan titik lokasi resmi di bawah ini.
-              </p>
-            </div>
-
-            {/* Dashboard Mockup Map Frame */}
-            <div className="max-w-5xl mx-auto bg-slate-950 p-3 rounded-[2rem] shadow-2xl border border-slate-800 relative group overflow-hidden">
-              {/* Inner Map Panel */}
-              <div className="relative w-full h-[400px] md:h-[480px] bg-slate-900 rounded-[1.5rem] overflow-hidden">
-                <iframe
-                  title="Peta Lokasi Kementerian Kehutanan RI"
-                  src="https://maps.google.com/maps?q=Gedung%20Manggala%20Wanabakti%20Kementerian%20Kehutanan%20RI%20Jakarta&t=&z=16&ie=UTF8&iwloc=&output=embed"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0, opacity: 0.9 }}
-                  allowFullScreen=""
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="brightness-95 hover:brightness-100 transition-all duration-700"
-                ></iframe>
-
-                {/* Floating Map Info Overlay */}
-                <div className="absolute bottom-6 left-6 right-6 md:right-auto bg-slate-950/90 backdrop-blur-md border border-slate-800 p-5 rounded-2xl text-white shadow-2xl font-sans max-w-sm">
-                  <div className="flex items-center gap-2 mb-2 text-emerald-400 font-bold text-xs uppercase tracking-wider">
-                    <MapPin size={14} />
-                    Lokasi Kantor Resmi
-                  </div>
-                  <h4 className="font-extrabold text-sm mb-1 text-slate-100">Kementerian Kehutanan RI</h4>
-                  <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-                    Gedung Manggala Wanabakti, Jl. Gatot Subroto, Senayan, Jakarta Pusat, DKI Jakarta 10270
-                  </p>
-
-                  <div className="grid grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-800 text-center">
-                    <div>
-                      <div className="text-xs font-bold text-emerald-400">Senin - Jumat</div>
-                      <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">08.00 - 16.00 WIB</div>
-                    </div>
-                    <div>
-                      <div className="text-xs font-bold text-amber-400">Pusat Layanan</div>
-                      <div className="text-[9px] text-slate-500 uppercase tracking-widest font-bold">Informasi Publik</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
 
         {/* ─────────────────────────────────────────── */}
         {/* 4. MEDIA SOSIAL & SITUS TERKAIT SECTION     */}
@@ -349,187 +322,212 @@ const Homepage = () => {
               Tautan &amp; Jejaring
             </span>
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight uppercase">
-              MEDIA SOSIAL &amp; SITUS TERKAIT
+              KONTAK, MEDIA SOSIAL &amp; SITUS TERKAIT
             </h2>
             <p className="text-sm text-slate-500 mt-2 font-medium">
-              Akses cepat ke jejaring media sosial resmi dan portal situs kementerian serta lembaga mitra terkait pengelolaan kawasan hutan.
+              Akses cepat ke layanan kontak resmi, akun media sosial, serta portal situs kementerian dan lembaga mitra terkait.
             </p>
           </div>
 
-          {/* 30% / 70% Grid Layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* 50% / 50% Grid Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-stretch">
 
-            {/* SEBELAH KIRI (~30% / 4 COLS): CARD MEDIA SOSIAL */}
-            <div className="lg:col-span-4 bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
-                  <Share2 size={20} />
+            {/* SEBELAH KIRI (50%): DIBAGI MENJADI 2 CARD (KONTAK EMAIL & MEDSOS) */}
+            <div className="flex flex-col gap-6">
+
+              {/* CARD 1: KONTAK RESMI (EMAIL) */}
+              <div className="bg-white border-2 border-emerald-500/40 rounded-3xl p-6 shadow-md shadow-emerald-700/5 hover:shadow-lg transition-all relative overflow-hidden group">
+                <div className="absolute -right-8 -bottom-8 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
+                    <Mail size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-base">Kontak Resmi</h3>
+                    <p className="text-xs text-slate-400 font-medium">Layanan informasi &amp; komunikasi publik</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-800 text-base">Media Sosial Resmi</h3>
-                  <p className="text-xs text-slate-400 font-medium">Ikuti pembaruan berita</p>
+
+                <a
+                  href="mailto:humas@menhut.go.id"
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 transition-all group/item"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover/item:scale-105 transition-transform">
+                    <Mail size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-extrabold text-slate-900 truncate">Email Layanan Publik</span>
+                      <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
+                        Utama
+                      </span>
+                    </div>
+                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">humas@menhut.go.id</div>
+                  </div>
+                  <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
+                </a>
+              </div>
+
+              {/* CARD 2: MEDIA SOSIAL RESMI */}
+              <div className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow flex-1 flex flex-col justify-between">
+                <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
+                    <Share2 size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-extrabold text-slate-800 text-base">Media Sosial Resmi</h3>
+                    <p className="text-xs text-slate-400 font-medium">Ikuti pembaruan berita &amp; kegiatan terbaru</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Instagram */}
+                  <a
+                    href="https://www.instagram.com/kementeriankehutanan"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-pink-50 text-pink-600 border border-pink-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Instagram size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-extrabold text-slate-800 truncate">Instagram</div>
+                      <div className="text-[11px] font-semibold text-slate-400 truncate">@kemenhut</div>
+                    </div>
+                    <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                  </a>
+
+                  {/* Facebook */}
+                  <a
+                    href="https://www.facebook.com/kementeriankehutanan"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                      <Facebook size={18} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs font-extrabold text-slate-800 truncate">Facebook</div>
+                      <div className="text-[11px] font-semibold text-slate-400 truncate">Kementerian Kehutanan</div>
+                    </div>
+                    <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                  </a>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 gap-3.5">
-                {/* Instagram */}
-                <a
-                  href="https://www.instagram.com/kementeriankehutanan"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-pink-50 text-pink-600 border border-pink-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Instagram size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">Instagram</div>
-                    <div className="text-[11px] font-semibold text-slate-400 truncate">@kemenhut</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
-
-                {/* YouTube */}
-                <a
-                  href="https://www.youtube.com/@kementeriankehutananri"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Youtube size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">YouTube</div>
-                    <div className="text-[11px] font-semibold text-slate-400 truncate">Kemenhut RI</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
-
-                {/* Facebook */}
-                <a
-                  href="https://www.facebook.com/kementeriankehutanan"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Globe size={18} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">Facebook</div>
-                    <div className="text-[11px] font-semibold text-slate-400 truncate">Kementerian Kehutanan</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
-
-                {/* X / Twitter */}
-                <a
-                  href="https://x.com/kemenhut"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform font-black text-xs">
-                    X
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">X (Twitter)</div>
-                    <div className="text-[11px] font-semibold text-slate-400 truncate">@kemenhut</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
-              </div>
             </div>
 
-            {/* SEBELAH KANAN (~70% / 8 COLS): CARD SITUS TERKAIT */}
-            <div className="lg:col-span-8 bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-sm hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-3 mb-6 pb-4 border-b border-slate-100">
-                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0">
-                  <Globe size={20} />
+            {/* SEBELAH KANAN (50%): CARD SITUS TERKAIT */}
+            <div className="bg-white border border-slate-200/80 rounded-3xl p-6 sm:p-8 shadow-[0_4px_25px_rgba(0,0,0,0.02)] hover:shadow-xl hover:shadow-emerald-950/5 transition-all duration-300 flex flex-col justify-between relative overflow-hidden">
+              {/* Top decorative gradient glow */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-emerald-500/10 to-transparent rounded-bl-full pointer-events-none"></div>
+
+              <div className="flex items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100/80 relative z-10">
+                <div className="flex items-center gap-3">
+                  <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-50 to-emerald-100/60 text-[#2D7344] border border-emerald-200/60 flex items-center justify-center shrink-0 shadow-xs">
+                    <Globe size={22} className="stroke-[2.2]" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-extrabold text-slate-800 text-base sm:text-lg tracking-tight">Situs Terkait</h3>
+                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full">
+                        Mitra
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Tautan resmi portal &amp; lembaga mitra kehutanan</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="font-extrabold text-slate-800 text-base">Situs Terkait</h3>
-                  <p className="text-xs text-slate-400 font-medium">Tautan resmi portal &amp; lembaga mitra kehutanan</p>
-                </div>
+                {Array.isArray(situsTerkaitList) && situsTerkaitList.length > 0 && (
+                  <span className="hidden sm:inline-flex items-center text-[10px] font-extrabold text-slate-500 bg-slate-100/80 px-2.5 py-1 rounded-full border border-slate-200/60 shrink-0">
+                    {situsTerkaitList.length} Portal
+                  </span>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* Situs 1: Kementerian Kehutanan */}
-                <a
-                  href="https://www.menhut.go.id"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Globe size={20} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 flex-1 items-center relative z-10">
+                {situsTerkaitLoading ? (
+                  <>
+                    {[1, 2, 3, 4].map((n) => (
+                      <div key={n} className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 animate-pulse">
+                        <div className="w-11 h-11 rounded-xl bg-slate-200 shrink-0"></div>
+                        <div className="flex-1 space-y-2">
+                          <div className="h-3 bg-slate-200 rounded w-3/4"></div>
+                          <div className="h-2.5 bg-slate-200 rounded w-1/2"></div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                ) : situsTerkaitList.length === 0 ? (
+                  <div className="sm:col-span-2 py-10 flex flex-col items-center justify-center text-slate-400 gap-2">
+                    <Globe size={32} className="text-slate-300 stroke-[1.5]" />
+                    <span className="text-xs font-semibold">Belum ada situs terkait terdaftar.</span>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">Kementerian Kehutanan</div>
-                    <div className="text-[11px] font-semibold text-emerald-700 truncate">menhut.go.id</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
+                ) : (
+                  situsTerkaitList.map((situs) => {
+                    const imgUrl = resolveImageUrl(situs.logo);
+                    const domainDisplay = situs.url
+                      ? situs.url.replace(/^https?:\/\//i, "").replace(/\/$/, "")
+                      : "";
 
-                {/* Situs 2: Badan Informasi Geospasial */}
-                <a
-                  href="https://www.big.go.id"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-cyan-50 text-cyan-600 border border-cyan-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Globe size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">Badan Informasi Geospasial</div>
-                    <div className="text-[11px] font-semibold text-cyan-700 truncate">big.go.id</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
+                    return (
+                      <a
+                        key={situs.id || situs.nama}
+                        href={situs.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3.5 p-3.5 sm:p-4 rounded-2xl border border-slate-200/60 bg-gradient-to-br from-white via-slate-50/40 to-emerald-50/20 hover:from-white hover:to-emerald-50/80 hover:border-emerald-300 hover:shadow-md hover:shadow-emerald-950/5 hover:-translate-y-0.5 transition-all duration-300 group h-full relative overflow-hidden"
+                      >
+                        {/* Subtle glow accent on hover */}
+                        <div className="absolute top-0 right-0 w-12 h-12 bg-emerald-400/10 rounded-bl-full opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none"></div>
 
-                {/* Situs 3: Kemendagri */}
-                <a
-                  href="https://www.kemendagri.go.id"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 border border-amber-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Globe size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">Kementerian Dalam Negeri</div>
-                    <div className="text-[11px] font-semibold text-amber-700 truncate">kemendagri.go.id</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
-
-                {/* Situs 4: SIPSN Kemenhut */}
-                <a
-                  href="https://sipsn.menhut.go.id"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-3.5 p-4 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                    <Globe size={20} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-xs font-extrabold text-slate-800 truncate">SIPSN Kemenhut</div>
-                    <div className="text-[11px] font-semibold text-emerald-700 truncate">sipsn.menhut.go.id</div>
-                  </div>
-                  <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                </a>
+                        <div className="w-11 h-11 rounded-xl bg-white text-emerald-700 border border-slate-200/80 group-hover:border-emerald-300 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300 overflow-hidden p-1.5 shadow-xs">
+                          {imgUrl ? (
+                            <img
+                              src={imgUrl}
+                              alt={situs.nama}
+                              className="w-full h-full object-contain transition-transform group-hover:scale-110"
+                              onError={(e) => {
+                                e.target.onerror = null;
+                                e.target.style.display = "none";
+                                if (e.target.parentElement) {
+                                  e.target.parentElement.innerHTML = '<svg class="w-5 h-5 text-emerald-600 stroke-[2]" viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>';
+                                }
+                              }}
+                            />
+                          ) : (
+                            <Globe size={20} className="stroke-[2]" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div
+                            className="text-xs font-extrabold text-slate-800 group-hover:text-emerald-900 truncate leading-snug transition-colors"
+                            title={situs.nama}
+                          >
+                            {situs.nama}
+                          </div>
+                          <div
+                            className="text-[10px] font-bold text-emerald-700 truncate mt-1 inline-flex items-center gap-1 bg-emerald-50/80 group-hover:bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-100 transition-colors"
+                            title={situs.url}
+                          >
+                            <span>{domainDisplay || situs.url}</span>
+                          </div>
+                        </div>
+                        <div className="w-7 h-7 rounded-lg bg-slate-100/80 group-hover:bg-emerald-600 group-hover:text-white text-slate-400 flex items-center justify-center shrink-0 transition-all duration-300">
+                          <ExternalLink size={13} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                        </div>
+                      </a>
+                    );
+                  })
+                )}
               </div>
             </div>
 
           </div>
 
-
         </section>
-
 
       </div>
     </HomeLayout>

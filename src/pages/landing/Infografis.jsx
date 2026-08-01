@@ -314,7 +314,7 @@ export default function Infografis() {
               Infografis & Statistik Wilayah Desa Hutan
             </h1>
             <p className="text-sm sm:text-base text-green-100 max-w-2xl mx-auto leading-relaxed">
-              Analisis spasial interaksi wilayah administrasi desa dengan kawasan hutan nasional secara dinamis dan real-time.
+              Analisis spasial wilayah administrasi desa hutan.
             </p>
           </div>
         </section>
@@ -329,7 +329,7 @@ export default function Infografis() {
                 <MapPin size={20} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Filter Wilayah Analisis</h2>
+                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Filter Infografis Desa Hutan</h2>
                 <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Pilih wilayah untuk memfilter data infografis</p>
               </div>
             </div>
@@ -577,7 +577,7 @@ export default function Infografis() {
                     <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full -mr-8 -mt-8 pointer-events-none"></div>
                     <span className="text-xs font-bold text-[#0B8457] uppercase tracking-wider block mb-1">Luas Irisan </span>
                     <span className="text-2xl font-extrabold text-[#0B8457] block">{formatHa(totalLuasIrisan)}</span>
-                    <span className="text-xs text-gray-400 mt-2 block font-medium">Luas Wilayah Desa Yang Terdapat Kawasan Hutan</span>
+                    <span className="text-xs text-gray-400 mt-2 block font-medium">Luas wilayah desa yang terdapat kawasan hutan</span>
                   </div>
                 </div>
 
@@ -585,7 +585,7 @@ export default function Infografis() {
                 {totalLuasDesa > 0 && (
                   <div className="bg-green-50/30 rounded-2xl p-5 border border-green-100/30">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
-                      <span className="text-sm font-bold text-gray-700">Rasio Luas Kawasan Hutan Terhadap Administrasi Desa</span>
+                      <span className="text-sm font-bold text-gray-700">Rasio Luas Kawasan Hutan Terhadap Wilayah Administrasi Desa</span>
                       <span className="text-sm font-black text-[#0B8457]">
                         {((totalLuasIrisan / totalLuasDesa) * 100).toFixed(2)}%
                       </span>
@@ -615,7 +615,7 @@ export default function Infografis() {
                     <Database size={20} />
                   </div>
                   <div>
-                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Sumber Data &amp; Metode Pengolahan Spasial</h2>
+                    <h2 className="text-lg font-bold text-gray-900 tracking-tight">Sumber Data &amp; Teknologi Pengolahan Spasial</h2>
                     <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Referensi sumber data peta dan teknologi komputasi GIS</p>
                   </div>
                 </div>
@@ -635,21 +635,22 @@ export default function Infografis() {
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
                             <strong className="text-gray-800 font-bold block">Peta Kawasan Hutan Desember 2025</strong>
-                            <span>Kementerian Kehutanan RI (Persetujuan &amp; Penetapan Batas Fungsi Kawasan Hutan)</span>
+                            <span> Kementerian Kehutanan (Desember 2025)</span>
                           </div>
                         </li>
                         <li className="flex items-start gap-2.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
-                            <strong className="text-gray-800 font-bold block">Peta Batas Wilayah Desa</strong>
-                            <span>Badan Informasi Geospasial (BIG - Peta RBI &amp; Vektor Geometri Desa)</span>
+                            <strong className="text-gray-800 font-bold block">Peta Batas Wilayah Desa Indonesia</strong>
+                            <span>Peta Rupabumi Indonesia (RBI)</span><br/>
+                            <span>Badan Informasi Geospasial (BIG) 2026</span>
                           </div>
                         </li>
                         <li className="flex items-start gap-2.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
                             <strong className="text-gray-800 font-bold block">Kode &amp; Nama Wilayah Administrasi</strong>
-                            <span>Kementerian Dalam Negeri RI (Permendagri Kode Wilayah Administrasi)</span>
+                            <span>Kementerian Dalam Negeri (Keputusan Menteri Dalam Negeri Nomor Nomor 300.2.2-2138 Tahun 2025 tentang Pemberian dan Pemutakhiran Kode, Data Wilayah Administrasi Pemerintahan, dan Pulau)</span>
                           </div>
                         </li>
                       </ul>
@@ -663,7 +664,7 @@ export default function Infografis() {
                         <span className="p-1.5 bg-blue-100/60 text-blue-700 rounded-lg">
                           <Cpu size={16} />
                         </span>
-                        <h3 className="font-extrabold text-gray-900 text-sm">Metode &amp; Teknologi Pengolahan (GIS Stack)</h3>
+                        <h3 className="font-extrabold text-gray-900 text-sm">Teknologi Pengolahan</h3>
                       </div>
                       <ul className="space-y-3 text-xs text-gray-600 font-medium">
                         <li className="flex items-start gap-2.5">

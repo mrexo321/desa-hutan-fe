@@ -1,4 +1,5 @@
 import masterInstance from "../../api/masterInstance";
+import axiosInstance from "../../api/axiosInstance";
 
 export const performaDesaService = {
   /**
@@ -135,16 +136,57 @@ export const performaDesaService = {
   },
 
   /**
-   * POST /public/performa-desa-hutan/request-excel
-   * Buat permohonan excel performa baru (public endpoint).
+   * GET /api/request-excel/label?tahun={tahun}
+   * Ambil label indikator/dimensi (admin/public) berdasarkan tahun.
    */
-  async createRequestExcel(payload) {
+  async getRequestExcelLabels(tahun) {
     try {
-      const response = await masterInstance.post("/public/performa-desa-hutan/request-excel", payload);
+      const response = await masterInstance.get("/public/request-excel/label", {
+        params: { tahun },
+      });
       return response.data;
     } catch (error) {
-      // Jika backend merespon dengan HTTP Error (misal 400 Bad Request, 422 Error, 500 Server Error),
-      // lempar error asli ke komponen agar toast.error ditampilkan dan bukan toast.success
+      if (error.response?.status === 404) {
+        try {
+          const response = await masterInstance.get("/public/request-excel/label", {
+            params: { tahun },
+          });
+          return response.data;
+        } catch (err2) {
+          if (err2.response?.status === 404) {
+            const response = await axiosInstance.get("/api/request-excel/label", {
+              params: { tahun },
+            });
+            return response.data;
+          }
+          throw err2;
+        }
+      }
+      throw error;
+    }
+  },
+
+  /**
+   * POST /api/public/request-excel
+   * Buat permohonan data excel publik baru.
+   */
+  async createPublicRequestExcel(payload) {
+    try {
+      const response = await masterInstance.post("/public/request-excel", payload);
+      return response.data;
+    } catch (error) {
+      if (error.response?.status === 404) {
+        try {
+          const response = await masterInstance.post("/api/public/request-excel", payload);
+          return response.data;
+        } catch (err2) {
+          if (err2.response?.status === 404) {
+            const response = await axiosInstance.post("/api/public/request-excel", payload);
+            return response.data;
+          }
+          throw err2;
+        }
+      }
       if (error.response) {
         throw error;
       }
@@ -152,16 +194,18 @@ export const performaDesaService = {
       const local = getLocalPerformaRequests();
       const newRequest = {
         id: "req-perf-" + Date.now() + "-" + Math.random().toString(36).substr(2, 9),
+        nama: payload.nama,
+        noHp: payload.noHp,
         email: payload.email,
         export_type: "performa_desa_hutan",
         filters: {
           tahun: Number(payload.tahun),
-          provinsi: payload.provinsi,
-          kabupaten: payload.kabupaten || null,
-          kecamatan: payload.kecamatan || null,
-          formulaId: null,
-          fungsiKawasan: null,
-          indexDesaHutan: null,
+          tingkatAdministrasi: payload.tingkatAdministrasi,
+          provinsiId: payload.provinsiId || null,
+          kabupatenId: payload.kabupatenId || null,
+          kecamatanId: payload.kecamatanId || null,
+          desaId: payload.desaId || null,
+          jenisData: payload.jenisData || [],
         },
         status: "pending",
         reject_reason: null,
@@ -170,8 +214,16 @@ export const performaDesaService = {
       };
       local.unshift(newRequest);
       saveLocalPerformaRequests(local);
-      return { success: true, data: newRequest };
+      return { success: true, data: newRequest, message: "Berhasil mengirim permintaan data, mohon tunggu persetujuan Admin" };
     }
+  },
+
+  /**
+   * POST /public/performa-desa-hutan/request-excel or /api/public/request-excel
+   * Wrapper for backward compatibility.
+   */
+  async createRequestExcel(payload) {
+    return this.createPublicRequestExcel(payload);
   },
 
   /**

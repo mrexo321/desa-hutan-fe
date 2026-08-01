@@ -1,6 +1,7 @@
 import React from "react";
 import { Route, Routes } from "react-router-dom";
 import ProtectedRoute from "./components/ProtectedRoute";
+import GuestRoute from "./components/GuestRoute";
 import ChatWidget from "./components/ChatWidget";
 
 // Import halaman Landing & Auth
@@ -50,6 +51,7 @@ import AiAsisten from "./pages/AiAsisten/AiAsisten";
 import Profile from "./pages/dashboard/Profile";
 import DataDesaPublic from "./pages/landing/DataDesaPublic";
 import PermintaanData from "./pages/dashboard/PermintaanData";
+import ManajemenSitus from "./pages/ManajemenSitus/ManajemenSitus";
 
 const App = () => {
   return (
@@ -60,7 +62,14 @@ const App = () => {
         {/* ======================================================= */}
         <Route path="/" element={<Homepage />} />
         <Route path="/map" element={<MapPage />} />
-        <Route path="/login" element={<Login />} />
+        <Route
+          path="/login"
+          element={
+            <GuestRoute>
+              <Login />
+            </GuestRoute>
+          }
+        />
         <Route path="/infografis" element={<Infografis />} />
         <Route path="/about-us" element={<AboutUs />} />
         <Route path="/unauthorized" element={<Unauthorized />} />
@@ -246,6 +255,16 @@ const App = () => {
         element={
           <ProtectedRoute allowedPermissions={["intervensi_desa:read"]}>
             <MasterIntervensiDesa />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* --- MANAJEMEN SITUS TERKAIT --- */}
+      <Route
+        path="/dashboard/manajemen-situs"
+        element={
+          <ProtectedRoute>
+            <ManajemenSitus />
           </ProtectedRoute>
         }
       />

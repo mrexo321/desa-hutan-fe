@@ -65,6 +65,43 @@ const getFilterValue = (filters, key, fallback = "-") => {
   return filters[key] || fallback;
 };
 
+const getWilayahLabel = (filters) => {
+  if (!filters) return "-";
+  const parts = [];
+  const prov = filters.provinsi || filters.provinsiNama || (filters.provinsiId ? `Prov: ${String(filters.provinsiId).substring(0, 8)}...` : null);
+  const kab = filters.kabupaten || filters.kabupatenNama || (filters.kabupatenId ? `Kab: ${String(filters.kabupatenId).substring(0, 8)}...` : null);
+  const kec = filters.kecamatan || filters.kecamatanNama || (filters.kecamatanId ? `Kec: ${String(filters.kecamatanId).substring(0, 8)}...` : null);
+
+  if (prov) parts.push(prov);
+  if (kab) parts.push(kab);
+  if (kec) parts.push(kec);
+
+  if (parts.length === 0) return "-";
+  return parts.join(" • ");
+};
+
+const formatJenisDataBadges = (jenisData) => {
+  if (!jenisData || !Array.isArray(jenisData) || jenisData.length === 0) {
+    return <span className="text-gray-400 font-mono text-[11px]">-</span>;
+  }
+  return (
+    <div className="flex flex-wrap gap-1 items-center">
+      {jenisData.map((item, i) => (
+        <span
+          key={i}
+          className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full border ${
+            item.tipe === "indexDesa"
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+              : "bg-blue-50 text-blue-700 border-blue-200"
+          }`}
+        >
+          {item.tipe === "indexDesa" ? "Index Desa" : "Indikator Desa"}
+        </span>
+      ))}
+    </div>
+  );
+};
+
 export default function PermintaanData() {
   const queryClient = useQueryClient();
   const user = useSelector((state) => state.user);
@@ -113,22 +150,28 @@ export default function PermintaanData() {
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       list = list.filter((r) => {
-        const prov = getFilterValue(r.filters, "provinsi").toLowerCase();
-        const kab = getFilterValue(r.filters, "kabupaten").toLowerCase();
-        const kec = getFilterValue(r.filters, "kecamatan").toLowerCase();
-        const emailVal = String(r.email).toLowerCase();
-        const statusVal = String(r.status).toLowerCase();
+        const namaVal = String(r.nama || "").toLowerCase();
+        const hpVal = String(r.no_hp || r.noHp || "").toLowerCase();
+        const emailVal = String(r.email || "").toLowerCase();
+        const statusVal = String(r.status || "").toLowerCase();
         const tahunVal = String(r.filters?.tahun || "").toLowerCase();
         const exportType = String(r.export_type || "").toLowerCase();
+        const tingkatVal = String(r.filters?.tingkatAdministrasi || r.filters?.tingkat_administrasi || "").toLowerCase();
+        const prov = String(r.filters?.provinsi || r.filters?.provinsiNama || r.filters?.provinsiId || "").toLowerCase();
+        const kab = String(r.filters?.kabupaten || r.filters?.kabupatenNama || r.filters?.kabupatenId || "").toLowerCase();
+        const kec = String(r.filters?.kecamatan || r.filters?.kecamatanNama || r.filters?.kecamatanId || "").toLowerCase();
 
         return (
+          namaVal.includes(q) ||
+          hpVal.includes(q) ||
           emailVal.includes(q) ||
-          prov.includes(q) ||
-          kab.includes(q) ||
-          kec.includes(q) ||
           statusVal.includes(q) ||
           tahunVal.includes(q) ||
-          exportType.includes(q)
+          exportType.includes(q) ||
+          tingkatVal.includes(q) ||
+          prov.includes(q) ||
+          kab.includes(q) ||
+          kec.includes(q)
         );
       });
     }
@@ -225,7 +268,7 @@ export default function PermintaanData() {
     rejectMutation.mutate({ id: rejectingReqId, alasan: alasanReject.trim() });
   };
 
-  const colCount = isAdmin ? 10 : 9;
+  const colCount = 10;
 
   return (
     <DashboardLayout activeMenu="Permintaan Data">
@@ -308,7 +351,7 @@ export default function PermintaanData() {
                   />
                   <input
                     type="text"
-                    placeholder="Cari email, wilayah, tahun..."
+                    placeholder="Cari nama, email, hp, wilayah, tahun..."
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -341,12 +384,12 @@ export default function PermintaanData() {
                   <tr className="bg-gray-50 border-b border-gray-100 text-[10px] uppercase tracking-wider font-bold text-gray-500">
                     <th className="py-4 px-6 w-12 text-center">No</th>
                     <th className="py-4 px-6">Tanggal Permintaan</th>
-                    {isAdmin && <th className="py-4 px-6">Email Pemohon</th>}
+                    <th className="py-4 px-6">Pemohon</th>
                     <th className="py-4 px-6">Tipe Ekspor</th>
                     <th className="py-4 px-6 text-center">Tahun</th>
-                    <th className="py-4 px-6">Provinsi</th>
-                    <th className="py-4 px-6">Kabupaten</th>
-                    <th className="py-4 px-6">Kecamatan</th>
+                    <th className="py-4 px-6">Tingkat Daerah</th>
+                    <th className="py-4 px-6">Detail Wilayah</th>
+                    <th className="py-4 px-6">Jenis Data</th>
                     <th className="py-4 px-6 text-center">Status</th>
                     <th className="py-4 px-6 text-center w-28">Aksi</th>
                   </tr>
@@ -379,9 +422,6 @@ export default function PermintaanData() {
                   ) : (
                     paginatedRequests.map((item, idx) => {
                       const filters = item.filters || {};
-                      const prov = getFilterValue(filters, "provinsi");
-                      const kab = getFilterValue(filters, "kabupaten");
-                      const kec = getFilterValue(filters, "kecamatan");
                       const exportType = (item.export_type || "-")
                         .replace(/_/g, " ")
                         .replace(/\b\w/g, (c) => c.toUpperCase());
@@ -394,6 +434,8 @@ export default function PermintaanData() {
                             minute: "2-digit",
                           })
                         : "-";
+                      const tingkatVal = filters.tingkatAdministrasi || filters.tingkat_administrasi || "-";
+                      const noHpVal = item.no_hp || item.noHp || "";
 
                       return (
                         <tr key={item.id} className="border-b border-gray-50 hover:bg-[#F9FBFA] transition-colors">
@@ -403,16 +445,30 @@ export default function PermintaanData() {
                           <td className="py-4 px-6 text-gray-600 font-medium">
                             {createdDate}
                           </td>
-                          {isAdmin && (
-                            <td className="py-4 px-6 text-gray-900 font-extrabold">{item.email || "-"}</td>
-                          )}
+                          <td className="py-4 px-6">
+                            <div className="flex flex-col">
+                              <span className="font-extrabold text-gray-900">{item.nama || item.email || "-"}</span>
+                              {item.nama && item.email && (
+                                <span className="text-gray-500 font-medium text-[11px]">{item.email}</span>
+                              )}
+                              {noHpVal && (
+                                <span className="text-emerald-700 font-mono text-[10px] font-bold">{noHpVal}</span>
+                              )}
+                            </div>
+                          </td>
                           <td className="py-4 px-6 font-bold text-gray-800">{exportType}</td>
                           <td className="py-4 px-6 text-center font-mono font-bold text-gray-600">
                             {filters.tahun || "-"}
                           </td>
-                          <td className="py-4 px-6 font-medium text-gray-600">{prov}</td>
-                          <td className="py-4 px-6 font-medium text-gray-600">{kab}</td>
-                          <td className="py-4 px-6 font-medium text-gray-600">{kec}</td>
+                          <td className="py-4 px-6 font-extrabold text-slate-700 capitalize">
+                            {tingkatVal}
+                          </td>
+                          <td className="py-4 px-6 text-gray-600 font-medium">
+                            {getWilayahLabel(filters)}
+                          </td>
+                          <td className="py-4 px-6">
+                            {formatJenisDataBadges(filters.jenisData)}
+                          </td>
                           <td className="py-4 px-6 text-center">
                             <StatusBadge status={item.status} />
                           </td>
@@ -518,7 +574,7 @@ export default function PermintaanData() {
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/50 backdrop-blur-sm animate-in fade-in">
             <div className="bg-white rounded-3xl shadow-xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
               <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50">
-                <h3 className="text-lg font-bold text-gray-800">Detail Permintaan</h3>
+                <h3 className="text-lg font-bold text-gray-800">Detail Permintaan Data</h3>
                 <button
                   onClick={() => setSelectedRequest(null)}
                   className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
@@ -527,8 +583,10 @@ export default function PermintaanData() {
                 </button>
               </div>
 
-              <div className="p-6 space-y-0 font-sans">
-                <DetailRow label="Email Pemohon" value={selectedRequest.email} bold />
+              <div className="p-6 space-y-0 font-sans max-h-[75vh] overflow-y-auto custom-scrollbar">
+                <DetailRow label="Nama Pemohon" value={selectedRequest.nama || "-"} bold />
+                <DetailRow label="No. HP / WA" value={selectedRequest.no_hp || selectedRequest.noHp || "-"} mono />
+                <DetailRow label="Email Pemohon" value={selectedRequest.email || "-"} />
                 <DetailRow
                   label="Tanggal Permintaan"
                   value={
@@ -552,29 +610,33 @@ export default function PermintaanData() {
                   }
                 />
                 <DetailRow
-                  label="Tahun"
+                  label="Tahun Data"
                   value={selectedRequest.filters?.tahun || "-"}
                   mono
                 />
                 <DetailRow
-                  label="Provinsi"
-                  value={getFilterValue(selectedRequest.filters, "provinsi")}
+                  label="Tingkat Administrasi"
+                  value={
+                    <span className="font-bold text-gray-800 capitalize">
+                      {selectedRequest.filters?.tingkatAdministrasi || selectedRequest.filters?.tingkat_administrasi || "Nasional"}
+                    </span>
+                  }
                 />
+                {selectedRequest.filters?.provinsiId && (
+                  <DetailRow label="Provinsi ID" value={selectedRequest.filters.provinsiId} mono />
+                )}
+                {selectedRequest.filters?.kabupatenId && (
+                  <DetailRow label="Kabupaten ID" value={selectedRequest.filters.kabupatenId} mono />
+                )}
+                {selectedRequest.filters?.kecamatanId && (
+                  <DetailRow label="Kecamatan ID" value={selectedRequest.filters.kecamatanId} mono />
+                )}
+                {selectedRequest.filters?.desaId && (
+                  <DetailRow label="Desa ID" value={selectedRequest.filters.desaId} mono />
+                )}
                 <DetailRow
-                  label="Kabupaten"
-                  value={getFilterValue(selectedRequest.filters, "kabupaten")}
-                />
-                <DetailRow
-                  label="Kecamatan"
-                  value={getFilterValue(selectedRequest.filters, "kecamatan")}
-                />
-                <DetailRow
-                  label="Fungsi Kawasan"
-                  value={getFilterValue(selectedRequest.filters, "fungsiKawasan")}
-                />
-                <DetailRow
-                  label="Index Desa Hutan"
-                  value={getFilterValue(selectedRequest.filters, "indexDesaHutan")}
+                  label="Jenis Data"
+                  value={formatJenisDataBadges(selectedRequest.filters?.jenisData)}
                 />
                 <DetailRow
                   label="Status"

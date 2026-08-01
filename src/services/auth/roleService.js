@@ -18,7 +18,7 @@ export const roleService = {
   },
 
   async updateRole(roleid, payload) {
-    const response = await authInstance.put(`/roles/${roleid}`, payload);
+    const response = await authInstance.patch(`/roles/${roleid}`, payload);
     return response.data;
   },
 

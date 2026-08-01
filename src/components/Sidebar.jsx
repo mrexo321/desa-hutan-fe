@@ -23,6 +23,7 @@ import {
   Settings2,
   BrainCircuit,
   FileSpreadsheet,
+  Globe,
 } from "lucide-react";
 
 export default function Sidebar({ activeMenu }) {
@@ -124,6 +125,11 @@ export default function Sidebar({ activeMenu }) {
       path: "/dashboard/master-intervensi-desa",
       icon: <ClipboardList {...iconProps} />,
       permission: "intervensi_desa:read",
+    },
+    {
+      name: "Manajemen Situs",
+      path: "/dashboard/manajemen-situs",
+      icon: <Globe {...iconProps} />,
     },
     {
       name: "Manajemen User",

@@ -84,10 +84,11 @@ const Navbar = () => {
           </div>
           <div className="flex flex-col">
             <span className="font-extrabold text-sm md:text-base leading-tight tracking-tight uppercase bg-gradient-to-r from-emerald-100 to-white bg-clip-text text-transparent group-hover:text-emerald-300 transition-colors">
-              {siteName}
+              {/* {siteName} */}
+             GRAWANA
             </span>
             <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-widest leading-none mt-0.5">
-              Kementerian Kehutanan
+              GeoBaseline Desa Hutan Integrasi Data , Menguatkan Desa
             </span>
           </div>
         </Link>

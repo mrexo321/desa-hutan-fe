@@ -631,23 +631,22 @@ export default function Infografis() {
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
                             <strong className="text-gray-800 font-bold block">Peta Kawasan Hutan Desember 2025</strong>
-                            <span>Kementerian Kehutanan RI (Persetujuan &amp; Penetapan Batas Fungsi Kawasan Hutan)</span>
+                            <span> Kementerian Kehutanan (Desember 2025)</span>
                           </div>
                         </li>
                         <li className="flex items-start gap-2.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
-                            <strong className="text-gray-800 font-bold block">Peta Batas Wilayah Desa</strong>
-                            <span>Badan Informasi Geospasial (BIG - Peta RBI 2026 &amp; Vektor Geometri Desa)</span>
+                            <strong className="text-gray-800 font-bold block">Peta Batas Wilayah Desa Indonesia</strong>
+                            <span>Peta Rupabumi Indonesia (RBI)</span><br/>
+                            <span>Badan Informasi Geospasial (BIG) 2026</span>
                           </div>
                         </li>
                         <li className="flex items-start gap-2.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
                             <strong className="text-gray-800 font-bold block">Kode &amp; Nama Wilayah Administrasi</strong>
-                            <span>Kementerian Dalam Negeri RI (KEPUTUSAN MENTERI DALAM NEGERI NOMOR 300.2.2 -2L38 TAHUN 2025
-TENTANG
-PEMBERIAN DAN PEMUTAKHIRAN KODE, DATA WILAYAH ADMINISTRASI PEMERINTAHAN, DAN PUT-A.U)</span>
+                            <span>Kementerian Dalam Negeri (Keputusan Menteri Dalam Negeri Nomor Nomor 300.2.2-2138 Tahun 2025 tentang Pemberian dan Pemutakhiran Kode, Data Wilayah Administrasi Pemerintahan, dan Pulau)</span>
                           </div>
                         </li>
                       </ul>

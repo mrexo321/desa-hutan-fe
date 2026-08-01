@@ -57,7 +57,7 @@ export const wilayahDesaService = {
     return response.data;
   },
 
-  async searchMap(query, limit = 5) {
+  async searchMap(query, limit = 50) {
     const response = await masterInstance.get("/wilayah-desa/search-map", {
       params: {
         q: query,
@@ -67,7 +67,7 @@ export const wilayahDesaService = {
     return response.data;
   },
 
-  async searchMapPublic(query, limit = 5) {
+  async searchMapPublic(query, limit = 50) {
     const response = await masterInstance.get("/public/search-map", {
       params: {
         q: query,

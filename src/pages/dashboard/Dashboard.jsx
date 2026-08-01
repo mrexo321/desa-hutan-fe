@@ -279,7 +279,7 @@ const Dashboard = () => {
 
     const cleanName = (name) => {
       if (!name) return null;
-      return name.replace(/^(Kab\.|Kabupaten|Kota|Kec\.|Kecamatan)\s+/i, "");
+      return name.replace(/^(Kab\.|Kabupaten|Kec\.|Kecamatan)\s+/i, "");
     };
 
     setAppliedApiFilters({

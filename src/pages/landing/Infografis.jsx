@@ -145,7 +145,9 @@ export default function Infografis() {
     setSelectedKabupatenId(id);
     if (id) {
       const kabObj = kabupatens.find((k) => String(k.id) === String(id));
-      setSelectedKabupatenName(kabObj?.name || kabObj?.nama || kabObj?.kabupaten || "");
+      const rawName = kabObj?.name || kabObj?.nama || kabObj?.kabupaten || "";
+      const cleanKab = rawName.replace(/^(Kab\.|Kabupaten)\s+/i, "");
+      setSelectedKabupatenName(cleanKab);
     } else {
       setSelectedKabupatenName("");
     }
@@ -160,7 +162,9 @@ export default function Infografis() {
     setSelectedKecamatanId(id);
     if (id) {
       const kecObj = kecamatans.find((kc) => String(kc.id) === String(id));
-      setSelectedKecamatanName(kecObj?.name || kecObj?.nama || kecObj?.kecamatan || "");
+      const rawName = kecObj?.name || kecObj?.nama || kecObj?.kecamatan || "";
+      const cleanKec = rawName.replace(/^(Kec\.|Kecamatan)\s+/i, "");
+      setSelectedKecamatanName(cleanKec);
     } else {
       setSelectedKecamatanName("");
     }

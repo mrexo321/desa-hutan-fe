@@ -1,9 +1,9 @@
 import masterInstance from "../../api/masterInstance";
 
 export const intervensiDesaService = {
-  async getAll({ page = 1, size = 10 } = {}) {
+  async getAll({ page = 1, size = 10, tahunIntervensiDesaId } = {}) {
     const response = await masterInstance.get("/intervensi-desa", {
-      params: { page, size },
+      params: { page, size, tahunIntervensiDesaId: tahunIntervensiDesaId || undefined },
     });
     return response.data;
   },

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import DataTable from "../../components/DataTable";
+import RichTextEditor from "../../components/RichTextEditor";
 import { intervensiDesaService } from "../../services/master/intervensiDesaService";
 import { wilayahDesaService } from "../../services/master/wilayahDesaService";
 import { masterWilayahService } from "../../services/master/masterWilayahService";
@@ -28,19 +29,31 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 
+const createEmptyRun = () => ({ text: "", bold: false, italic: false });
+
 const emptyIntervensiForm = {
   desaId: "",
   tahunIntervensiDesaId: "",
-  intervensi: [{ header: "", value: "" }],
+  intervensi: [{ header: "", value: [createEmptyRun()] }],
 };
 
-// Gabungkan runs rich-text ("header"/"value") jadi satu string biasa untuk ditampilkan.
-const flattenValue = (value) => {
-  if (!value) return "-";
-  if (Array.isArray(value)) {
-    return value.map((run) => run.text).join(" ") || "-";
-  }
-  return String(value);
+// Render array of rich-text runs ({text, bold, italic}) dengan formatting aslinya.
+const renderRuns = (value, emptyLabel = "-") => {
+  const runs = Array.isArray(value) ? value : value ? [{ text: String(value) }] : [];
+  const validRuns = runs.filter((run) => run.text);
+  if (validRuns.length === 0) return emptyLabel;
+  return validRuns.map((run, idx) =>
+    run.text === "\n" ? (
+      <br key={idx} />
+    ) : (
+      <span
+        key={idx}
+        className={`${run.bold ? "font-bold" : ""} ${run.italic ? "italic" : ""}`}
+      >
+        {run.text}
+      </span>
+    ),
+  );
 };
 
 const MasterIntervensiDesa = () => {
@@ -51,6 +64,7 @@ const MasterIntervensiDesa = () => {
   const [activeTab, setActiveTab] = useState(
     tabParam === "tahun" ? "tahun" : "data",
   );
+  const [selectedTahunId, setSelectedTahunId] = useState(searchParams.get("tahunId") || null);
 
   useEffect(() => {
     if (tabParam && ["data", "tahun"].includes(tabParam) && tabParam !== activeTab) {
@@ -61,7 +75,23 @@ const MasterIntervensiDesa = () => {
 
   const handleChangeTab = (tab) => {
     setActiveTab(tab);
-    setSearchParams({ tab });
+    setSearchParams(
+      tab === "data" && selectedTahunId ? { tab, tahunId: selectedTahunId } : { tab },
+    );
+  };
+
+  const handleSelectTahun = (t) => {
+    setSelectedTahunId(t.id);
+    setPage(1);
+    setSearchQuery("");
+    setSearchParams({ tab: "data", tahunId: t.id });
+  };
+
+  const handleBackToTahunList = () => {
+    setSelectedTahunId(null);
+    setPage(1);
+    setSearchQuery("");
+    setSearchParams({ tab: "data" });
   };
 
   // ==========================================
@@ -70,7 +100,6 @@ const MasterIntervensiDesa = () => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterTahunId, setFilterTahunId] = useState("");
 
   const [viewId, setViewId] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -93,10 +122,11 @@ const MasterIntervensiDesa = () => {
     isLoading: isLoadingList,
     isError: isErrorList,
   } = useQuery({
-    queryKey: ["intervensiDesaList", page, size],
-    queryFn: () => intervensiDesaService.getAll({ page, size }),
+    queryKey: ["intervensiDesaList", selectedTahunId, page, size],
+    queryFn: () =>
+      intervensiDesaService.getAll({ page, size, tahunIntervensiDesaId: selectedTahunId }),
     keepPreviousData: true,
-    enabled: activeTab === "data",
+    enabled: activeTab === "data" && !!selectedTahunId,
   });
 
   const items = listResponse?.data?.items || [];
@@ -106,26 +136,21 @@ const MasterIntervensiDesa = () => {
   const startIdx = (page - 1) * size;
 
   const filteredItems = useMemo(() => {
-    let rows = items;
-    if (filterTahunId) {
-      rows = rows.filter((row) => row.tahunIntervensiDesa?.id === filterTahunId);
-    }
-    if (searchQuery) {
-      const q = searchQuery.toLowerCase();
-      rows = rows.filter((row) => {
-        const name = (row.wilayahDesa?.nama || "").toLowerCase();
-        const code = (row.wilayahDesa?.kodeKemendagri || "").toLowerCase();
-        return name.includes(q) || code.includes(q);
-      });
-    }
-    return rows;
-  }, [items, searchQuery, filterTahunId]);
+    if (!searchQuery) return items;
+    const q = searchQuery.toLowerCase();
+    return items.filter((row) => {
+      const name = (row.wilayahDesa?.nama || "").toLowerCase();
+      const code = (row.wilayahDesa?.kodeKemendagri || "").toLowerCase();
+      return name.includes(q) || code.includes(q);
+    });
+  }, [items, searchQuery]);
 
   const { data: tahunResponse } = useQuery({
     queryKey: ["tahunIntervensiDesaList"],
     queryFn: () => intervensiDesaService.getAllTahun(),
   });
   const tahunList = tahunResponse?.data || [];
+  const selectedTahunObj = tahunList.find((t) => t.id === selectedTahunId) || null;
 
   const { data: viewResponse, isLoading: isLoadingView } = useQuery({
     queryKey: ["intervensiDesaDetail", viewId],
@@ -202,7 +227,7 @@ const MasterIntervensiDesa = () => {
 
   const handleOpenAdd = () => {
     setEditingId(null);
-    setFormData(emptyIntervensiForm);
+    setFormData({ ...emptyIntervensiForm, tahunIntervensiDesaId: selectedTahunId || "" });
     resetDesaPicker();
     setIsFormModalOpen(true);
   };
@@ -214,7 +239,14 @@ const MasterIntervensiDesa = () => {
       tahunIntervensiDesaId: row.tahunIntervensiDesaId,
       intervensi: (row.intervensi || []).map((item) => ({
         header: item.header || "",
-        value: flattenValue(item.value),
+        value:
+          Array.isArray(item.value) && item.value.length > 0
+            ? item.value.map((run) => ({
+                text: run.text || "",
+                bold: !!run.bold,
+                italic: !!run.italic,
+              }))
+            : [createEmptyRun()],
       })),
     });
     setSelectedDesaLabel(row.wilayahDesa?.nama || null);
@@ -266,7 +298,7 @@ const MasterIntervensiDesa = () => {
   const handleAddIntervensiRow = () => {
     setFormData((prev) => ({
       ...prev,
-      intervensi: [...prev.intervensi, { header: "", value: "" }],
+      intervensi: [...prev.intervensi, { header: "", value: [createEmptyRun()] }],
     }));
   };
 
@@ -277,10 +309,18 @@ const MasterIntervensiDesa = () => {
     }));
   };
 
-  const handleIntervensiRowChange = (idx, field, value) => {
+  const handleHeaderChange = (idx, header) => {
     setFormData((prev) => {
       const updated = [...prev.intervensi];
-      updated[idx] = { ...updated[idx], [field]: value };
+      updated[idx] = { ...updated[idx], header };
+      return { ...prev, intervensi: updated };
+    });
+  };
+
+  const handleValueChange = (rowIdx, runs) => {
+    setFormData((prev) => {
+      const updated = [...prev.intervensi];
+      updated[rowIdx] = { ...updated[rowIdx], value: runs };
       return { ...prev, intervensi: updated };
     });
   };
@@ -298,11 +338,17 @@ const MasterIntervensiDesa = () => {
     }
 
     const intervensiPayload = formData.intervensi
-      .filter((item) => item.header.trim() || item.value.trim())
       .map((item) => ({
         header: item.header.trim(),
-        value: [{ text: item.value.trim(), bold: false, italic: false }],
-      }));
+        value: item.value
+          .filter((run) => run.text)
+          .map((run) => ({
+            text: run.text,
+            bold: !!run.bold,
+            italic: !!run.italic,
+          })),
+      }))
+      .filter((item) => item.header && item.value.length > 0);
 
     if (intervensiPayload.length === 0) {
       toast.error("Isi minimal satu data intervensi.");
@@ -494,31 +540,93 @@ const MasterIntervensiDesa = () => {
           {/* ============================================== */}
           {/* TAB CONTENT: DATA INTERVENSI                    */}
           {/* ============================================== */}
-          {activeTab === "data" && (
+          {activeTab === "data" && !selectedTahunId && (
+            <div>
+              {/* Toolbar pilih tahun */}
+              <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2D7344] shrink-0">
+                    <ClipboardList size={20} strokeWidth={2} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-gray-800">Pilih Tahun Intervensi</h2>
+                    <p className="text-xs text-gray-400 font-medium">
+                      Pilih tahun untuk melihat & mengelola data intervensi desa
+                    </p>
+                  </div>
+                </div>
+                {can("tahun_intervensi_desa:create") && (
+                  <button
+                    onClick={() => setIsTahunModalOpen(true)}
+                    className="flex items-center gap-2 bg-[#2D7344] hover:bg-[#1E5230] text-white px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all cursor-pointer"
+                  >
+                    <Plus size={18} strokeWidth={2.5} />
+                    Tambah Tahun
+                  </button>
+                )}
+              </div>
+
+              {/* Grid pilihan tahun */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {tahunList.map((t) => (
+                  <div
+                    key={t.id}
+                    onClick={() => handleSelectTahun(t)}
+                    className="bg-white border border-gray-100 rounded-2xl p-6 hover:border-[#2D7344]/40 hover:shadow-md transition-all duration-300 cursor-pointer group flex justify-between items-center"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="p-3.5 bg-emerald-50 rounded-2xl text-[#2D7344] border border-emerald-100/50 group-hover:bg-[#2D7344] group-hover:text-white transition-colors duration-300">
+                        <Calendar size={22} strokeWidth={2.2} />
+                      </div>
+                      <div>
+                        <h3 className="text-xl font-extrabold text-gray-800">Tahun {t.tahun}</h3>
+                        <p className="text-xs text-gray-400 font-medium mt-0.5">
+                          Lihat data intervensi desa
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight
+                      size={18}
+                      className="text-gray-400 group-hover:translate-x-1 group-hover:text-[#2D7344] transition-all"
+                    />
+                  </div>
+                ))}
+
+                {tahunList.length === 0 && (
+                  <div className="col-span-full bg-white border border-dashed border-gray-300 rounded-2xl p-12 text-center text-gray-400 font-medium">
+                    <div className="w-12 h-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto text-slate-400 mb-3">
+                      <Info size={24} />
+                    </div>
+                    <h3>Belum Ada Tahun Intervensi</h3>
+                    <p className="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                      Klik tombol "Tambah Tahun" di kanan atas untuk mendaftarkan tahun pertama.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeTab === "data" && selectedTahunId && (
             <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col">
               <div className="p-6 border-b border-gray-50 flex flex-col xl:flex-row xl:items-center justify-between gap-6">
                 <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <button
+                    onClick={handleBackToTahunList}
+                    className="flex items-center gap-2 text-gray-500 hover:text-[#2D7344] font-bold text-sm transition-colors w-fit px-3 py-2 -ml-3 rounded-xl hover:bg-emerald-50 cursor-pointer"
+                  >
+                    <ChevronLeft size={18} />
+                    Kembali
+                  </button>
+
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center text-[#2D7344] shrink-0">
                       <ClipboardList size={20} strokeWidth={2} />
                     </div>
-                    <h2 className="text-lg font-bold text-gray-800 whitespace-nowrap hidden sm:block">
-                      Tabel Intervensi Desa
+                    <h2 className="text-lg font-bold text-gray-800 whitespace-nowrap">
+                      Data Intervensi — Tahun {selectedTahunObj?.tahun || "-"}
                     </h2>
                   </div>
-
-                  <select
-                    value={filterTahunId}
-                    onChange={(e) => setFilterTahunId(e.target.value)}
-                    className="bg-gray-50 border border-gray-200 text-gray-700 py-2 px-3 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-[#2D7344] cursor-pointer font-bold"
-                  >
-                    <option value="">Semua Tahun</option>
-                    {tahunList.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.tahun}
-                      </option>
-                    ))}
-                  </select>
 
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
@@ -566,7 +674,10 @@ const MasterIntervensiDesa = () => {
                   </button>
                   {can("intervensi_desa:import") && (
                     <button
-                      onClick={() => setIsUploadModalOpen(true)}
+                      onClick={() => {
+                        setUploadTahunId(selectedTahunId);
+                        setIsUploadModalOpen(true);
+                      }}
                       title="Upload Excel"
                       className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer"
                     >
@@ -607,11 +718,6 @@ const MasterIntervensiDesa = () => {
                     header: "Nama Desa",
                     className: "font-bold text-gray-900",
                     render: (row) => <span>{row.wilayahDesa?.nama || "-"}</span>,
-                  },
-                  {
-                    header: "Tahun",
-                    className: "w-24",
-                    render: (row) => <span>{row.tahunIntervensiDesa?.tahun || "-"}</span>,
                   },
                   {
                     header: "Jumlah Intervensi",
@@ -660,7 +766,7 @@ const MasterIntervensiDesa = () => {
                 isLoading={isLoadingList}
                 isError={isErrorList}
                 searchQuery={searchQuery}
-                emptyMessage="Belum ada data intervensi desa yang terdaftar."
+                emptyMessage={`Belum ada data intervensi desa untuk tahun ${selectedTahunObj?.tahun || "-"}.`}
               />
 
               {!isLoadingList && !isErrorList && items.length > 0 && (
@@ -778,12 +884,20 @@ const MasterIntervensiDesa = () => {
 
             <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
               <div>
-                <span className="text-[10px] font-extrabold px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-full uppercase tracking-wider font-mono shadow-sm">
-                  Detail Intervensi Desa
-                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-extrabold px-3 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-full uppercase tracking-wider font-mono shadow-sm">
+                    Detail Intervensi Desa
+                  </span>
+                  <span className="text-[10px] font-extrabold px-3 py-1 bg-amber-50 border border-amber-100 text-amber-700 rounded-full uppercase tracking-wider font-mono shadow-sm">
+                    Tahun {viewData?.tahunIntervensiDesa?.tahun || "-"}
+                  </span>
+                </div>
                 <h3 className="text-2xl font-black text-slate-800 mt-2 tracking-tight">
                   Desa {viewData?.wilayahDesa?.nama || "-"}
                 </h3>
+                <p className="text-xs font-bold text-slate-400 font-mono mt-1">
+                  Kode Kemendagri: {viewData?.wilayahDesa?.kodeKemendagri || "-"}
+                </p>
               </div>
               <button
                 onClick={() => setViewId(null)}
@@ -801,37 +915,18 @@ const MasterIntervensiDesa = () => {
                 </div>
               ) : viewData ? (
                 <div className="p-8 space-y-6">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white border border-slate-100 p-4 rounded-2xl">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                        Kode Kemendagri
-                      </span>
-                      <span className="block text-xs font-black text-slate-700 mt-1 font-mono">
-                        {viewData.wilayahDesa?.kodeKemendagri || "-"}
-                      </span>
-                    </div>
-                    <div className="bg-white border border-slate-100 p-4 rounded-2xl">
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">
-                        Tahun Intervensi
-                      </span>
-                      <span className="block text-xs font-black text-slate-700 mt-1">
-                        {viewData.tahunIntervensiDesa?.tahun || "-"}
-                      </span>
-                    </div>
-                  </div>
-
                   {viewData.intervensi && viewData.intervensi.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 gap-4">
                       {viewData.intervensi.map((item, idx) => (
                         <div
                           key={idx}
-                          className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm"
+                          className="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm"
                         >
-                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                          <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono">
                             {item.header}
                           </span>
-                          <p className="font-bold text-slate-800 text-sm mt-1 leading-snug">
-                            {flattenValue(item.value)}
+                          <p className="text-slate-800 text-lg mt-2 leading-relaxed whitespace-pre-wrap">
+                            {renderRuns(item.value)}
                           </p>
                         </div>
                       ))}
@@ -1027,26 +1122,19 @@ const MasterIntervensiDesa = () => {
                   </div>
                 )}
 
-                {/* Pilih Tahun */}
-                <div>
-                  <label className="block text-[10px] font-bold text-slate-400 mb-1.5 uppercase tracking-wider font-mono">
-                    Tahun Intervensi
-                  </label>
-                  <select
-                    required
-                    value={formData.tahunIntervensiDesaId}
-                    onChange={(e) =>
-                      setFormData((prev) => ({ ...prev, tahunIntervensiDesaId: e.target.value }))
-                    }
-                    className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 text-slate-700 cursor-pointer"
-                  >
-                    <option value="">-- Pilih Tahun --</option>
-                    {tahunList.map((t) => (
-                      <option key={t.id} value={t.id}>
-                        {t.tahun}
-                      </option>
-                    ))}
-                  </select>
+                {/* Tahun (mengikuti konteks tahun yang sedang dipilih) */}
+                <div className="bg-slate-100/70 border border-slate-200 rounded-2xl p-4 flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-slate-500 border border-slate-200 shrink-0">
+                    <Calendar size={16} />
+                  </div>
+                  <div>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                      Tahun Intervensi
+                    </span>
+                    <h4 className="font-bold text-slate-700 text-sm mt-0.5">
+                      {tahunList.find((t) => t.id === formData.tahunIntervensiDesaId)?.tahun || "-"}
+                    </h4>
+                  </div>
                 </div>
 
                 {/* Daftar Intervensi */}
@@ -1055,38 +1143,36 @@ const MasterIntervensiDesa = () => {
                     Daftar Intervensi
                   </span>
 
-                  <div className="space-y-2">
+                  <div className="space-y-4">
                     {formData.intervensi.map((item, idx) => (
                       <div
                         key={idx}
-                        className="flex flex-wrap items-center gap-3 bg-slate-50/50 p-3 rounded-xl border border-slate-100/50"
+                        className="bg-slate-50/50 p-3 rounded-xl border border-slate-100/50 space-y-2.5"
                       >
-                        <div className="flex-1 min-w-[150px]">
+                        <div className="flex items-center gap-3">
                           <input
                             type="text"
                             placeholder="Nama Intervensi (Contoh: Bantuan Bibit)"
                             value={item.header}
-                            onChange={(e) => handleIntervensiRowChange(idx, "header", e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold"
+                            onChange={(e) => handleHeaderChange(idx, e.target.value)}
+                            className="flex-1 min-w-[150px] px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold"
                           />
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveIntervensiRow(idx)}
+                            className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                            title="Hapus Baris"
+                          >
+                            <Trash2 size={14} />
+                          </button>
                         </div>
-                        <div className="flex-1 min-w-[150px]">
-                          <input
-                            type="text"
-                            placeholder="Keterangan / Nilai"
-                            value={item.value}
-                            onChange={(e) => handleIntervensiRowChange(idx, "value", e.target.value)}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500/10 transition-all font-semibold"
-                          />
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveIntervensiRow(idx)}
-                          className="p-2 text-red-500 hover:bg-red-100 rounded-lg transition-colors cursor-pointer"
-                          title="Hapus Baris"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+
+                        {/* Keterangan / Nilai — rich text box, bisa diformat bold/italic seperti compose email */}
+                        <RichTextEditor
+                          value={item.value}
+                          onChange={(runs) => handleValueChange(idx, runs)}
+                          placeholder="Tulis keterangan / nilai intervensi di sini..."
+                        />
                       </div>
                     ))}
                   </div>
@@ -1153,23 +1239,18 @@ const MasterIntervensiDesa = () => {
                 Gunakan template Excel resmi. Data lama untuk kombinasi desa & tahun yang sama akan digantikan oleh data baru dari file ini.
               </p>
 
-              <div>
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                  Tahun Intervensi
-                </label>
-                <select
-                  required
-                  value={uploadTahunId}
-                  onChange={(e) => setUploadTahunId(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 transition-all font-medium cursor-pointer"
-                >
-                  <option value="">-- Pilih Tahun --</option>
-                  {tahunList.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.tahun}
-                    </option>
-                  ))}
-                </select>
+              <div className="bg-slate-100/70 border border-slate-200 rounded-xl p-3.5 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-white flex items-center justify-center text-slate-500 border border-slate-200 shrink-0">
+                  <Calendar size={16} />
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest font-mono">
+                    Tahun Intervensi
+                  </span>
+                  <h4 className="font-bold text-slate-700 text-sm mt-0.5">
+                    {tahunList.find((t) => t.id === uploadTahunId)?.tahun || "-"}
+                  </h4>
+                </div>
               </div>
 
               <div>

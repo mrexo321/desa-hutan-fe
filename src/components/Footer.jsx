@@ -19,10 +19,10 @@ const Footer = () => {
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-sm md:text-base leading-tight tracking-tight uppercase text-white">
-                Desa Hutan
+                GRAWARNA
               </span>
               <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-widest leading-none mt-0.5">
-                Kementerian Kehutanan
+                GeoBaseline Desa Hutan Integrasi Data , Menguatkan Desa
               </span>
             </div>
           </Link>
@@ -69,7 +69,7 @@ const Footer = () => {
       <div className="border-t border-emerald-950 bg-[#071F0E] py-6 px-6 md:px-8 text-center text-xs text-emerald-200/50 tracking-wider">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-4">
           <p className="font-medium">
-            © {new Date().getFullYear()} Direktorat Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan.
+            © {new Date().getFullYear()} Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan.
           </p>
           <div className="flex gap-4 font-bold">
             <a href="#" className="hover:text-white transition-colors">Kebijakan Privasi</a>

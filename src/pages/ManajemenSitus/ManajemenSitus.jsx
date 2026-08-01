@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { Navigate } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { situsTerkaitService } from "../../services/master/situsTerkaitService";
 import environment from "../../config/environment";
@@ -54,7 +55,7 @@ const formatDate = (dateString) => {
   }
 };
 
-export default function ManajemenSitus() {
+export function ManajemenSitusContent() {
   const queryClient = useQueryClient();
 
   // ── STATE MANAJEMEN ──
@@ -272,8 +273,7 @@ export default function ManajemenSitus() {
     filteredList.length > 0 && selectedIds.length === filteredList.length;
 
   return (
-    <DashboardLayout activeMenu="Manajemen Situs">
-      <div className="p-6 md:p-8 space-y-8 max-w-7xl mx-auto">
+    <div className="space-y-8 max-w-7xl mx-auto">
         {/* ── HEADER BANNER ── */}
         <div className="relative overflow-hidden bg-gradient-to-r from-[#0B241A] via-[#123E2E] to-[#1C5842] rounded-3xl p-6 sm:p-8 text-white shadow-xl">
           {/* Background Decorative Element */}
@@ -738,6 +738,9 @@ export default function ManajemenSitus() {
           </div>
         )}
       </div>
-    </DashboardLayout>
   );
+}
+
+export default function ManajemenSitus() {
+  return <Navigate to="/dashboard/site-settings?tab=manajemen-situs" replace />;
 }

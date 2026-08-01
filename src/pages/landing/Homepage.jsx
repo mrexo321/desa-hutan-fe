@@ -122,15 +122,7 @@ const Homepage = () => {
     staleTime,
   });
 
-  // Default fallback data if API returns empty
-  const situsTerkaitList = Array.isArray(rawSitusTerkait) && rawSitusTerkait.length > 0
-    ? rawSitusTerkait
-    : [
-        { id: "1", nama: "Kementerian Kehutanan", url: "https://www.menhut.go.id", logo: null },
-        { id: "2", nama: "Badan Informasi Geospasial", url: "https://www.big.go.id", logo: null },
-        { id: "3", nama: "Kementerian Dalam Negeri", url: "https://www.kemendagri.go.id", logo: null },
-        { id: "4", nama: "SIPSN Kemenhut", url: "https://sipsn.menhut.go.id", logo: null },
-      ];
+  const situsTerkaitList = Array.isArray(rawSitusTerkait) ? rawSitusTerkait : [];
 
   const hero = siteSettingService.toMap(heroArr);
   const profil = siteSettingService.toMap(profilArr);
@@ -349,8 +341,9 @@ const Homepage = () => {
                   </div>
                 </div>
 
-                <a
-                  href="mailto:humas@menhut.go.id"
+                <div className="space-y-4">
+                    <a
+                  href="#"
                   className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 transition-all group/item"
                 >
                   <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover/item:scale-105 transition-transform">
@@ -363,10 +356,29 @@ const Homepage = () => {
                         Utama
                       </span>
                     </div>
-                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">humas@menhut.go.id</div>
+                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">p2semh.kehutanan@gmail.com </div>
                   </div>
                   <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
                 </a>
+                <a
+                  href="#"
+                  className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-emerald-50 via-white to-emerald-50/50 border border-emerald-200/80 hover:border-emerald-500 transition-all group/item"
+                >
+                  <div className="w-11 h-11 rounded-xl bg-[#2D7344] text-white flex items-center justify-center shrink-0 shadow-sm group-hover/item:scale-105 transition-transform">
+                    <Mail size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-extrabold text-slate-900 truncate">Email Layanan Publik</span>
+                      <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
+                        Utama
+                      </span>
+                    </div>
+                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">puspsemh@kehutanan.go.id</div>
+                  </div>
+                  <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
+                </a>
+                </div>
               </div>
 
               {/* CARD 2: MEDIA SOSIAL RESMI */}
@@ -433,11 +445,8 @@ const Homepage = () => {
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-extrabold text-slate-800 text-base sm:text-lg tracking-tight">Situs Terkait</h3>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-emerald-700 bg-emerald-100/70 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        Mitra
-                      </span>
                     </div>
-                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Tautan resmi portal &amp; lembaga mitra kehutanan</p>
+                    <p className="text-xs text-slate-400 font-semibold mt-0.5">Tautan resmi portal website terkait</p>
                   </div>
                 </div>
                 {Array.isArray(situsTerkaitList) && situsTerkaitList.length > 0 && (
@@ -461,9 +470,16 @@ const Homepage = () => {
                     ))}
                   </>
                 ) : situsTerkaitList.length === 0 ? (
-                  <div className="sm:col-span-2 py-10 flex flex-col items-center justify-center text-slate-400 gap-2">
-                    <Globe size={32} className="text-slate-300 stroke-[1.5]" />
-                    <span className="text-xs font-semibold">Belum ada situs terkait terdaftar.</span>
+                  <div className="sm:col-span-2 py-8 px-6 flex flex-col items-center justify-center text-center bg-slate-50/70 border border-dashed border-slate-200/80 rounded-3xl gap-2.5">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#2D7344] flex items-center justify-center border border-emerald-100/80 shadow-xs">
+                      <Globe size={24} className="stroke-[1.75]" />
+                    </div>
+                    <div className="space-y-1 max-w-sm">
+                      <h4 className="text-xs font-extrabold text-slate-700">Belum Ada Situs Terkait</h4>
+                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                        Saat ini belum ada tautan situs resmi mitra yang terdaftar. Daftar situs terkait akan ditampilkan di sini setelah ditambahkan oleh administrator.
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   situsTerkaitList.map((situs) => {

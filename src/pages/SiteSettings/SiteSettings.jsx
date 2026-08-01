@@ -1,8 +1,11 @@
 import React, { useState, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { siteSettingService } from "../../services/auth/siteSettingService";
+import { ManajemenSitusContent } from "../ManajemenSitus/ManajemenSitus";
 import {
   Settings2,
+  Globe,
   Plus,
   Edit2,
   Trash2,
@@ -221,6 +224,16 @@ const SettingModal = ({ mode, initialData, onClose, onSubmit, isPending }) => {
 const SiteSettings = () => {
   const queryClient = useQueryClient();
 
+  // ── Main Slide Tab State ──
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialTab = searchParams.get("tab") === "manajemen-situs" ? "manajemen-situs" : "site-settings";
+  const [activeMainTab, setActiveMainTab] = useState(initialTab);
+
+  const handleTabChange = (tab) => {
+    setActiveMainTab(tab);
+    setSearchParams(tab === "manajemen-situs" ? { tab: "manajemen-situs" } : {});
+  };
+
   // ── State ──
   const [activeCategory, setActiveCategory] = useState("all");
   const [search, setSearch] = useState("");
@@ -319,16 +332,51 @@ const SiteSettings = () => {
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
 
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Site Settings</h1>
-            <p className="text-sm text-gray-500 mt-1">
-              Kelola konten dinamis landing page — teks, gambar, dan konfigurasi tampilan situs.
-            </p>
+          {/* Page Header & 2 Slide Tabs */}
+          <div className="mb-8 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+                {activeMainTab === "site-settings" ? "Site Settings" : "Manajemen Situs Terkait"}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                {activeMainTab === "site-settings"
+                  ? "Kelola konten dinamis landing page — teks, gambar, dan konfigurasi tampilan situs."
+                  : "Kelola daftar tautan resmi situs mitra kehutanan yang akan ditampilkan pada beranda situs."}
+              </p>
+            </div>
+
+            {/* 2 SLIDE TAB SWITCHER */}
+            <div className="bg-slate-200/70 p-1.5 rounded-2xl flex items-center gap-1.5 border border-slate-200 shadow-inner w-full lg:w-auto shrink-0">
+              <button
+                type="button"
+                onClick={() => handleTabChange("site-settings")}
+                className={`flex-1 lg:flex-initial flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-300 cursor-pointer ${
+                  activeMainTab === "site-settings"
+                    ? "bg-white text-[#2D7344] shadow-md scale-[1.02]"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-white/40"
+                }`}
+              >
+                <Settings2 size={18} />
+                <span>Site Setting</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTabChange("manajemen-situs")}
+                className={`flex-1 lg:flex-initial flex items-center justify-center gap-2 py-2.5 px-5 rounded-xl font-extrabold text-xs sm:text-sm transition-all duration-300 cursor-pointer ${
+                  activeMainTab === "manajemen-situs"
+                    ? "bg-white text-[#2D7344] shadow-md scale-[1.02]"
+                    : "text-slate-500 hover:text-slate-800 hover:bg-white/40"
+                }`}
+              >
+                <Globe size={18} />
+                <span>Manajemen Situs</span>
+              </button>
+            </div>
           </div>
 
-          {/* Card */}
-          <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col">
+          {activeMainTab === "site-settings" ? (
+            /* TAB 1: SITE SETTINGS TABLE */
+            <div className="bg-white rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-gray-100 flex flex-col">
 
             {/* Toolbar */}
             <div className="p-6 border-b border-gray-50 flex flex-col xl:flex-row xl:items-center justify-between gap-4">
@@ -541,6 +589,12 @@ const SiteSettings = () => {
               </div>
             )}
           </div>
+          ) : (
+            /* TAB 2: MANAJEMEN SITUS CONTENT */
+            <div className="animate-in fade-in duration-300">
+              <ManajemenSitusContent />
+            </div>
+          )}
         </div>
       </main>
 

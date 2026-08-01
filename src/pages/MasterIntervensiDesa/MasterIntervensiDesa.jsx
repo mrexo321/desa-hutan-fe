@@ -60,18 +60,10 @@ const MasterIntervensiDesa = () => {
   const queryClient = useQueryClient();
   const { can } = usePermission();
   const [searchParams, setSearchParams] = useSearchParams();
-  const tabParam = searchParams.get("tab");
-  const [activeTab, setActiveTab] = useState(
-    tabParam === "tahun" ? "tahun" : "data",
+  const [activeTab] = useState("data");
+  const [selectedTahunId, setSelectedTahunId] = useState(
+    searchParams.get("tahunId") || null
   );
-  const [selectedTahunId, setSelectedTahunId] = useState(searchParams.get("tahunId") || null);
-
-  useEffect(() => {
-    if (tabParam && ["data", "tahun"].includes(tabParam) && tabParam !== activeTab) {
-      setActiveTab(tabParam);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tabParam]);
 
   const handleChangeTab = (tab) => {
     setActiveTab(tab);
@@ -513,28 +505,10 @@ const MasterIntervensiDesa = () => {
 
           {/* TABS */}
           <div className="flex items-center gap-2 mb-6 bg-white p-1.5 rounded-2xl border border-gray-100 shadow-sm w-fit">
-            <button
-              onClick={() => handleChangeTab("data")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-                activeTab === "data"
-                  ? "bg-[#2D7344] text-white shadow-sm"
-                  : "text-gray-500 hover:bg-gray-50"
-              }`}
-            >
+            <div className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold bg-[#2D7344] text-white shadow-sm">
               <ClipboardList size={16} />
-              Data Intervensi
-            </button>
-            <button
-              onClick={() => handleChangeTab("tahun")}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
-                activeTab === "tahun"
-                  ? "bg-[#2D7344] text-white shadow-sm"
-                  : "text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              <Calendar size={16} />
-              Tahun Intervensi
-            </button>
+              <span>Data Intervensi</span>
+            </div>
           </div>
 
           {/* ============================================== */}

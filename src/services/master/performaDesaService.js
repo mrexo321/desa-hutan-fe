@@ -89,11 +89,13 @@ export const performaDesaService = {
    * GET /performa-desa-hutan/request-excel
    * Ambil semua permohonan file Excel performa desa hutan.
    */
-  async getAllRequestExcel({ page = 1, size = 10, search = "", status = "" } = {}) {
+  async getAllRequestExcel({ page = 1, size = 10, search = "", status = "", startDate = "", endDate = "" } = {}) {
     try {
       const params = { page, size };
       if (search) params.search = search;
-      if (status) params.status = status;
+      if (status && status !== "all") params.status = status;
+      if (startDate) params.startDate = startDate;
+      if (endDate) params.endDate = endDate;
       const response = await masterInstance.get("/performa-desa-hutan/request-excel", { params });
       return response.data;
     } catch (error) {
@@ -103,6 +105,18 @@ export const performaDesaService = {
 
       if (status && status !== "all") {
         filtered = filtered.filter((r) => r.status === status);
+      }
+
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        filtered = filtered.filter((r) => r.createdAt && new Date(r.createdAt) >= start);
+      }
+
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        filtered = filtered.filter((r) => r.createdAt && new Date(r.createdAt) <= end);
       }
 
       if (search) {

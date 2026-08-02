@@ -7,8 +7,11 @@ import { Provider } from "react-redux";
 import { store } from "./store/store.js";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "sonner";
+import { initAuthSync } from "./utils/authSync";
 
 const queryClient = new QueryClient();
+
+initAuthSync();
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

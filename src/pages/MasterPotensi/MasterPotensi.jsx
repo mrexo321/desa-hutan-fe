@@ -20,6 +20,10 @@ import {
   Loader2,
   Info,
   Building,
+  Download,
+  Upload,
+  FileDown,
+  FileSpreadsheet,
 } from "lucide-react";
 
 const MasterPotensi = () => {
@@ -46,6 +50,11 @@ const MasterPotensi = () => {
   const [filterProvinsi, setFilterProvinsi] = useState("");
   const [filterKabupaten, setFilterKabupaten] = useState("");
   const [filterKecamatan, setFilterKecamatan] = useState("");
+
+  // States for Import/Export Excel
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const [uploadFile, setUploadFile] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   // Fetch list of potensi
   const {
@@ -195,6 +204,76 @@ const MasterPotensi = () => {
     },
   });
 
+  // Import/Export Excel Handlers
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await potensiDesaService.downloadTemplate();
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "Template_Data_Potensi_Desa.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Gagal mengunduh template Excel.");
+    }
+  };
+
+  const uploadMutation = useMutation({
+    mutationFn: (formData) => potensiDesaService.importExcel(formData),
+    onSuccess: (res) => {
+      const result = res?.data || {};
+      toast.success(
+        `Berhasil memproses file Excel. ${result.total_desa_diupdate || 0} desa diperbarui.`
+      );
+      queryClient.invalidateQueries({ queryKey: ["potensiList"] });
+      setIsUploadModalOpen(false);
+      setUploadFile(null);
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Gagal memproses file Excel.");
+    },
+  });
+
+  const handleSubmitUpload = (e) => {
+    e.preventDefault();
+    if (!uploadFile) {
+      toast.error("Silakan pilih file Excel terlebih dahulu.");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("file", uploadFile);
+    uploadMutation.mutate(formData);
+  };
+
+  const handleExportPotensi = async () => {
+    setIsExporting(true);
+    try {
+      const response = await potensiDesaService.exportExcel();
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      const dateStr = new Date().toISOString().slice(0, 10);
+      link.download = `Data_Potensi_Desa_${dateStr}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Gagal mengekspor data potensi desa.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   // Edit Handlers
   const handleAddCategory = () => {
     setEditPotensi([...editPotensi, { kategori: "Kategori Baru", sub: [] }]);
@@ -324,6 +403,38 @@ const MasterPotensi = () => {
                     className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-green-500/20 focus:border-[#2D7344] transition-all font-semibold"
                   />
                 </div>
+
+                <button
+                  onClick={handleDownloadTemplate}
+                  title="Unduh Template Excel"
+                  className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                >
+                  <Download size={16} />
+                  <span className="hidden lg:inline">Template</span>
+                </button>
+
+                <button
+                  onClick={() => setIsUploadModalOpen(true)}
+                  title="Import Excel"
+                  className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                >
+                  <Upload size={16} />
+                  <span className="hidden lg:inline">Import</span>
+                </button>
+
+                <button
+                  onClick={handleExportPotensi}
+                  disabled={isExporting}
+                  title="Export Excel"
+                  className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {isExporting ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <FileDown size={16} />
+                  )}
+                  <span className="hidden lg:inline">Export</span>
+                </button>
 
                 <button
                   onClick={() => setIsAddPotensiModalOpen(true)}
@@ -1160,6 +1271,75 @@ const MasterPotensi = () => {
                 </button>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL IMPORT EXCEL */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between p-5 border-b border-slate-100">
+              <h3 className="text-lg font-bold text-slate-800">Import Excel Potensi Desa</h3>
+              <button
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadFile(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitUpload} className="p-5 space-y-5">
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Gunakan template Excel resmi. Kategori potensi dari file akan digabungkan dengan data yang sudah ada untuk masing-masing desa (bukan menggantikan).
+              </p>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 mb-2">
+                  File Excel (.xlsx)
+                </label>
+                <label className="flex flex-col items-center justify-center gap-2 border-2 border-dashed border-slate-200 rounded-xl py-6 cursor-pointer hover:bg-slate-50 transition-colors">
+                  <FileSpreadsheet size={28} className="text-emerald-600" />
+                  <span className="text-xs font-semibold text-slate-500">
+                    {uploadFile ? uploadFile.name : "Klik untuk memilih file"}
+                  </span>
+                  <input
+                    type="file"
+                    accept=".xlsx"
+                    className="hidden"
+                    onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                  />
+                </label>
+              </div>
+
+              <div className="flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsUploadModalOpen(false);
+                    setUploadFile(null);
+                  }}
+                  className="px-4 py-2 text-sm font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploadMutation.isPending}
+                  className="flex items-center gap-2 px-5 py-2 bg-[#2D7344] hover:bg-[#1E5230] text-white text-sm font-semibold rounded-xl transition-all shadow-md active:scale-[0.98] disabled:opacity-50 cursor-pointer"
+                >
+                  {uploadMutation.isPending ? (
+                    <Loader2 size={16} className="animate-spin" />
+                  ) : (
+                    <Upload size={16} />
+                  )}
+                  {uploadMutation.isPending ? "Memproses..." : "Upload"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

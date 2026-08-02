@@ -118,6 +118,11 @@ export const dimensiDesaService = {
     return response.data;
   },
 
+  async getDimensiDesaByDesaId(id, desaId, params = {}) {
+    const response = await masterInstance.get(`/dimensi-desa/${id}/desa/${desaId}`);
+    return response.data;
+  },
+
   // Update indikator dimensi desa per ID (/dimensi-desa/:id)
   async updateIndikatorDimensi(id, payload) {
     const response = await masterInstance.patch(`/dimensi-desa/${id}`, payload);

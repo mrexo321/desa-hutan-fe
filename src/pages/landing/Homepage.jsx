@@ -371,7 +371,7 @@ const Homepage = () => {
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-extrabold text-slate-900 truncate">Email Layanan Publik</span>
                       <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
-                        Utama
+                        Kedua
                       </span>
                     </div>
                     <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">puspsemh@kehutanan.go.id</div>

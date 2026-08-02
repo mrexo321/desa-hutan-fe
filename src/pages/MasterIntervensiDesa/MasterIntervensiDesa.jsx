@@ -211,6 +211,7 @@ const MasterIntervensiDesa = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadTahunId, setUploadTahunId] = useState("");
   const [uploadFile, setUploadFile] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     data: listResponse,
@@ -567,6 +568,32 @@ const MasterIntervensiDesa = () => {
     }
   };
 
+  const handleExportIntervensi = async () => {
+    if (!selectedTahunId) {
+      toast.error("Silakan pilih tahun intervensi terlebih dahulu.");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const response = await intervensiDesaService.exportExcel(selectedTahunId);
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Data_Intervensi_Desa_${selectedTahunObj?.tahun || "semua"}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Gagal mengekspor data intervensi desa.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const uploadMutation = useMutation({
     mutationFn: (formDataPayload) => intervensiDesaService.uploadExcel(formDataPayload),
     onSuccess: (res) => {
@@ -752,6 +779,40 @@ const MasterIntervensiDesa = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                  <button
+                      onClick={handleDownloadTemplate}
+                      title="Unduh Template Excel"
+                      className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                  >
+                    <Download size={16} />
+                    <span className="hidden lg:inline">Template</span>
+                  </button>
+                  {can("intervensi_desa:import") && (
+                      <button
+                          onClick={() => {
+                            setUploadTahunId(selectedTahunId);
+                            setIsUploadModalOpen(true);
+                          }}
+                          title="Upload Excel"
+                          className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                      >
+                        <Upload size={16} />
+                        <span className="hidden lg:inline">Upload</span>
+                      </button>
+                  )}
+                  <button
+                      onClick={handleExportIntervensi}
+                      disabled={isExporting}
+                      title="Export Excel"
+                      className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isExporting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                        <FileSpreadsheet size={16} />
+                    )}
+                    <span className="hidden lg:inline">Export</span>
+                  </button>
                   <div className="relative w-full sm:w-64 group">
                     <Search
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors"

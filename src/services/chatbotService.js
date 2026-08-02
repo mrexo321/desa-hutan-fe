@@ -1,7 +1,17 @@
 import environment from "../config/environment";
 
 const API_BASE = environment.CHATBOT_API_URL;
-const CHATBOT_ID_STORAGE_KEY = "desa_hutan_chatbot_id";
+const HARDCODED_CHATBOT_ID = "7f017090-de01-4e09-88bd-ea9e8b048810";
+
+/**
+ * Mendapatkan chatbot ID (menggunakan hardcoded ID)
+ */
+export const getOrCreateChatbotId = async () => {
+  if (environment.CHATBOT_ID && environment.CHATBOT_ID.trim() !== "") {
+    return environment.CHATBOT_ID.trim();
+  }
+  return HARDCODED_CHATBOT_ID;
+};
 
 // ============================================================
 // KNOWLEDGE BASE LENGKAP APLIKASI DESA HUTAN
@@ -322,56 +332,7 @@ ${APP_KNOWLEDGE_BASE}
 };
 
 
-/**
- * Mendapatkan atau membuat chatbot ID
- * Prioritas: env var → localStorage → buat baru
- */
-export const getOrCreateChatbotId = async () => {
-  // 1. Cek environment variable dulu
-  if (environment.CHATBOT_ID && environment.CHATBOT_ID.trim() !== "") {
-    return environment.CHATBOT_ID.trim();
-  }
 
-  // 2. Cek localStorage (sudah pernah dibuat sebelumnya)
-  const storedId = localStorage.getItem(CHATBOT_ID_STORAGE_KEY);
-  if (storedId) {
-    // Jalankan update system prompt secara background agar database selalu sync dengan file js terbaru
-    fetch(`${API_BASE}/chatbots/${storedId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: "Asisten Desa Hutan",
-        system_prompt: buildSystemPrompt(),
-        model_name: "gpt-4o-mini",
-      }),
-    }).catch(err => console.error("Gagal sinkronisasi system prompt:", err));
-
-    return storedId;
-  }
-
-  // 3. Buat chatbot baru via API dengan system prompt lengkap
-  const response = await fetch(`${API_BASE}/chatbots/`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      name: "Asisten Desa Hutan",
-      system_prompt: buildSystemPrompt(),
-      model_name: "gpt-4o-mini",
-    }),
-  });
-
-  if (!response.ok) {
-    throw new Error(`Gagal membuat chatbot: ${response.statusText}`);
-  }
-
-  const data = await response.json();
-  const newId = data.id;
-
-  // Simpan ke localStorage agar tidak perlu buat ulang
-  localStorage.setItem(CHATBOT_ID_STORAGE_KEY, newId);
-
-  return newId;
-};
 
 /**
  * Mengirim pesan ke chatbot dan mendapatkan jawaban

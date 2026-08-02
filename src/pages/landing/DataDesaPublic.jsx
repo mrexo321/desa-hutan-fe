@@ -16,7 +16,9 @@ import {
   User,
   Phone,
   CheckSquare,
-  Square
+  Square,
+  Building2,
+  FileText
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import HomeLayout from "../../components/HomeLayout";
@@ -37,6 +39,8 @@ export default function DataDesaPublic() {
   const [nama, setNama] = useState("");
   const [noHp, setNoHp] = useState("");
   const [email, setEmail] = useState("");
+  const [instansi, setInstansi] = useState("");
+  const [tujuan, setTujuan] = useState("");
   const [selectedTahunId, setSelectedTahunId] = useState("");
   const [selectedWilayahLevel, setSelectedWilayahLevel] = useState("");
   const [selectedProvinsiId, setSelectedProvinsiId] = useState("");
@@ -286,8 +290,8 @@ export default function DataDesaPublic() {
       email: email.trim(),
       nama: nama.trim(),
       noHp: noHp.trim(),
-      // instansi: "nama instansi",
-      // tujuan: "tujuan",
+      instansi: instansi.trim(),
+      tujuan: tujuan.trim(),
       altcha: altchaPayload,
     };
 
@@ -727,6 +731,46 @@ export default function DataDesaPublic() {
                     <div className="flex gap-1.5 items-start text-[11px] text-slate-400 font-semibold pl-1.5 mt-1 leading-normal">
                       <Info size={12} className="text-emerald-600 shrink-0 mt-0.5" />
                       <span>Permintaan data akan dikirimkan melalui email setelah proses persetujuan Admin</span>
+                    </div>
+                  </div>
+
+                  {/* INSTANSI INPUT */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
+                      Instansi Pemohon
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                        <Building2 size={16} />
+                      </div>
+                      <input
+                        type="text"
+                        id="input-instansi"
+                        placeholder="contoh: Kementerian / Universitas / Badan Umum"
+                        value={instansi}
+                        onChange={(e) => setInstansi(e.target.value)}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                      />
+                    </div>
+                  </div>
+
+                  {/* TUJUAN PERMINTAAN DATA INPUT */}
+                  <div className="space-y-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
+                      Tujuan Permintaan Data
+                    </label>
+                    <div className="relative group">
+                      <div className="absolute top-3.5 left-3.5 flex items-start pointer-events-none text-slate-400 group-focus-within:text-emerald-600 transition-colors">
+                        <FileText size={16} />
+                      </div>
+                      <textarea
+                        id="input-tujuan"
+                        placeholder="Jelaskan maksud dan tujuan penggunaan data desa..."
+                        value={tujuan}
+                        onChange={(e) => setTujuan(e.target.value)}
+                        rows={3}
+                        className="w-full pl-10 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 font-semibold focus:bg-white focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all resize-none"
+                      />
                     </div>
                   </div>
                 </div>

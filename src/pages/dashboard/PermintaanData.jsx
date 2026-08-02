@@ -211,6 +211,8 @@ export default function PermintaanData() {
         const namaVal = String(r.nama || "").toLowerCase();
         const hpVal = String(r.no_hp || r.noHp || "").toLowerCase();
         const emailVal = String(r.email || "").toLowerCase();
+        const instansiVal = String(r.instansi || "").toLowerCase();
+        const tujuanVal = String(r.tujuan || "").toLowerCase();
         const statusVal = String(r.status || "").toLowerCase();
         const tahunVal = String(r.filters?.tahun || "").toLowerCase();
         const exportType = String(r.export_type || "").toLowerCase();
@@ -224,6 +226,8 @@ export default function PermintaanData() {
           namaVal.includes(q) ||
           hpVal.includes(q) ||
           emailVal.includes(q) ||
+          instansiVal.includes(q) ||
+          tujuanVal.includes(q) ||
           statusVal.includes(q) ||
           tahunVal.includes(q) ||
           exportType.includes(q) ||
@@ -322,7 +326,7 @@ export default function PermintaanData() {
     rejectMutation.mutate({ id: rejectingReqId, alasan: alasanReject.trim() });
   };
 
-  const colCount = 10;
+  const colCount = 12;
 
   return (
     <DashboardLayout activeMenu="Permintaan Data">
@@ -439,6 +443,8 @@ export default function PermintaanData() {
                     <th className="py-4 px-6 w-12 text-center">No</th>
                     <th className="py-4 px-6">Tanggal Permintaan</th>
                     <th className="py-4 px-6">Pemohon</th>
+                    <th className="py-4 px-6">Instansi</th>
+                    <th className="py-4 px-6">Tujuan Permintaan</th>
                     <th className="py-4 px-6">Tipe Ekspor</th>
                     <th className="py-4 px-6 text-center">Tahun</th>
                     <th className="py-4 px-6">Tingkat Daerah</th>
@@ -509,6 +515,12 @@ export default function PermintaanData() {
                                 <span className="text-emerald-700 font-mono text-[10px] font-bold">{noHpVal}</span>
                               )}
                             </div>
+                          </td>
+                          <td className="py-4 px-6 font-bold text-gray-800">
+                            {item.instansi || "-"}
+                          </td>
+                          <td className="py-4 px-6 text-gray-600 font-medium max-w-[200px] truncate" title={item.tujuan || ""}>
+                            {item.tujuan || "-"}
                           </td>
                           <td className="py-4 px-6 font-bold text-gray-800">{exportType}</td>
                           <td className="py-4 px-6 text-center font-mono font-bold text-gray-600">
@@ -639,6 +651,8 @@ export default function PermintaanData() {
 
               <div className="p-6 space-y-0 font-sans max-h-[75vh] overflow-y-auto custom-scrollbar">
                 <DetailRow label="Nama Pemohon" value={selectedRequest.nama || "-"} bold />
+                <DetailRow label="Instansi Pemohon" value={selectedRequest.instansi || "-"} bold />
+                <DetailRow label="Tujuan Permintaan" value={selectedRequest.tujuan || "-"} />
                 <DetailRow label="No. HP / WA" value={selectedRequest.no_hp || selectedRequest.noHp || "-"} mono />
                 <DetailRow label="Email Pemohon" value={selectedRequest.email || "-"} />
                 <DetailRow

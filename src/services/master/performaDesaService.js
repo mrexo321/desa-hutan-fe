@@ -197,6 +197,8 @@ export const performaDesaService = {
         nama: payload.nama,
         noHp: payload.noHp,
         email: payload.email,
+        instansi: payload.instansi || null,
+        tujuan: payload.tujuan || null,
         export_type: "performa_desa_hutan",
         filters: {
           tahun: Number(payload.tahun),

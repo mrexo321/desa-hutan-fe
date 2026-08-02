@@ -1,16 +1,17 @@
 import masterInstance from "../../api/masterInstance";
 
 export const wilayahDesaService = {
-  async getAllDesa(pageOrParams, size, search, provinsiId, kabupatenId, kecamatanId) {
+  async getAllDesa(pageOrParams, size, search, provinsi, kabupaten, kecamatan, tipe_administrasi) {
     let params = {};
     if (typeof pageOrParams === "object" && pageOrParams !== null) {
       params = {
         page: pageOrParams.page || 1,
         size: pageOrParams.size || 10,
         search: pageOrParams.search || "",
-        provinsiId: pageOrParams.provinsiId || null,
-        kabupatenId: pageOrParams.kabupatenId || null,
-        kecamatanId: pageOrParams.kecamatanId || null,
+        provinsi: pageOrParams.provinsi || pageOrParams.provinsiId || null,
+        kabupaten: pageOrParams.kabupaten || pageOrParams.kabupatenId || null,
+        kecamatan: pageOrParams.kecamatan || pageOrParams.kecamatanId || null,
+        tipe_administrasi: pageOrParams.tipe_administrasi || pageOrParams.tipeAdministrasi || null,
       };
     } else {
       params = {
@@ -18,9 +19,10 @@ export const wilayahDesaService = {
         size: size || 10,
       };
       if (search) params.search = search;
-      if (provinsiId) params.provinsiId = provinsiId;
-      if (kabupatenId) params.kabupatenId = kabupatenId;
-      if (kecamatanId) params.kecamatanId = kecamatanId;
+      if (provinsi) params.provinsi = provinsi;
+      if (kabupaten) params.kabupaten = kabupaten;
+      if (kecamatan) params.kecamatan = kecamatan;
+      if (tipe_administrasi) params.tipe_administrasi = tipe_administrasi;
     }
 
     const response = await masterInstance.get("/wilayah-desa", { params });

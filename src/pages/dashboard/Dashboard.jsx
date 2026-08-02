@@ -504,7 +504,7 @@ const Dashboard = () => {
   // --- SEARCH MAP API ---
   const { data: searchResponse, isFetching: isFetchingSearch } = useQuery({
     queryKey: ["searchMapDesaDashboard", debouncedQuery],
-    queryFn: () => wilayahDesaService.searchMap(debouncedQuery, 5),
+    queryFn: () => wilayahDesaService.searchMap(debouncedQuery, 50),
     enabled: debouncedQuery.trim().length >= 2,
     staleTime: 30000,
   });
@@ -564,6 +564,18 @@ const Dashboard = () => {
     window.addEventListener('storage', handler);
     return () => window.removeEventListener('storage', handler);
   }, []);
+
+  // --- TRIGGER MAPBOX RESIZE UPON FULLSCREEN TOGGLE ---
+  useEffect(() => {
+    const t1 = setTimeout(() => mapRef.current?.resize(), 50);
+    const t2 = setTimeout(() => mapRef.current?.resize(), 300);
+    const t3 = setTimeout(() => mapRef.current?.resize(), 600);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [isFullscreen]);
 
   // --- FLY-TO FROM DETAIL DESA (via location.state.flyToKode) ---
   useEffect(() => {
@@ -736,7 +748,7 @@ const Dashboard = () => {
       ========================================= */}
       <div
         className={`transition-all duration-500 ease-in-out ${isFullscreen
-          ? "fixed inset-0 z-[100] w-screen h-screen bg-[#E8EDE9]"
+          ? "fixed inset-0 z-[99999] w-screen h-screen bg-[#E8EDE9]"
           : "relative w-full h-[500px] md:h-[600px] rounded-[32px] overflow-hidden mb-8 shadow-sm border border-gray-200 bg-[#E8EDE9] shrink-0"
           }`}
       >
@@ -847,11 +859,10 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setPopupActiveTab("spasial")}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                            popupActiveTab === "spasial"
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "spasial"
                               ? "bg-white text-[#00B67A] shadow-sm"
                               : "text-gray-500 hover:text-gray-800"
-                          }`}
+                            }`}
                         >
                           <Activity size={14} strokeWidth={2.5} />
                           <span>Detail Spasial</span>
@@ -859,11 +870,10 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setPopupActiveTab("potensi")}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                            popupActiveTab === "potensi"
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "potensi"
                               ? "bg-white text-[#00B67A] shadow-sm"
                               : "text-gray-500 hover:text-gray-800"
-                          }`}
+                            }`}
                         >
                           <Zap size={14} strokeWidth={2.5} />
                           <span>Potensi</span>
@@ -1809,7 +1819,7 @@ const Dashboard = () => {
                   </tbody>
                 </table>
               </div>
-              <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
+              {/* <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
                 <div>Menampilkan 1-7 dari 268 data provinsi</div>
                 <div className="flex items-center gap-1.5">
                   <button className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors">
@@ -1832,7 +1842,7 @@ const Dashboard = () => {
                     <ChevronRight size={16} />
                   </button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </>
         )}

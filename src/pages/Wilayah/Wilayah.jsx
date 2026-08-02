@@ -274,6 +274,7 @@ const TabWilayahDesa = () => {
   const [selectedProvId, setSelectedProvId] = useState("");
   const [selectedKabId, setSelectedKabId] = useState("");
   const [selectedKecId, setSelectedKecId] = useState("");
+  const [selectedTipeAdministrasi, setSelectedTipeAdministrasi] = useState("");
 
   // Master Provinsi
   const { data: provData } = useQuery({
@@ -310,7 +311,7 @@ const TabWilayahDesa = () => {
     return [];
   }, [kecData]);
 
-  // Dapatkan nama untuk dikirim sebagai filter backend
+  // Dapatkan nama untuk dikirim sebagai filter backend (Sanitasi Kab/Kec)
   const selectedProvName = useMemo(() => {
     if (!selectedProvId) return "";
     const p = listProvinsi.find((item) => String(item.id) === String(selectedProvId));
@@ -320,13 +321,18 @@ const TabWilayahDesa = () => {
   const selectedKabName = useMemo(() => {
     if (!selectedKabId) return "";
     const k = listKabupaten.find((item) => String(item.id) === String(selectedKabId));
-    return k?.nama || k?.name || k?.kabupaten || "";
+    const rawName = k?.nama || k?.name || k?.kabupaten || "";
+    if (!rawName) return "";
+    if (/^Kota\s+/i.test(rawName)) return rawName; // Keep Kota prefix
+    return rawName.replace(/^(Kab\.|Kabupaten)\s+/i, "").trim();
   }, [selectedKabId, listKabupaten]);
 
   const selectedKecName = useMemo(() => {
     if (!selectedKecId) return "";
     const k = listKecamatan.find((item) => String(item.id) === String(selectedKecId));
-    return k?.nama || k?.name || k?.kecamatan || "";
+    const rawName = k?.nama || k?.name || k?.kecamatan || "";
+    if (!rawName) return "";
+    return rawName.replace(/^(Kec\.|Kecamatan)\s+/i, "").trim();
   }, [selectedKecId, listKecamatan]);
 
   useEffect(() => {
@@ -350,6 +356,7 @@ const TabWilayahDesa = () => {
       selectedProvName,
       selectedKabName,
       selectedKecName,
+      selectedTipeAdministrasi,
     ],
     queryFn: () =>
       wilayahDesaService.getAllDesa({
@@ -359,6 +366,7 @@ const TabWilayahDesa = () => {
         provinsi: selectedProvName,
         kabupaten: selectedKabName,
         kecamatan: selectedKecName,
+        tipe_administrasi: selectedTipeAdministrasi || null,
       }),
     keepPreviousData: true,
   });
@@ -552,13 +560,28 @@ const TabWilayahDesa = () => {
             ))}
           </select>
 
+          {/* TIPE ADMINISTRASI DROPDOWN */}
+          <select
+            value={selectedTipeAdministrasi}
+            onChange={(e) => {
+              setSelectedTipeAdministrasi(e.target.value);
+              setPage(1);
+            }}
+            className="bg-white border border-slate-200 text-slate-700 py-2 px-3 rounded-xl text-sm focus:outline-none focus:border-blue-600 font-medium cursor-pointer max-w-[200px] truncate"
+          >
+            <option value="">Semua (Tipe Administrasi)</option>
+            <option value="Desa">Desa</option>
+            <option value="Kelurahan">Kelurahan</option>
+          </select>
+
           {/* RESET FILTER */}
-          {(selectedProvId || selectedKabId || selectedKecId || searchTerm) && (
+          {(selectedProvId || selectedKabId || selectedKecId || selectedTipeAdministrasi || searchTerm) && (
             <button
               onClick={() => {
                 setSelectedProvId("");
                 setSelectedKabId("");
                 setSelectedKecId("");
+                setSelectedTipeAdministrasi("");
                 setSearchTerm("");
                 setPage(1);
               }}

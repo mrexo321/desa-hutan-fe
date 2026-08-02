@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
 import { usePermission } from "../hooks/usePermission";
+import { clearUserData } from "../store/userSlice";
 import {
   LayoutDashboard,
   Trees,
@@ -28,13 +30,13 @@ import {
 
 export default function Sidebar({ activeMenu }) {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const { can, canAny } = usePermission();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpenMobile, setIsOpenMobile] = useState(false);
 
   const handleLogout = () => {
-    localStorage.clear();
-    sessionStorage.clear();
+    dispatch(clearUserData());
     navigate("/");
   };
 

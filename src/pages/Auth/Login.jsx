@@ -35,7 +35,7 @@ const Login = () => {
 
   useEffect(() => {
     const profileString = localStorage.getItem("user_profile");
-    const refreshToken = sessionStorage.getItem("_rt");
+    const refreshToken = localStorage.getItem("_rt");
 
     if (token || profileString || refreshToken) {
       navigate("/dashboard", { replace: true });
@@ -86,7 +86,7 @@ const Login = () => {
     loginMutation.mutate({
       username,
       password,
-    //   altcha: altchaPayload,
+      // altcha: altchaPayload,
     });
   };
 

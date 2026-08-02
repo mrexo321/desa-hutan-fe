@@ -1,11 +1,22 @@
 import React from "react";
+import { Loader2 } from "lucide-react";
 import { useBackgroundRefresh } from "../hooks/useBakgroundRefresh";
 import Sidebar from "./Sidebar";
 import Header from "./Header";
 
 export default function DashboardLayout({ children, activeMenu, noScroll = false, noPadding = false }) {
   // Background token refresh: setiap 15 menit + setiap pindah halaman
-  useBackgroundRefresh();
+  const { isRecovering } = useBackgroundRefresh();
+
+  // Tunda render konten (yang fetch data) sampai accessToken selesai
+  // direcovery dari refreshToken — cegah request API 401 dini.
+  if (isRecovering) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F8FAFC]">
+        <Loader2 className="animate-spin text-[#2D7344]" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen bg-[#F8FAFC] font-sans overflow-hidden">

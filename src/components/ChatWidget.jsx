@@ -27,7 +27,7 @@ const buildWelcomeMessage = (pathname) => {
   return {
     id: "welcome",
     role: "bot",
-    text: `Halo! 👋 Saya **Asisten AI Desa Hutan** — asisten cerdas yang memahami seluruh fitur aplikasi ini.\n\n${hint}\n\nSilakan tanyakan apa saja!`,
+    text: `Halo! 👋 Saya **Asisten Grawana** — asisten cerdas yang memahami seluruh fitur aplikasi ini.\n\n${hint}\n\nSilakan tanyakan apa saja!`,
     timestamp: new Date(),
   };
 };
@@ -414,7 +414,7 @@ const ChatWidget = () => {
               pointerEvents: showTooltip || isHovered ? "auto" : "none",
             }}
           >
-            💬 Tanya Asisten Desa Hutan
+            💬 Tanya Asisten Grawana
           </div>
         )}
 
@@ -444,7 +444,7 @@ const ChatWidget = () => {
           <button
             id="chatbot-fab-btn"
             onClick={() => setIsOpen((p) => !p)}
-            title={isOpen ? "Tutup Chat" : "Buka Asisten AI Desa Hutan"}
+            title={isOpen ? "Tutup Chat" : "Buka Asisten Grawana"}
             style={{
               width: "58px", height: "58px", borderRadius: "50%",
               background: isOpen
@@ -522,7 +522,7 @@ const ChatWidget = () => {
 
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ color: "white", fontWeight: "700", fontSize: "14px" }}>
-                Asisten Desa Hutan
+                Asisten Grawana
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px", flexWrap: "wrap" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
@@ -658,7 +658,7 @@ const ChatWidget = () => {
               placeholder={
                 isOffline ? "Server tidak tersedia..." :
                 isInitializing ? "Menghubungkan..." :
-                "Tanyakan seputar aplikasi Desa Hutan..."
+                "Tanyakan seputar aplikasi Grawana..."
               }
               disabled={isOffline || isInitializing}
               rows={1}
@@ -724,7 +724,7 @@ const ChatWidget = () => {
             color: "rgba(109,155,135,0.55)",
             flexShrink: 0,
           }}>
-            Asisten AI khusus Sistem Informasi Desa Hutan 🌿
+            Asisten AI khusus Sistem Informasi Grawana 🌿
           </div>
         </div>
       )}

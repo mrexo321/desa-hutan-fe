@@ -398,7 +398,6 @@ const Indikator = () => {
             </h1>
             <p className="text-sm text-slate-500 mt-2 max-w-2xl">
               Kelola data indikator utama dan kategori untuk pengukuran desa
-              hutan.
             </p>
           </div>
 

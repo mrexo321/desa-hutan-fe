@@ -311,10 +311,10 @@ export default function Infografis() {
           </div>
           <div className="max-w-4xl mx-auto z-10 relative">
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight mb-4 animate-fade-in">
-              Infografis & Statistik Wilayah Desa Hutan
+              Infografis & Statistik Wilayah Desa
             </h1>
             <p className="text-sm sm:text-base text-green-100 max-w-2xl mx-auto leading-relaxed">
-              Analisis spasial wilayah administrasi desa hutan.
+              Analisis spasial wilayah administrasi desa
             </p>
           </div>
         </section>
@@ -329,7 +329,7 @@ export default function Infografis() {
                 <MapPin size={20} />
               </div>
               <div>
-                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Filter Infografis Desa Hutan</h2>
+                <h2 className="text-lg font-bold text-gray-900 tracking-tight">Filter Infografis Desa</h2>
                 <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Pilih wilayah untuk memfilter data infografis</p>
               </div>
             </div>
@@ -553,7 +553,7 @@ export default function Infografis() {
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-gray-900 tracking-tight">Ringkasan Luas Wilayah</h2>
-                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Statistik Luas Desa Hutan</p>
+                    <p className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Statistik Luas Desa</p>
                   </div>
                 </div>
 

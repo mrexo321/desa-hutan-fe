@@ -147,7 +147,7 @@ export default function Profile() {
     <DashboardLayout activeMenu="Profile">
       <main className="flex-1 flex flex-col h-full relative overflow-hidden bg-[#FAFBFC]">
         <div className="flex-1 overflow-y-auto py-4 custom-scrollbar">
-          
+
           {/* ================= HEADER HALAMAN ================= */}
           <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4 bg-gradient-to-r from-[#0B241A] to-[#1E5230] p-6 rounded-3xl text-white shadow-lg shadow-green-950/10 relative overflow-hidden">
             <div className="absolute -right-10 -bottom-10 w-40 h-40 bg-white/5 rounded-full blur-2xl pointer-events-none"></div>
@@ -162,17 +162,13 @@ export default function Profile() {
                 </p>
               </div>
             </div>
-            
-            {/* Display status log masuk */}
-            <div className="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-white/10 text-xs font-bold text-green-100 flex items-center gap-2 z-10">
-              <ShieldCheck size={16} className="text-[#00C47C]" />
-              <span>Sesi Anda Terlindungi</span>
-            </div>
+
+
           </div>
 
           {/* ================= CONTENT CONTAINER ================= */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            
+
             {/* === KARTU KIRI: DETAIL PROFIL & UPDATE USERNAME === */}
             <div className="lg:col-span-6 bg-white p-6 sm:p-8 rounded-3xl border border-gray-100 shadow-[0_4px_25px_rgba(0,0,0,0.02)] flex flex-col transition-all hover:shadow-[0_4px_30px_rgba(0,0,0,0.04)]">
               <div className="flex items-center gap-3.5 mb-6 pb-4 border-b border-gray-50">
@@ -270,7 +266,7 @@ export default function Profile() {
 
               {/* Form Ganti Password */}
               <form onSubmit={handleChangePassword} className="space-y-5">
-                
+
                 {/* Password Lama */}
                 <div className="space-y-1.5">
                   <label className="block text-xs font-extrabold text-gray-700 uppercase tracking-widest ml-1">

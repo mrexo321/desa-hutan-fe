@@ -300,7 +300,7 @@ A: Indikator Utama adalah indikator individual (contoh: Akses Air Bersih, Akses 
  * System prompt lengkap dengan knowledge base aplikasi
  */
 const buildSystemPrompt = (pageContext = "") => {
-  return `Kamu adalah **Asisten AI resmi** dari Sistem Informasi Pemetaan Profil Desa Hutan.
+  return `Kamu adalah **Asisten Grawana**, asisten AI resmi dari Sistem Informasi Pemetaan Profil Desa.
 
 ## PERAN KAMU
 Kamu adalah asisten cerdas yang memahami secara mendalam seluruh fitur, alur kerja, dan data dalam aplikasi ini. Bantu pengguna dengan:
@@ -332,7 +332,56 @@ ${APP_KNOWLEDGE_BASE}
 };
 
 
+/**
+ * Mendapatkan atau membuat chatbot ID
+ * Prioritas: env var → localStorage → buat baru
+ */
+export const getOrCreateChatbotId = async () => {
+  // 1. Cek environment variable dulu
+  if (environment.CHATBOT_ID && environment.CHATBOT_ID.trim() !== "") {
+    return environment.CHATBOT_ID.trim();
+  }
 
+  // 2. Cek localStorage (sudah pernah dibuat sebelumnya)
+  const storedId = localStorage.getItem(CHATBOT_ID_STORAGE_KEY);
+  if (storedId) {
+    // Jalankan update system prompt secara background agar database selalu sync dengan file js terbaru
+    fetch(`${API_BASE}/chatbots/${storedId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: "Asisten Grawana",
+        system_prompt: buildSystemPrompt(),
+        model_name: "gpt-4o-mini",
+      }),
+    }).catch(err => console.error("Gagal sinkronisasi system prompt:", err));
+
+    return storedId;
+  }
+
+  // 3. Buat chatbot baru via API dengan system prompt lengkap
+  const response = await fetch(`${API_BASE}/chatbots/`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      name: "Asisten Grawana",
+      system_prompt: buildSystemPrompt(),
+      model_name: "gpt-4o-mini",
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error(`Gagal membuat chatbot: ${response.statusText}`);
+  }
+
+  const data = await response.json();
+  const newId = data.id;
+
+  // Simpan ke localStorage agar tidak perlu buat ulang
+  localStorage.setItem(CHATBOT_ID_STORAGE_KEY, newId);
+
+  return newId;
+};
 
 /**
  * Mengirim pesan ke chatbot dan mendapatkan jawaban

@@ -859,10 +859,11 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setPopupActiveTab("spasial")}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "spasial"
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            popupActiveTab === "spasial"
                               ? "bg-white text-[#00B67A] shadow-sm"
                               : "text-gray-500 hover:text-gray-800"
-                            }`}
+                          }`}
                         >
                           <Activity size={14} strokeWidth={2.5} />
                           <span>Detail Spasial</span>
@@ -870,10 +871,11 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setPopupActiveTab("potensi")}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "potensi"
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                            popupActiveTab === "potensi"
                               ? "bg-white text-[#00B67A] shadow-sm"
                               : "text-gray-500 hover:text-gray-800"
-                            }`}
+                          }`}
                         >
                           <Zap size={14} strokeWidth={2.5} />
                           <span>Potensi</span>
@@ -996,55 +998,17 @@ const Dashboard = () => {
                             </div>
                           </div>
                         ) : (
-                          detailData.desa?.potensi && detailData.desa.potensi.length > 0 ? (
-                            <div className="space-y-3 max-h-[300px] overflow-y-auto custom-scrollbar pr-1">
-                              {detailData.desa.potensi.map((catItem, idx) => (
-                                <div key={idx} className="bg-white border border-gray-200 rounded-xl p-3.5 shadow-sm">
-                                  <div className="flex items-center gap-2 mb-2.5 pb-2 border-b border-gray-100">
-                                    <div className="w-6 h-6 rounded-lg bg-emerald-50 text-[#00B67A] flex items-center justify-center font-bold text-xs shrink-0 border border-emerald-100">
-                                      <Zap size={13} strokeWidth={2.5} />
-                                    </div>
-                                    <h5 className="font-extrabold text-xs text-gray-800 uppercase tracking-wide">
-                                      {catItem.kategori || "Potensi Desa"}
-                                    </h5>
-                                  </div>
-                                  <div className="space-y-2">
-                                    {catItem.sub && catItem.sub.length > 0 ? (
-                                      catItem.sub.map((subItem, sIdx) => (
-                                        <div key={sIdx} className="flex justify-between items-center bg-gray-50/70 p-2.5 rounded-lg border border-gray-100/80">
-                                          <span className="text-xs font-bold text-gray-700">
-                                            {subItem.nama}
-                                          </span>
-                                          <div className="flex items-center gap-1">
-                                            <span className="text-xs font-extrabold text-[#00B67A]">
-                                              {Number(subItem.nilai).toLocaleString("id-ID")}
-                                            </span>
-                                            <span className="text-[10px] text-gray-400 font-bold uppercase">
-                                              {subItem.unit || ""}
-                                            </span>
-                                          </div>
-                                        </div>
-                                      ))
-                                    ) : (
-                                      <p className="text-[11px] text-gray-400 italic">Belum ada rincian potensi</p>
-                                    )}
-                                  </div>
-                                </div>
-                              ))}
+                          <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
+                            <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#00B67A] flex items-center justify-center mb-3 border border-emerald-100 shadow-inner">
+                              <Zap size={22} strokeWidth={2} />
                             </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
-                              <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#00B67A] flex items-center justify-center mb-3 border border-emerald-100 shadow-inner">
-                                <Zap size={22} strokeWidth={2} />
-                              </div>
-                              <h4 className="font-extrabold text-gray-800 text-sm mb-1">
-                                Potensi Desa
-                              </h4>
-                              <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[240px]">
-                                Belum terdapat data potensi desa pada desa ini
-                              </p>
-                            </div>
-                          )
+                            <h4 className="font-extrabold text-gray-800 text-sm mb-1">
+                              Potensi Desa
+                            </h4>
+                            <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[240px]">
+                              Belum terdapat data potensi desa pada desa ini
+                            </p>
+                          </div>
                         )
                       ) : (
                         <div className="text-center py-6 text-gray-500 text-xs">
@@ -1857,7 +1821,7 @@ const Dashboard = () => {
                   </tbody>
                 </table>
               </div>
-              {/* <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
+              <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
                 <div>Menampilkan 1-7 dari 268 data provinsi</div>
                 <div className="flex items-center gap-1.5">
                   <button className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors">
@@ -1880,7 +1844,7 @@ const Dashboard = () => {
                     <ChevronRight size={16} />
                   </button>
                 </div>
-              </div> */}
+              </div>
             </div>
           </>
         )}

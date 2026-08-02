@@ -131,7 +131,7 @@ export const indikatorService = {
 
   getAllYearIndicatorPublic: async () => {
     const response = await masterInstance.get(
-      "/public/tahun-indikator-perhitungan",
+      "/public/request-excel/tahun",
     );
     return response.data;
   },

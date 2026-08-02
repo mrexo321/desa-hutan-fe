@@ -1,17 +1,8 @@
 import environment from "../config/environment";
 
 const API_BASE = environment.CHATBOT_API_URL;
+const CHATBOT_ID_STORAGE_KEY = "desa_hutan_chatbot_id";
 const HARDCODED_CHATBOT_ID = "7f017090-de01-4e09-88bd-ea9e8b048810";
-
-/**
- * Mendapatkan chatbot ID (menggunakan hardcoded ID)
- */
-export const getOrCreateChatbotId = async () => {
-  if (environment.CHATBOT_ID && environment.CHATBOT_ID.trim() !== "") {
-    return environment.CHATBOT_ID.trim();
-  }
-  return HARDCODED_CHATBOT_ID;
-};
 
 // ============================================================
 // KNOWLEDGE BASE LENGKAP APLIKASI DESA HUTAN
@@ -340,6 +331,11 @@ export const getOrCreateChatbotId = async () => {
   // 1. Cek environment variable dulu
   if (environment.CHATBOT_ID && environment.CHATBOT_ID.trim() !== "") {
     return environment.CHATBOT_ID.trim();
+  }
+
+  // 2. Cek hardcoded ID jika ada
+  if (HARDCODED_CHATBOT_ID && HARDCODED_CHATBOT_ID.trim() !== "") {
+    return HARDCODED_CHATBOT_ID.trim();
   }
 
   // 2. Cek localStorage (sudah pernah dibuat sebelumnya)

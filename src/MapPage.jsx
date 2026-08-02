@@ -600,7 +600,7 @@ export default function MapPage() {
                 GEO<span className="text-[#2D7344]">DASHBOARD</span>
               </h1>
               <p className="text-[9px] text-gray-500 uppercase tracking-[0.25em] font-bold">
-                GEODASHBOARD SISTEM DESA HUTAN
+                GEODASHBOARD SISTEM GRAWANA
               </p>
             </div>
           </div>

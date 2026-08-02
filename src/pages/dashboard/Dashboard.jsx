@@ -939,7 +939,7 @@ const Dashboard = () => {
                               </div>
                               <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
                                 <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                  Kawasan Hutan
+                                  Nama Kawasan(Sesuai titik)
                                 </p>
                                 <p
                                   className="font-bold text-gray-800 text-sm"
@@ -953,12 +953,12 @@ const Dashboard = () => {
                             <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
                               <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
                               <div className="relative z-10">
-                                <div className="flex justify-between items-start mb-3">
+                                <div className="flex justify-between items-center mb-3">
                                   <div>
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
                                       Luas Kawasan
                                     </p>
-                                    <div className="flex flex-col">
+                                    {/* <div className="flex flex-col">
                                       <span className="font-extrabold text-[#2D7344] text-sm">
                                         {detailData.irisan?.jenisInteraksi || detailData.status?.replace('_', ' ') || '-'}
                                       </span>
@@ -967,9 +967,9 @@ const Dashboard = () => {
                                           {detailData.status.replace('_', ' ')}
                                         </span>
                                       )}
-                                    </div>
+                                    </div> */}
                                   </div>
-                                  <div className="text-right shrink-0">
+                                  <div className="text-left shrink-0">
                                     <span className="text-xl font-extrabold text-gray-800 block leading-none">
                                       {detailData.irisan?.luasPersen ?? 0}%
                                     </span>

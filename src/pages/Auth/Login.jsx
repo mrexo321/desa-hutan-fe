@@ -86,7 +86,7 @@ const Login = () => {
     loginMutation.mutate({
       username,
       password,
-      // altcha: altchaPayload,
+      altcha: altchaPayload,
     });
   };
 
@@ -196,8 +196,8 @@ const Login = () => {
               type="submit"
               disabled={loginMutation.isPending || !altchaPayload}
               className={`w-full flex items-center justify-center gap-2 text-white text-sm font-bold py-3.5 rounded-xl transition-all ${loginMutation.isPending || !altchaPayload
-                  ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
-                  : "bg-[#2D7344] hover:bg-[#1f5631] hover:shadow-[0_8px_25px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed shadow-none"
+                : "bg-[#2D7344] hover:bg-[#1f5631] hover:shadow-[0_8px_25px_rgba(45,115,68,0.3)] hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
                 }`}
             >
               {loginMutation.isPending ? (

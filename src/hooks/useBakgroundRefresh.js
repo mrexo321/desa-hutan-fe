@@ -1,14 +1,13 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import environment from "../config/environment";
-import { setToken, clearUserData } from "../store/userSlice";
+import { clearUserData } from "../store/userSlice";
+import { refreshAccessToken } from "../api/refreshCoordinator";
 
 // ============================================================
 // useBackgroundRefresh
 //
-// 1. Saat mount: jika ada refreshToken (dari sessionStorage) tapi
+// 1. Saat mount: jika ada refreshToken (dari localStorage) tapi
 //    belum ada accessToken (kondisi setelah hard-refresh) →
 //    langsung hit refresh-token untuk recover sesi.
 //
@@ -23,46 +22,36 @@ export const useBackgroundRefresh = () => {
   const accessToken = useSelector((state) => state.user?.accessToken);
   const refreshToken = useSelector((state) => state.user?.refreshToken);
 
+  // Loading guard: true hanya selama recovery accessToken pertama kali
+  // (mencegah komponen anak fetch data sebelum accessToken tersedia → 401 dini)
+  const [isRecovering, setIsRecovering] = useState(
+    () => Boolean(refreshToken && !accessToken),
+  );
+
   // Ref untuk selalu baca nilai terbaru di dalam interval/closure
   const refreshTokenRef = useRef(refreshToken);
-  const isRefreshingRef = useRef(false);
 
   useEffect(() => {
     refreshTokenRef.current = refreshToken;
   }, [refreshToken]);
 
   const doRefresh = async () => {
-    const token = refreshTokenRef.current;
-    if (!token || isRefreshingRef.current) return;
-    isRefreshingRef.current = true;
+    if (!refreshTokenRef.current) return;
     try {
-      const res = await axios.post(
-        `${environment.AUTH_URL}/auth/refresh-token`,
-        { refreshToken: token },
-      );
-
-      const newAccessToken = res.data.data.accessToken;
-      const newRefreshToken = res.data.data.refreshToken || token;
-
-      dispatch(
-        setToken({
-          accessToken: newAccessToken,
-          refreshToken: newRefreshToken,
-        }),
-      );
+      await refreshAccessToken();
     } catch {
       // Refresh token sudah tidak valid → bersihkan state & redirect login
       dispatch(clearUserData());
       navigate("/login", { replace: true });
-    } finally {
-      isRefreshingRef.current = false;
     }
   };
 
   // 1. Recovery saat hard-refresh: ada refreshToken tapi belum ada accessToken
   useEffect(() => {
     if (refreshToken && !accessToken) {
-      doRefresh();
+      doRefresh().finally(() => setIsRecovering(false));
+    } else {
+      setIsRecovering(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // hanya saat mount
@@ -74,4 +63,6 @@ export const useBackgroundRefresh = () => {
     return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshToken]);
+
+  return { isRecovering };
 };

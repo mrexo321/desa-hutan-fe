@@ -53,39 +53,69 @@ const AboutUs = () => {
   // Tupoksi (Tugas Pokok & Fungsi)
   const tupoksi = [
     {
-      title: "Perumusan Kebijakan",
-      desc: "Merumuskan standar dan instrumen kebijakan peningkatan pendapatan masyarakat adat sekitar hutan."
+      title: "Penyusunan kebijakan teknis di bidang perencanaan, formulasi, dan fasilitasi penerapan sosial ekonomi masyarakat hutan",
+      // desc: "Merumuskan standar dan instrumen kebijakan peningkatan pendapatan masyarakat adat sekitar hutan."
     },
     {
-      title: "Fasilitasi Kemitraan",
-      desc: "Membangun kerja sama kemitraan konservasi antara kelompok tani hutan (KTH) dengan unit pengelola tapak."
+      title: "Pelaksanaan perencanaan, formulasi, dan fasilitasi penerapan pengembangan sosial ekonomi masyarakat hutan",
+      // desc: "Membangun kerja sama kemitraan konservasi antara kelompok tani hutan (KTH) dengan unit pengelola tapak."
     },
     {
-      title: "Penyusunan Rencana Kerja",
-      desc: "Penyusunan rencana teknis pengelolaan hasil hutan bukan kayu (HHBK) dan jasa lingkungan berkelanjutan."
+      title: "Pelaksanaan pengelolaan laboratorium",
+      // desc: "Penyusunan rencana teknis pengelolaan hasil hutan bukan kayu (HHBK) dan jasa lingkungan berkelanjutan."
     },
     {
-      title: "Monitoring & Evaluasi",
-      desc: "Melakukan pemantauan real-time perkembangan indeks desa hutan mandiri menggunakan sistem informasi geografis."
+      title: "Pelaksanaan pengelolaan dan pembinaan kawasan hutan dengan tujuan khusus (KHDTK)",
+      // desc: "Melakukan pemantauan real-time perkembangan indeks desa hutan mandiri menggunakan sistem informasi geografis."
+    },
+    {
+      title: "Pelaksanaan pemantauan, evaluasi, dan pelaporan di bidang pengembangan sosial ekonomi masyarakat hutan, pengelolaan laboratorium serta pengelolaan dan pembinaan kawasan hutan dengan tujuan khusus"
+    },
+    {
+      title: "Pelaksanaan urusan ketatausahaan pusat."
     }
   ];
 
   // Milestones Timeline
   const milestones = [
     {
-      year: "2024",
-      title: "Permenhut No. 1 / 2024",
-      desc: "Pengesahan struktur tata kerja baru Kementerian Kehutanan Republik Indonesia."
+      // year: "2024",
+      title: "Perpes Nomor 175 Tahun 2024 tentang Kementerian Kehutanan",
+      // desc: "Pengesahan struktur tata kerja baru Kementerian Kehutanan Republik Indonesia."
     },
     {
+      // year: "2025",
+      title: "Permenhut Nomor 1 Tahun 2024 tentang Organisasi dan Tata Kerja Kementerian Kehutanan",
+      // desc: "Pendampingan gelombang pertama KTH di 1.200 desa perbatasan hutan."
+    },
+    {
+      // year: "2026",
+      title: "Permenhut Nomor 9 Tahun 2026 tentang Perubahan atas Peraturan Menteri Kehutanan Nomor 1 Tahun 2024 tentang Organisasi dan Tata Kerja Kementerian Kehutanan",
+      // desc: "Peluncuran geoportal peta interaktif dan modul verifikasi ekspor data."
+    }
+  ];
+
+  // Milestone 2025 - 2029
+  const milestoneTarget = [
+    {
       year: "2025",
-      title: "Inisiasi Program Desa Hutan",
-      desc: "Pendampingan gelombang pertama KTH di 1.200 desa perbatasan hutan."
+      desc: "Pengembangan penerapan kebijakan pengembangan sosial ekonomi masyarakat hutan untuk ketahanan pangan, energi dan kemandirian desa dengan tahapan yaitu identifikasi kebutuhan kebijakan teknis, dialog kerja, penyiapan enabling, penerapan kebijakan."
     },
     {
       year: "2026",
-      title: "Digitalisasi Sistem Spasial",
-      desc: "Peluncuran geoportal peta interaktif dan modul verifikasi ekspor data."
+      desc: "Penguatan efektivitas penerapan kebijakan pengembangan sosial ekonomi masyarakat hutan dengan tahapan yaitu sosialisasi, pendampingan, peningkatan kapasitas, untuk mendorong peran aktif masyarakat hutan."
+    },
+    {
+      year: "2027",
+      desc: "Peningkatan kemandirian desa di dalam dan sekitar kawasan hutan, didorong dan diintervensi dengan kebijakan teknis sosial ekonomi masyarakat sekitar hutan serta peningkatan kelembagaan masyarakat hutan dengan tahapan meningkatnya indeks kemandirian desa yang mendapat intervensi program kehutanan."
+    },
+    {
+      year: "2028",
+      desc: "Pemerataan intervensi kebijakan dan direplikasikan ke wilayah lain yang belum diintervensi dengan tahapan kebijakan teknis direplikasi di daerah lain yang belum diintervensi, dan meningkatnya kemajuan dan kemandirian desa yang dapat mendorong ketercapaian."
+    },
+    {
+      year: "2029",
+      desc: "Tercapai peningkatan kemandirian desa yang berkelanjutan dengan tahapan kontribusi kelompok masyarakat hutan terhadap peningkatan dan pemerataan kesejahteraan masyarakat sekitar hutan."
     }
   ];
 
@@ -120,54 +150,29 @@ const AboutUs = () => {
   // Org Chart Node descriptions for Modal
   const nodeDetails = {
     direktur: {
-      title: "Direktur Penggunaan Kawasan Hutan",
+      title: "Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan",
       role: "Pimpinan Puncak / Pengambil Keputusan",
-      desc: "Bertanggung jawab memimpin seluruh pelaksanaan kebijakan, perumusan standardisasi kriteria penggunaan kawasan hutan, penyiapan persetujuan prinsip, serta koordinasi strategis lintas sektoral nasional."
+      desc: "Bertanggung jawab memimpin seluruh pelaksanaan kebijakan teknis, koordinasi perumusan strategi, serta penerapan pengembangan sosial ekonomi masyarakat hutan."
     },
     tu: {
-      title: "Kepala Subbagian Tata Usaha",
+      title: "Subbagian Tata Usaha",
       role: "Manajemen Administrasi & Keuangan",
-      desc: "Mengelola persuratan kedinasan, urusan kepegawaian internal, koordinasi pengadaan perlengkapan, serta pengelolaan anggaran belanja direktorat."
-    },
-    fungsional: {
-      title: "Kelompok Jabatan Fungsional",
-      role: "Tim Ahli & Analis Teknis",
-      desc: "Bertugas melaksanakan analisis kelayakan ekologis, penelitian dampak penggunaan lahan, perumusan kajian ilmiah kehutanan, serta pendampingan teknis independen."
+      desc: "Melakukan pelaksanaan urusan administrasi sumber daya manusia, administrasi keuangan, administrasi barang milik negara, tata persuratan, kearsipan, kerumahtanggaan, koordinasi data dan informasi, penyiapan bahan penyusunan rencana, program, anggaran, serta koordinasi administrasi penerapan sistem pengendalian intern pusat."
     },
     subdit_penyiapan: {
-      title: "Subdirektorat Penyiapan Penggunaan Kawasan Hutan",
-      role: "Pemberian Persetujuan & Standardisasi Rencana",
-      desc: "Memproses permohonan persetujuan prinsip baru penggunaan kawasan hutan, melakukan verifikasi kelengkapan berkas administratif, dan menyusun kriteria batas lahan."
+      title: "Bidang Perencanaan dan Formulasi Pengembangan Sosial Ekonomi Masyarakat Hutan",
+      role: "Perencanaan & Kebijakan Teknis",
+      desc: "Melaksanakan penyiapan penyusunan kebijakan teknis dan pelaksanaan di bidang perencanaan dan formulasi pengembangan sosial ekonomi masyarakat hutan."
     },
     subdit_pemantauan: {
-      title: "Subdirektorat Pemantauan Kewajiban & PNBP",
-      role: "Pengawasan Izin & Penerimaan Negara",
-      desc: "Memantau kepatuhan pemegang izin penggunaan kawasan hutan, melakukan inspeksi berkala di lapangan, serta mengelola penatausahaan iuran Penerimaan Negara Bukan Pajak (PNBP) Kehutanan."
+      title: "Bidang Fasilitasi Penerapan Pengembangan Sosial Ekonomi Masyarakat Hutan",
+      role: "Fasilitasi & Pelaksanaan Teknis",
+      desc: "Melaksanakan penyiapan penyusunan kebijakan teknis dan pelaksanaan di bidang fasilitasi penerapan masyarakat hutan pengembangan sosial ekonomi pengelolaan laboratorium serta pengelolaan dan pembinaan kawasan hutan dengan tujuan khusus."
     },
-    tim_timur: {
-      title: "Tim Kerja Penyiapan Wilayah Timur & Tengah",
-      role: "Verifikasi Wilayah Kalimantan, Sulawesi & Papua",
-      desc: "Melaksanakan pemeriksaan berkas permohonan secara spasial (overlay peta) maupun verifikasi fisik untuk seluruh kawasan hutan di Kalimantan, Sulawesi, dan kepulauan Papua."
-    },
-    tim_barat: {
-      title: "Tim Kerja Penyiapan Wilayah Barat & Selatan",
-      role: "Verifikasi Wilayah Sumatera, Jawa, Nusa Tenggara & Maluku",
-      desc: "Melaksanakan pemeriksaan berkas permohonan secara spasial (overlay peta) maupun verifikasi fisik untuk seluruh kawasan hutan di Sumatera, Jawa, Bali, Nusa Tenggara, dan kepulauan Maluku."
-    },
-    tim_kewajiban: {
-      title: "Tim Kerja Pemantauan Kewajiban Persetujuan",
-      role: "Evaluasi Komitmen Pemegang Izin",
-      desc: "Mengawasi pelaksanaan kewajiban reboisasi, pemeliharaan batas izin, laporan berkala, serta kelestarian ekologis oleh korporasi atau instansi pengguna kawasan hutan."
-    },
-    tim_pnbp: {
-      title: "Tim Kerja Penatausahaan PNBP Penggunaan Hutan",
-      role: "Verifikasi Keuangan & Penerimaan Negara",
-      desc: "Memastikan akurasi pembayaran iuran penggunaan kawasan hutan (seperti PSDH dan DR) dan mengelola pelaporan berkala keuangan PNBP."
-    },
-    tim_data: {
-      title: "Tim Kerja Data & Informasi Penggunaan Hutan",
-      role: "Manajemen Sistem Spasial & SIG",
-      desc: "Mengelola server basis data spasial (GIS), mengoperasikan aplikasi Geoserver, serta menyajikan visualisasi data tabular rekapitulasi daerah."
+    jabatan_fungsional_pelaksana: {
+      title: "Jabatan Fungsional dan Jabatan Pelaksana",
+      role: "Pelayanan Fungsional & Analis Teknis",
+      desc: "Jabatan fungsional mempunyai tugas memberikan pelayanan fungsional dalam pelaksanaan tugas dan fungsi Jabatan pimpinan tinggi pratama sesuai dengan bidang keahlian dan keterampilan."
     }
   };
 
@@ -190,8 +195,9 @@ const AboutUs = () => {
               TENTANG KAMI
             </h1>
             <p className="text-sm md:text-lg text-emerald-100/80 mt-4 max-w-2xl font-medium leading-relaxed">
-              Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH) Kementerian Kehutanan Republik Indonesia.
+              Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH).
             </p>
+            <p className="text-xs text-emerald-100/80 mt-0 max-w-2xl font-medium leading-relaxed">Kementerian Kehutanan</p>
           </div>
         </div>
 
@@ -201,19 +207,19 @@ const AboutUs = () => {
           {/* VISI & PROFIL */}
           <div className="bg-white rounded-[2.5rem] border border-slate-100 p-8 md:p-12 shadow-[0_15px_40px_rgba(0,0,0,0.015)] mb-12 space-y-6">
             <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium text-justify">
-              <strong>Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH)</strong> merupakan unit kerja strategis di bawah naungan Kementerian Kehutanan, yang bertugas merumuskan, mengoordinasikan, dan melaksanakan kebijakan serta strategi di bidang fasilitasi dan pengembangan sosial ekonomi masyarakat di dalam maupun sekitar kawasan hutan, sesuai ketentuan peraturan perundang-undangan. Kami berkomitmen penuh dalam mendukung visi Kementerian Kehutanan, yaitu:
+              <strong>Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH)</strong> merupakan unit kerja strategis di bawah naungan Kementerian Kehutanan, yang mempunyai tugas melaksanakan pengembangan sosial ekonomi masyarakat hutan. P2SEMH berkomitmen penuh dalam mendukung visi Kementerian Kehutanan, yaitu “Entitas Tapak Hutan yang Mengalirkan Manfaat Ekologi, Ekonomi, Sosial dalam mewujudkan Indonesia Maju Menuju Indonesia Emas 2045”. <br />
+              P2SEMH mendukung salah satu tujuan Kementerian Kehutanan yang dituangkan dalam Rencana Strategis 2025-2029, yaitu:
             </p>
 
             <blockquote className="font-bold italic text-slate-800 px-6 py-5 border-l-4 border-emerald-600 bg-emerald-50/50 rounded-r-2xl leading-relaxed text-sm md:text-base font-sans shadow-inner">
-              "Mewujudkan entitas tapak yang mengalirkan manfaat ekologi, ekonomi, sosial, dan berkelanjutan guna mendukung pembangunan ekonomi hijau."
+              "“Meningkatkan peran hutan untuk peningkatan kemajuan dan kemandirian desa sekitar kawasan hutan”
             </blockquote>
 
             <p className="text-slate-600 text-base md:text-lg leading-relaxed font-medium text-justify">
-              Sebagai wujud komitmen tersebut, Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan (P2SEMH) memiliki sasaran utama:{" "}
+              Sebagai wujud komitmen tersebut, sasaran kegiatan P2SEMH yaitu “Pengembangan Sosial Ekonomi Masyarakat Sekitar Hutan” dengan indikator kinerja kegiatan (IKK) yaitu{" "}
               <strong className="text-slate-800">
-                "Mengoptimalkan pengembangan sosial ekonomi masyarakat hutan berbasis pengelolaan sumber daya yang inklusif dan lestari"
+                "Efektivitas Penerapan Kebijakan Teknis untuk Pengembangan Sosial Ekonomi Masyarakat Hutan termasuk Cadangan Pangan, Energi, dan Peningkatan Kemandirian Desa"
               </strong>
-              , sehingga pelibatan masyarakat dan pemanfaatan hutan—termasuk di dalamnya pengelolaan Hasil Hutan Bukan Kayu (HHBK) dan jasa lingkungan—dapat memberikan manfaat nyata bagi peningkatan kemandirian ekonomi lokal, kesejahteraan masyarakat tapak, sekaligus menjaga keseimbangan ekologis nasional.
             </p>
           </div>
 
@@ -227,7 +233,7 @@ const AboutUs = () => {
                   <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
                     <Briefcase size={18} strokeWidth={2.5} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800">Tugas Pokok &amp; Fungsi</h3>
+                  <h3 className="text-lg font-bold text-slate-800">Fungsi P2SEMH</h3>
                 </div>
 
                 <div className="space-y-5">
@@ -253,7 +259,7 @@ const AboutUs = () => {
                   <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
                     <Clock size={18} strokeWidth={2.5} />
                   </div>
-                  <h3 className="text-lg font-bold text-slate-800">Langkah Strategis</h3>
+                  <h3 className="text-lg font-bold text-slate-800">Dasar Hukum</h3>
                 </div>
 
                 <div className="relative border-l-2 border-emerald-100 pl-5 ml-2.5 space-y-6">
@@ -276,7 +282,7 @@ const AboutUs = () => {
           </div>
 
           {/* INDIKATOR KINERJA UTAMA (KPI) */}
-          <div className="mb-16">
+          {/* <div className="mb-16">
             <div className="flex items-center gap-3 mb-6">
               <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
                 <Layers size={18} strokeWidth={2.5} />
@@ -303,6 +309,42 @@ const AboutUs = () => {
                 </div>
               ))}
             </div>
+          </div> */}
+
+          {/* MILESTONE SECTION */}
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
+                <Calendar size={18} strokeWidth={2.5} />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-slate-800">
+                Tolok Ukur Pencapaian (Milestone) Pengembangan Sosial Ekonomi Masyarakat Hutan termasuk Cadangan Pangan, Energi, dan Peningkatan Kemandirian Desa
+              </h3>
+            </div>
+
+            <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
+              <div className="relative border-l-2 border-emerald-200/80 ml-3 md:ml-5 pl-6 md:pl-8 space-y-6">
+                {milestoneTarget.map((item, index) => (
+                  <div key={index} className="relative group">
+                    {/* Timeline Node */}
+                    <div className="absolute -left-[37px] md:-left-[45px] top-0 w-8 h-8 md:w-9 md:h-9 bg-emerald-600 text-white font-extrabold text-xs rounded-full border-4 border-white shadow-md flex items-center justify-center group-hover:scale-110 transition-transform">
+                      {index + 1}
+                    </div>
+
+                    <div className="bg-slate-50/70 hover:bg-emerald-50/40 p-5 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-mono">
+                          Tahun {item.year}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 text-xs md:text-sm leading-relaxed font-medium text-justify">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <p className="text-slate-600 text-sm md:text-base leading-relaxed text-justify mb-10 font-semibold">
@@ -311,202 +353,137 @@ const AboutUs = () => {
 
           {/* BAGAN STRUKTUR ORGANISASI */}
           <div className="relative">
-              {/* Swipe Helper Badge on Mobile */}
-              <div className="md:hidden flex items-center justify-center gap-1.5 text-[10px] font-bold text-[#2D7344] bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5 w-fit mx-auto mb-4 animate-bounce">
-                <Info size={12} /> Geser Kanan-Kiri untuk melihat bagan
-              </div>
+            {/* Swipe Helper Badge on Mobile */}
+            <div className="md:hidden flex items-center justify-center gap-1.5 text-[10px] font-bold text-[#2D7344] bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1.5 w-fit mx-auto mb-4 animate-bounce">
+              <Info size={12} /> Geser Kanan-Kiri untuk melihat bagan
+            </div>
 
-              <div className="bg-white border border-slate-200/60 rounded-[2rem] p-6 md:p-10 overflow-x-auto shadow-sm custom-scrollbar relative">
-                {/* Organogram wrapper */}
-                <div className="min-w-[850px] flex flex-col items-center py-6 font-sans">
+            <div className="bg-white border border-slate-200/60 rounded-[2rem] p-6 md:p-10 overflow-x-auto shadow-sm custom-scrollbar relative">
+              {/* Organogram wrapper */}
+              <div className="min-w-[850px] flex flex-col items-center py-6 font-sans">
 
-                  {/* Level 1: Direktur */}
+                {/* Level 1: Pusat */}
+                <div
+                  onClick={() => setSelectedNode(nodeDetails.direktur)}
+                  className="w-64 bg-amber-100 border-2 border-amber-300/70 hover:border-amber-500 p-4 text-center rounded-2xl shadow-sm z-20 relative cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
+                >
+                  <p className="font-extrabold text-xs text-amber-900 tracking-wide leading-relaxed uppercase">
+                    PUSAT PENGEMBANGAN
+                    <br />
+                    SOSIAL EKONOMI
+                    <br />
+                    MASYARAKAT HUTAN
+                  </p>
+                  <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <HelpCircle size={12} className="text-amber-600" />
+                  </div>
+                </div>
+
+                {/* Vertical Trunk Line to Level 2 */}
+                <div className="w-0.5 h-8 bg-slate-300 z-0"></div>
+
+                {/* Level 2: Subbagian Tata Usaha (Di Taruh di Kanan) */}
+                <div className="w-[640px] flex justify-end relative items-center py-2 z-10">
+                  {/* Continuous Center Vertical Line */}
+                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-slate-300 z-0"></div>
+
+                  {/* Horizontal Branch to Subbagian Tata Usaha */}
+                  <div className="absolute top-1/2 left-[50%] right-[25%] h-0.5 bg-slate-300 z-0"></div>
+
+                  {/* Subbagian Tata Usaha Node */}
+                  <div className="w-1/2 flex justify-center relative z-20">
+                    <div
+                      onClick={() => setSelectedNode(nodeDetails.tu)}
+                      className="w-52 bg-white border border-slate-200 hover:border-emerald-500/40 p-3.5 text-center rounded-xl shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group z-20 relative"
+                    >
+                      <p className="font-bold text-[10px] md:text-xs text-slate-700 uppercase tracking-wide">
+                        SUBBAGIAN TATA USAHA
+                      </p>
+                      <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <HelpCircle size={10} className="text-slate-400" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vertical Trunk Line to Level 3 */}
+                <div className="w-0.5 h-8 bg-slate-300 z-0"></div>
+
+                {/* Level 3: Bidang Perencanaan & Bidang Fasilitasi */}
+                <div className="flex justify-between w-full relative pt-6 pb-2 z-10">
+                  {/* Horizontal Connector Line for the 2 Bidang */}
+                  <div className="absolute top-0 left-[25%] right-[25%] h-0.5 bg-slate-300 z-0"></div>
+
+                  {/* Continuous Center Vertical Line through Level 3 */}
+                  <div className="absolute top-0 bottom-0 left-1/2 -translate-x-1/2 w-0.5 bg-slate-300 z-0"></div>
+
+                  {/* Kiri: Bidang Perencanaan */}
+                  <div className="flex flex-col items-center w-1/2 relative z-20">
+                    <div className="absolute top-0 w-0.5 h-6 bg-slate-300 z-0"></div>
+                    <div
+                      onClick={() => setSelectedNode(nodeDetails.subdit_penyiapan)}
+                      className="w-80 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600 p-4 text-center rounded-2xl shadow-md cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group z-20 relative"
+                    >
+                      <p className="font-extrabold text-xs uppercase tracking-wide leading-relaxed">
+                        BIDANG PERENCANAAN DAN
+                        <br />
+                        FORMULASI PEGEMBANGAN
+                        <br />
+                        SOSIAL EKONOMI
+                        <br />
+                        MASYARAKAT HUTAN
+                      </p>
+                      <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <HelpCircle size={12} className="text-emerald-300" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Kanan: Bidang Fasilitasi */}
+                  <div className="flex flex-col items-center w-1/2 relative z-20">
+                    <div className="absolute top-0 w-0.5 h-6 bg-slate-300 z-0"></div>
+                    <div
+                      onClick={() => setSelectedNode(nodeDetails.subdit_pemantauan)}
+                      className="w-80 bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-700 p-4 text-center rounded-2xl shadow-md cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group z-20 relative"
+                    >
+                      <p className="font-extrabold text-xs uppercase tracking-wide leading-relaxed">
+                        BIDANG FASILITASI
+                        <br />
+                        PENERAPAN PENGEMBANGAN
+                        <br />
+                        SOSIAL EKONOMI
+                        <br />
+                        MASYARAKAT HUTAN
+                      </p>
+                      <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <HelpCircle size={12} className="text-emerald-300" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vertical Trunk Line to Level 4 */}
+                <div className="w-0.5 h-8 bg-slate-300 z-0"></div>
+
+                {/* Level 4: Jabatan Fungsional dan Jabatan Pelaksana */}
+                <div className="flex justify-center w-full relative z-20">
                   <div
-                    onClick={() => setSelectedNode(nodeDetails.direktur)}
-                    className="w-60 bg-amber-100 border-2 border-amber-300/70 hover:border-amber-500 p-4 text-center rounded-2xl shadow-sm z-10 relative cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
+                    onClick={() => setSelectedNode(nodeDetails.jabatan_fungsional_pelaksana)}
+                    className="w-72 bg-emerald-50 border-2 border-emerald-200 hover:border-emerald-400 p-3.5 text-center rounded-xl text-[10px] md:text-xs font-bold text-emerald-900 leading-relaxed shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group relative z-20"
                   >
-                    <p className="font-extrabold text-xs text-amber-900 tracking-wide leading-relaxed uppercase">
-                      DIREKTUR
+                    <p className="uppercase tracking-wide">
+                      JABATAN FUNGSIONAL DAN
                       <br />
-                      PENGGUNAAN
-                      <br />
-                      KAWASAN HUTAN
+                      JABATAN PELAKSANA
                     </p>
-                    <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <HelpCircle size={12} className="text-amber-600" />
-                    </div>
-                  </div>
-
-                  {/* Vertical Connector */}
-                  <div className="w-0.5 h-10 bg-slate-300"></div>
-
-                  {/* Level 2: Tata Usaha & Fungsional */}
-                  <div className="flex justify-between w-[640px] relative">
-                    {/* Horizontal Connector bar */}
-                    <div className="absolute top-0 left-[20%] right-[20%] h-0.5 bg-slate-300"></div>
-
-                    <div className="flex flex-col items-center w-1/2 pt-6 relative">
-                      <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div
-                        onClick={() => setSelectedNode(nodeDetails.tu)}
-                        className="w-52 bg-white border border-slate-200 hover:border-emerald-500/40 p-3.5 text-center rounded-xl shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
-                      >
-                        <p className="font-bold text-[10px] md:text-xs text-slate-700 uppercase tracking-wide">
-                          KEPALA SUBBAGIAN TATA USAHA
-                        </p>
-                        <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <HelpCircle size={10} className="text-slate-400" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col items-center w-1/2 pt-6 relative">
-                      <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div
-                        onClick={() => setSelectedNode(nodeDetails.fungsional)}
-                        className="w-52 bg-amber-50/50 border border-amber-200/60 hover:border-amber-400 p-3.5 text-center rounded-xl shadow-sm cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
-                      >
-                        <p className="font-bold text-[10px] md:text-xs text-amber-800 uppercase tracking-wide leading-relaxed">
-                          KELOMPOK JABATAN
-                          <br />
-                          FUNGSIONAL
-                        </p>
-                        <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <HelpCircle size={10} className="text-amber-600" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Vertical Connector line from center */}
-                  <div className="w-0.5 h-10 bg-slate-300 -mt-10"></div>
-
-                  {/* Level 3: Subdirektorat */}
-                  <div className="flex justify-between w-full mt-10 relative">
-                    {/* Horizontal Connector Line */}
-                    <div className="absolute top-0 left-[25%] right-[25%] h-0.5 bg-slate-300"></div>
-
-                    {/* Kiri: Subdit Penyiapan */}
-                    <div className="flex flex-col items-center w-1/2 pt-6 relative">
-                      <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div
-                        onClick={() => setSelectedNode(nodeDetails.subdit_penyiapan)}
-                        className="w-80 bg-emerald-700 hover:bg-emerald-600 text-white border border-emerald-600 p-4 text-center rounded-2xl shadow-md mb-6 z-10 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
-                      >
-                        <p className="font-extrabold text-xs uppercase tracking-wide leading-relaxed">
-                          KEPALA SUBDIREKTORAT
-                          <br />
-                          PENYIAPAN PENGGUNAAN
-                          <br />
-                          KAWASAN HUTAN
-                        </p>
-                        <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <HelpCircle size={12} className="text-emerald-300" />
-                        </div>
-                      </div>
-
-                      {/* Children nodes */}
-                      <div className="flex gap-4 relative pt-4">
-                        <div className="absolute top-0 left-[23%] right-[23%] h-0.5 bg-slate-300"></div>
-
-                        <div className="flex flex-col items-center relative pt-4">
-                          <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div
-                            onClick={() => setSelectedNode(nodeDetails.tim_timur)}
-                            className="w-40 bg-emerald-50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          >
-                            <p>
-                              TIM KERJA BIDANG PENYIAPAN PENGGUNAAN KAWASAN HUTAN
-                              WILAYAH KALIMANTAN, SULAWESI DAN PAPUA
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center relative pt-4">
-                          <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div
-                            onClick={() => setSelectedNode(nodeDetails.tim_barat)}
-                            className="w-40 bg-emerald-50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          >
-                            <p>
-                              TIM KERJA BIDANG PENYIAPAN PENGGUNAAN KAWASAN HUTAN
-                              WILAYAH SUMATERA, JAWA, BALI, NUSA TENGGARA, MALUKU
-                              DAN MALUKU UTARA
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Kanan: Subdit Pemantauan */}
-                    <div className="flex flex-col items-center w-1/2 pt-6 relative">
-                      <div className="absolute top-0 w-0.5 h-6 bg-slate-300"></div>
-                      <div
-                        onClick={() => setSelectedNode(nodeDetails.subdit_pemantauan)}
-                        className="w-80 bg-emerald-800 hover:bg-emerald-700 text-white border border-emerald-700 p-4 text-center rounded-2xl shadow-md mb-6 z-10 cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all group"
-                      >
-                        <p className="font-extrabold text-xs uppercase tracking-wide leading-relaxed">
-                          KEPALA SUBDIREKTORAT PEMANTAUAN
-                          <br />
-                          KEWAJIBAN DAN PENATAUSAHAAN
-                          <br />
-                          PENERIMAAN NEGARA BUKAN PAJAK
-                          <br />
-                          PENGGUNAAN KAWASAN HUTAN
-                        </p>
-                        <div className="absolute right-3 bottom-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <HelpCircle size={12} className="text-emerald-300" />
-                        </div>
-                      </div>
-
-                      {/* Children nodes */}
-                      <div className="flex gap-2.5 relative pt-4">
-                        <div className="absolute top-0 left-[16%] right-[16%] h-0.5 bg-slate-300"></div>
-
-                        <div className="flex flex-col items-center relative pt-4">
-                          <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div
-                            onClick={() => setSelectedNode(nodeDetails.tim_kewajiban)}
-                            className="w-32 bg-emerald-50/50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          >
-                            <p>
-                              TIM KERJA BIDANG PEMANTAUAN KEWAJIBAN PERSETUJUAN
-                              PENGGUNAAN KAWASAN HUTAN
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center relative pt-4">
-                          <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div
-                            onClick={() => setSelectedNode(nodeDetails.tim_pnbp)}
-                            className="w-32 bg-emerald-50/50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          >
-                            <p>
-                              TIM KERJA BIDANG PENATAUSAHAAN PENERIMAAN NEGARA
-                              BUKAN PAJAK PENGGUNAAN KAWASAN HUTAN
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col items-center relative pt-4">
-                          <div className="absolute top-0 w-0.5 h-4 bg-slate-300"></div>
-                          <div
-                            onClick={() => setSelectedNode(nodeDetails.tim_data)}
-                            className="w-32 bg-emerald-50/50 border border-emerald-100 hover:border-emerald-400 p-3 text-center rounded-xl text-[9px] font-bold text-emerald-800 leading-relaxed shadow-sm h-full flex items-center justify-center cursor-pointer hover:scale-[1.02] active:scale-[0.98] transition-all"
-                          >
-                            <p>
-                              TIM KERJA BIDANG DATA DAN INFORMASI PENGGUNAAN
-                              KAWASAN HUTAN
-                            </p>
-                          </div>
-                        </div>
-                      </div>
+                    <div className="absolute right-2 bottom-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <HelpCircle size={10} className="text-emerald-600" />
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          </div>
 
           {/* SISTEM INFORMASI TERKAIT */}
           {/* <div className="mt-20">
@@ -567,10 +544,10 @@ const AboutUs = () => {
 
               <div className="space-y-4 font-sans text-xs md:text-sm text-slate-500 leading-relaxed font-semibold">
                 <p className="text-slate-600">{selectedNode.desc}</p>
-                <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-2 text-[11px] text-slate-400">
+                {/* <div className="p-3.5 bg-slate-50 border border-slate-100 rounded-2xl flex items-start gap-2 text-[11px] text-slate-400">
                   <FileText size={16} className="text-emerald-600 shrink-0 mt-0.5" />
                   <span>Wewenang diatur berlandaskan Peraturan Menteri Kehutanan RI No. 1 Tahun 2024.</span>
-                </div>
+                </div> */}
               </div>
 
               <div className="flex justify-end mt-6">
@@ -585,8 +562,8 @@ const AboutUs = () => {
           </div>
         </div>
       )}
-  </HomeLayout>
-);
+    </HomeLayout>
+  );
 };
 
 export default AboutUs;

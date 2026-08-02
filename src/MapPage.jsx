@@ -592,13 +592,7 @@ export default function MapPage() {
                       {/* Header Info Banner */}
                       <div className="relative overflow-hidden bg-gradient-to-br from-[#0B241A] via-[#123E2E] to-[#1C5842] text-white p-3.5 rounded-2xl shadow-md border border-emerald-900/40">
                         <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="bg-emerald-400/20 text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-emerald-400/30 flex items-center gap-1.5 backdrop-blur-xs">
-                            <Trees size={12} className="text-emerald-400" />
-                            {irisan.jenisInteraksi ||
-                              (status === "hanya_hutan"
-                                ? "Kawasan Hutan"
-                                : "Wilayah Desa")}
-                          </span>
+
                           {desa.kodeKemendagri && (
                             <span className="font-mono text-[10px] font-extrabold text-emerald-200 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-700/50">
                               Kode: {desa.kodeKemendagri}
@@ -624,11 +618,9 @@ export default function MapPage() {
                           <div className="flex items-center justify-between gap-3 mb-2">
                             <div>
                               <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block mb-0.5">
-                                KAWASAN HUTAN(SESUAI TITIK)
+                                LUAS KAWASAN
                               </span>
-                              <span className="text-xs font-black text-[#2D7344] block">
-                                {irisan.jenisInteraksi || "Beririsan Kawasan Hutan"}
-                              </span>
+
                             </div>
                             <div className="text-right shrink-0">
                               <span className="text-2xl font-black text-slate-900 leading-none block">
@@ -670,7 +662,7 @@ export default function MapPage() {
                         <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-100 flex flex-col justify-between shadow-xs">
                           <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
                             <Trees size={12} className="text-emerald-600" />
-                            Fungsi Kawasan
+                            Nama Kawasan
                           </span>
                           <div>
                             <p
@@ -692,7 +684,7 @@ export default function MapPage() {
                       {(hutan.noSkKawasan ||
                         hutan.noSkPenetapan ||
                         luasHutanFormatted) && (
-                        <div className="bg-slate-50/90 rounded-2xl p-3 border border-slate-200/60 space-y-2 text-xs shadow-xs">
+                        <div className="bg-slate-50/90 hidden rounded-2xl p-3 border border-slate-200/60 space-y-2 text-xs shadow-xs">
                           <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-400 uppercase tracking-wider pb-1.5 border-b border-slate-200/80">
                             <span>INFORMASI SK KAWASAN HUTAN</span>
                             {luasHutanFormatted && (

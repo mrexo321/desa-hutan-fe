@@ -58,13 +58,12 @@ const Navbar = () => {
 
   return (
     <header
-      className={`w-full text-white transition-all duration-300 z-50 ${
-        isHome
+      className={`w-full text-white transition-all duration-300 z-50 ${isHome
           ? scrolled
             ? "fixed top-0 left-0 bg-[#0F381F]/90 backdrop-blur-md shadow-lg border-b border-emerald-800/20 py-4"
             : "absolute top-0 left-0 bg-transparent py-6"
           : "relative bg-[#0F381F] py-4 shadow-md"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-8 flex justify-between items-center">
         {/* Logo & Site Name */}
@@ -85,10 +84,13 @@ const Navbar = () => {
           <div className="flex flex-col">
             <span className="font-extrabold text-sm md:text-base leading-tight tracking-tight uppercase bg-gradient-to-r from-emerald-100 to-white bg-clip-text text-transparent group-hover:text-emerald-300 transition-colors">
               {/* {siteName} */}
-             GRAWANA
+              GRAWANA
             </span>
             <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-widest leading-none mt-0.5">
-              GeoBaseline Desa Hutan Integrasi Data , Menguatkan Desa
+              GeoBaseline Desa Hutan
+            </span>
+            <span className="text-[8px] text-emerald-200/90 font-medium tracking-wide leading-tight mt-0.5">
+              Integrasi Data, Menguatkan Desa
             </span>
           </div>
         </Link>
@@ -101,11 +103,10 @@ const Navbar = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 hover:bg-white/10 ${
-                  isActive
+                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 hover:bg-white/10 ${isActive
                     ? "text-[#E6B93B] bg-white/5"
                     : "text-emerald-100 hover:text-white"
-                }`}
+                  }`}
               >
                 {link.name}
               </Link>
@@ -142,11 +143,10 @@ const Navbar = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`px-4 py-3 rounded-xl text-base font-bold transition-colors ${
-                    isActive
+                  className={`px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive
                       ? "text-[#E6B93B] bg-emerald-950/40"
                       : "text-emerald-100 hover:text-white hover:bg-white/5"
-                  }`}
+                    }`}
                 >
                   {link.name}
                 </Link>

@@ -1,8 +1,9 @@
 import axios from "axios";
 import { toast } from "sonner";
-import { setToken, clearUserData } from "../store/userSlice";
+import { clearUserData } from "../store/userSlice";
 import environment from "../config/environment";
 import { reduxStore } from "../store/store";
+import { refreshAccessToken } from "./refreshCoordinator";
 
 const masterInstance = axios.create({
   baseURL: environment.MASTER_URL,
@@ -17,23 +18,6 @@ const handleSessionExpired = () => {
   if (window.location.pathname.startsWith("/dashboard")) {
     window.location.href = "/login";
   }
-};
-
-// ============================================================
-// VARIABEL UNTUK ANTREAN MULTIPLE REQUEST
-// ============================================================
-let isRefreshing = false;
-let failedQueue = [];
-
-const processQueue = (error, token = null) => {
-  failedQueue.forEach((prom) => {
-    if (error) {
-      prom.reject(error);
-    } else {
-      prom.resolve(token);
-    }
-  });
-  failedQueue = [];
 };
 
 // --- REQUEST INTERCEPTOR ---
@@ -61,60 +45,21 @@ masterInstance.interceptors.response.use(
       error.response?.data?.message || error.response?.data?.error || "";
 
     // ========================================================
-    // A. LOGIKA AUTO REFRESH TOKEN (DENGAN ANTREAN)
+    // A. LOGIKA AUTO REFRESH TOKEN (lock tunggal via refreshCoordinator)
     // ========================================================
     if (status === 401 && !originalRequest._retry) {
-      // Jika SEDANG proses refresh token, masukkan ke antrean
-      if (isRefreshing) {
-        return new Promise(function (resolve, reject) {
-          failedQueue.push({ resolve, reject });
-        })
-          .then((token) => {
-            originalRequest.headers.Authorization = `Bearer ${token}`;
-            return masterInstance(originalRequest);
-          })
-          .catch((err) => {
-            return Promise.reject(err);
-          });
-      }
-
-      // Tandai sebagai request pertama yang mencoba refresh
       originalRequest._retry = true;
-      isRefreshing = true;
 
       try {
-        const state = reduxStore.getState();
-        const currentRefreshToken = state.user?.refreshToken;
-
-        if (!currentRefreshToken) {
-          processQueue(new Error("No refresh token"), null);
-          handleSessionExpired();
-          return Promise.reject(error);
-        }
-
-        const res = await axios.post(
-          `${environment.AUTH_URL}/auth/refresh-token`,
-          { refreshToken: currentRefreshToken },
-        );
-
-        const newToken = res.data.data.accessToken;
-
-        // Simpan token baru ke Redux
-        reduxStore.dispatch(setToken({ accessToken: newToken }));
-
-        // Jalankan semua request yang antre
-        processQueue(null, newToken);
+        const newToken = await refreshAccessToken();
 
         // Re-hit endpoint awal dengan token baru
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
         return masterInstance(originalRequest);
       } catch (refreshError) {
         // Refresh token mati → tampilkan session expired screen
-        processQueue(refreshError, null);
         handleSessionExpired();
         return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
       }
     }
 

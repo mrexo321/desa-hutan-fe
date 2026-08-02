@@ -188,9 +188,12 @@ const Homepage = () => {
               ) : (
                 <div className="space-y-6">
                   {/* Badge */}
-                  <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-500/15 border border-emerald-400/30 rounded-full text-emerald-200 text-xs font-bold uppercase tracking-widest leading-none animate-fade-in-up">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse"></span>
-                    PUSAT PENGEMBANGAN SOSIAL EKONOMI MASYARAKAT HUTAN Kementerian Kehutanan
+                  <div className="inline-flex items-center gap-3 px-4 py-2 bg-emerald-500/15 border border-emerald-400/30 rounded-2xl text-emerald-200 text-xs font-bold uppercase tracking-widest animate-fade-in-up">
+                    <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse shrink-0"></span>
+                    <div className="flex flex-col text-left leading-snug">
+                      <span>PUSAT PENGEMBANGAN SOSIAL EKONOMI MASYARAKAT HUTAN</span>
+                      <span className="text-[11px] text-emerald-300 font-semibold tracking-wider uppercase mt-0.5">Kementerian Kehutanan</span>
+                    </div>
                   </div>
 
                   {/* Headline */}

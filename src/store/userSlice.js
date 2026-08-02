@@ -3,11 +3,11 @@ import { createSlice } from "@reduxjs/toolkit";
 // ============================================================
 // SECURITY:
 // - user_profile (non-sensitif) → localStorage (persist lintas tab)
-// - refreshToken → sessionStorage (persist hard-refresh, hilang saat tab tutup)
+// - refreshToken → localStorage (persist hard-refresh & lintas tab, untuk cross-tab auth sync)
 // - accessToken → Redux memory SAJA (tidak pernah disimpan ke storage)
 // ============================================================
 
-const RT_KEY = "_rt"; // sessionStorage key untuk refreshToken
+const RT_KEY = "_rt"; // localStorage key untuk refreshToken
 
 const savedUserData = (() => {
   try {
@@ -20,7 +20,7 @@ const savedUserData = (() => {
 
 const savedRefreshToken = (() => {
   try {
-    return sessionStorage.getItem(RT_KEY) || null;
+    return localStorage.getItem(RT_KEY) || null;
   } catch {
     return null;
   }
@@ -35,7 +35,7 @@ const initialState = {
 
   // accessToken — HANYA di Redux memory (hilang saat hard-refresh → di-recover via refreshToken)
   accessToken: null,
-  // refreshToken — disimpan ke sessionStorage agar tahan hard-refresh
+  // refreshToken — disimpan ke localStorage agar tahan hard-refresh & lintas tab
   refreshToken: savedRefreshToken,
 
   // Status session
@@ -66,12 +66,12 @@ const userSlice = createSlice({
         // Ignore storage errors
       }
 
-      // Simpan refreshToken ke sessionStorage
+      // Simpan refreshToken ke localStorage
       try {
         if (refreshToken) {
-          sessionStorage.setItem(RT_KEY, refreshToken);
+          localStorage.setItem(RT_KEY, refreshToken);
         } else {
-          sessionStorage.removeItem(RT_KEY);
+          localStorage.removeItem(RT_KEY);
         }
       } catch {
         // Ignore storage errors
@@ -83,9 +83,9 @@ const userSlice = createSlice({
       if (accessToken) state.accessToken = accessToken;
       if (refreshToken) {
         state.refreshToken = refreshToken;
-        // Perbarui sessionStorage dengan refreshToken terbaru
+        // Perbarui localStorage dengan refreshToken terbaru
         try {
-          sessionStorage.setItem(RT_KEY, refreshToken);
+          localStorage.setItem(RT_KEY, refreshToken);
         } catch {
           // Ignore
         }
@@ -98,9 +98,25 @@ const userSlice = createSlice({
       state.refreshToken = null;
       state.isSessionExpired = true;
       try {
-        sessionStorage.removeItem(RT_KEY);
+        localStorage.removeItem(RT_KEY);
       } catch {
         // Ignore
+      }
+    },
+
+    // Sinkronisasi state dari tab lain: mengisi ulang profil & refreshToken
+    // dari localStorage tanpa menyentuh accessToken (harus direcovery via refresh asli)
+    hydrateFromStorage: (state) => {
+      try {
+        const raw = localStorage.getItem("user_profile");
+        const profile = raw ? JSON.parse(raw) : null;
+        state.userId = profile?.userId || null;
+        state.username = profile?.username || null;
+        state.roles = profile?.roles || [];
+        state.permissions = profile?.permissions || [];
+        state.refreshToken = localStorage.getItem(RT_KEY) || null;
+      } catch {
+        // Ignore storage errors
       }
     },
 
@@ -108,7 +124,7 @@ const userSlice = createSlice({
       try {
         localStorage.removeItem("user_profile");
         localStorage.removeItem("user");
-        sessionStorage.removeItem(RT_KEY);
+        localStorage.removeItem(RT_KEY);
       } catch {
         // Ignore
       }
@@ -124,6 +140,6 @@ const userSlice = createSlice({
   },
 });
 
-export const { setUserData, clearUserData, setToken } =
+export const { setUserData, clearUserData, setToken, hydrateFromStorage } =
   userSlice.actions;
 export default userSlice.reducer;

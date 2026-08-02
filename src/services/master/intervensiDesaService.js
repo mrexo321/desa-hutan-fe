@@ -35,6 +35,14 @@ export const intervensiDesaService = {
     return response;
   },
 
+  async exportExcel(tahunIntervensiDesaId) {
+    const response = await masterInstance.get("/intervensi-desa/export", {
+      params: { tahunIntervensiDesaId: tahunIntervensiDesaId || undefined },
+      responseType: "blob",
+    });
+    return response;
+  },
+
   async uploadExcel(formData) {
     const response = await masterInstance.post("/intervensi-desa/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },

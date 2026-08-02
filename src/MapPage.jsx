@@ -420,7 +420,7 @@ export default function MapPage() {
                 GEO<span className="text-[#2D7344]">DASHBOARD</span>
               </h1>
               <p className="text-[9px] text-gray-500 uppercase tracking-[0.25em] font-bold">
-                GEODASHBOARD SISTEM DESA HUTAN
+                GEODASHBOARD SISTEM GRAWARNA
               </p>
             </div>
           </div>
@@ -938,69 +938,6 @@ export default function MapPage() {
                   )}
                 </div>
 
-                {/* --- KONTROL: LAYER DESA HUTAN --- */}
-                <div
-                  className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerDesaHutan ? "bg-white/90 border-teal-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
-                >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`p-2 rounded-xl transition-colors ${showLayerDesaHutan ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-400"}`}
-                      >
-                        <TreePine size={16} strokeWidth={2} />
-                      </div>
-                      <div>
-                        <div
-                          className={`text-sm font-bold transition-colors ${showLayerDesaHutan ? "text-gray-800" : "text-gray-500"}`}
-                        >
-                          Desa Hutan
-                        </div>
-                        <div className="text-[10px] text-gray-400 font-medium">
-                          PETA DESA HUTAN
-                        </div>
-                      </div>
-                    </div>
-                    <label className="cursor-pointer">
-                      <div
-                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerDesaHutan ? "bg-teal-600" : "bg-gray-300"}`}
-                      >
-                        <input
-                          type="checkbox"
-                          className="hidden"
-                          checked={showLayerDesaHutan}
-                          onChange={() => setShowLayerDesaHutan(!showLayerDesaHutan)}
-                        />
-                        <div
-                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-spring ${showLayerDesaHutan ? "translate-x-5" : "translate-x-0"}`}
-                        />
-                      </div>
-                    </label>
-                  </div>
-
-                  {showLayerDesaHutan && (
-                    <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200">
-                      <div className="flex justify-between items-center mb-1">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
-                          Transparansi
-                        </span>
-                        <span className="font-mono text-xs font-bold text-teal-600">
-                          {opacityDesaHutan}%
-                        </span>
-                      </div>
-                      <input
-                        type="range"
-                        min="10"
-                        max="100"
-                        value={opacityDesaHutan}
-                        onChange={(e) =>
-                          setOpacityDesaHutan(parseInt(e.target.value))
-                        }
-                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                      />
-                    </div>
-                  )}
-                </div>
-
                 {/* --- KONTROL: LAYER DESA PSN --- */}
                 <div
                   className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerPsn ? "bg-white/90 border-purple-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
@@ -1085,6 +1022,69 @@ export default function MapPage() {
                           ))}
                         </div>
                       </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* --- KONTROL: LAYER DESA HUTAN --- */}
+                <div
+                  className={`p-4 rounded-[16px] border transition-all duration-300 ${showLayerDesaHutan ? "bg-white/90 border-teal-100 shadow-sm" : "bg-gray-50/50 border-transparent opacity-70 grayscale"}`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`p-2 rounded-xl transition-colors ${showLayerDesaHutan ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-400"}`}
+                      >
+                        <TreePine size={16} strokeWidth={2} />
+                      </div>
+                      <div>
+                        <div
+                          className={`text-sm font-bold transition-colors ${showLayerDesaHutan ? "text-gray-800" : "text-gray-500"}`}
+                        >
+                          Desa Hutan
+                        </div>
+                        <div className="text-[10px] text-gray-400 font-medium">
+                          PETA DESA HUTAN
+                        </div>
+                      </div>
+                    </div>
+                    <label className="cursor-pointer">
+                      <div
+                        className={`w-11 h-6 flex items-center rounded-full p-1 transition-colors duration-300 ease-in-out shadow-inner ${showLayerDesaHutan ? "bg-teal-600" : "bg-gray-300"}`}
+                      >
+                        <input
+                          type="checkbox"
+                          className="hidden"
+                          checked={showLayerDesaHutan}
+                          onChange={() => setShowLayerDesaHutan(!showLayerDesaHutan)}
+                        />
+                        <div
+                          className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform duration-300 ease-spring ${showLayerDesaHutan ? "translate-x-5" : "translate-x-0"}`}
+                        />
+                      </div>
+                    </label>
+                  </div>
+
+                  {showLayerDesaHutan && (
+                    <div className="pt-2 border-t border-gray-100/80 animate-in fade-in zoom-in-95 duration-200">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                          Transparansi
+                        </span>
+                        <span className="font-mono text-xs font-bold text-teal-600">
+                          {opacityDesaHutan}%
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min="10"
+                        max="100"
+                        value={opacityDesaHutan}
+                        onChange={(e) =>
+                          setOpacityDesaHutan(parseInt(e.target.value))
+                        }
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                      />
                     </div>
                   )}
                 </div>

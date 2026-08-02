@@ -1599,54 +1599,6 @@ const Dashboard = () => {
                       </div>
 
                       <div
-                        className={`p-3.5 rounded-[14px] border transition-all ${showLayerDesaHutan ? "bg-white border-teal-100 shadow-sm" : "bg-gray-50 border-transparent opacity-70"}`}
-                      >
-                        <div className="flex justify-between items-center mb-3">
-                          <div className="flex items-center gap-2.5">
-                            <div
-                              className={`p-1.5 rounded-lg ${showLayerDesaHutan ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-400"}`}
-                            >
-                              <TreePine size={14} />
-                            </div>
-                            <div
-                              className={`text-xs font-bold ${showLayerDesaHutan ? "text-gray-800" : "text-gray-500"}`}
-                            >
-                              Desa Hutan
-                            </div>
-                          </div>
-                          <label className="cursor-pointer relative inline-flex items-center">
-                            <input
-                              type="checkbox"
-                              className="sr-only peer"
-                              checked={showLayerDesaHutan}
-                              onChange={() =>
-                                setShowLayerDesaHutan(!showLayerDesaHutan)
-                              }
-                            />
-                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
-                          </label>
-                        </div>
-                        {showLayerDesaHutan && (
-                          <div>
-                            <div className="flex justify-between text-[9px] font-bold text-gray-400 mb-1">
-                              <span>TRANSPARANSI</span>
-                              <span>{opacityDesaHutan}%</span>
-                            </div>
-                            <input
-                              type="range"
-                              min="10"
-                              max="100"
-                              value={opacityDesaHutan}
-                              onChange={(e) =>
-                                setOpacityDesaHutan(parseInt(e.target.value))
-                              }
-                              className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
-                            />
-                          </div>
-                        )}
-                      </div>
-
-                      <div
                         className={`p-3.5 rounded-[14px] border transition-all ${showLayerPsn ? "bg-white border-purple-100 shadow-sm" : "bg-gray-50 border-transparent opacity-70"}`}
                       >
                         <div className="flex justify-between items-center mb-3">
@@ -1707,6 +1659,54 @@ const Dashboard = () => {
                                 ))}
                               </div>
                             </div>
+                          </div>
+                        )}
+                      </div>
+
+                      <div
+                        className={`p-3.5 rounded-[14px] border transition-all ${showLayerDesaHutan ? "bg-white border-teal-100 shadow-sm" : "bg-gray-50 border-transparent opacity-70"}`}
+                      >
+                        <div className="flex justify-between items-center mb-3">
+                          <div className="flex items-center gap-2.5">
+                            <div
+                              className={`p-1.5 rounded-lg ${showLayerDesaHutan ? "bg-teal-100 text-teal-600" : "bg-gray-200 text-gray-400"}`}
+                            >
+                              <TreePine size={14} />
+                            </div>
+                            <div
+                              className={`text-xs font-bold ${showLayerDesaHutan ? "text-gray-800" : "text-gray-500"}`}
+                            >
+                              Desa Hutan
+                            </div>
+                          </div>
+                          <label className="cursor-pointer relative inline-flex items-center">
+                            <input
+                              type="checkbox"
+                              className="sr-only peer"
+                              checked={showLayerDesaHutan}
+                              onChange={() =>
+                                setShowLayerDesaHutan(!showLayerDesaHutan)
+                              }
+                            />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-600"></div>
+                          </label>
+                        </div>
+                        {showLayerDesaHutan && (
+                          <div>
+                            <div className="flex justify-between text-[9px] font-bold text-gray-400 mb-1">
+                              <span>TRANSPARANSI</span>
+                              <span>{opacityDesaHutan}%</span>
+                            </div>
+                            <input
+                              type="range"
+                              min="10"
+                              max="100"
+                              value={opacityDesaHutan}
+                              onChange={(e) =>
+                                setOpacityDesaHutan(parseInt(e.target.value))
+                              }
+                              className="w-full h-1.5 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-teal-600"
+                            />
                           </div>
                         )}
                       </div>

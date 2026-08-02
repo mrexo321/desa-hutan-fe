@@ -475,15 +475,18 @@ export default function AiAsisten() {
         // Load documents from backend
         try {
           const backendDocs = await getChatbotDocuments(id);
-          if (!cancelled) {
+          if (!cancelled && Array.isArray(backendDocs)) {
             const formattedDocs = backendDocs.map(d => ({
-              id: d.id,
-              name: d.filename,
-              size: null,
-              uploadedAt: new Date().toISOString(),
+              id: d.id || d.filename || d.file_name || d.name,
+              name: d.filename || d.file_name || d.name || "Dokumen",
+              size: d.size || d.file_size || null,
+              uploadedAt: d.created_at || d.uploaded_at || d.uploadedAt || new Date().toISOString(),
               status: "success"
             }));
             setDocs(formattedDocs);
+            if (formattedDocs.length > 0) {
+              setActiveDocId(formattedDocs[0].id);
+            }
           }
         } catch (err) {
           console.error("Gagal mengambil dokumen dari backend:", err);
@@ -543,8 +546,20 @@ export default function AiAsisten() {
       setIsUploading(true);
       try {
         await uploadDocument(chatbotId, file);
-        setDocs(prev => prev.map(d => d.id === docId ? { ...d, status: "success" } : d));
         toast.success(`✅ "${file.name}" berhasil diupload! Silakan ketik pertanyaan Anda tentang dokumen ini.`);
+        try {
+          const backendDocs = await getChatbotDocuments(chatbotId);
+          if (Array.isArray(backendDocs)) {
+            const formattedDocs = backendDocs.map(d => ({
+              id: d.id || d.filename || d.file_name || d.name,
+              name: d.filename || d.file_name || d.name || file.name,
+              size: d.size || d.file_size || file.size || null,
+              uploadedAt: d.created_at || d.uploaded_at || d.uploadedAt || new Date().toISOString(),
+              status: "success"
+            }));
+            setDocs(formattedDocs);
+          }
+        } catch {}
       } catch (err) {
         setDocs(prev => prev.map(d => d.id === docId ? { ...d, status: "error" } : d));
         toast.error(`Gagal upload "${file.name}": ${err.message}`);

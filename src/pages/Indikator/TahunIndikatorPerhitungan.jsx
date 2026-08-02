@@ -211,7 +211,7 @@ const TahunIndikatorPerhitungan = () => {
         <div className="flex-1 overflow-y-auto px-6 md:px-10 py-8 custom-scrollbar">
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-              Rumus Indeks Desa Hutan
+              Rumus Indeks Desa
             </h1>
             <p className="text-sm text-slate-500 mt-1">
               Master Rumus Per Tahun (Jika ada Perubahan)

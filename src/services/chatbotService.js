@@ -290,7 +290,7 @@ A: Indikator Utama adalah indikator individual (contoh: Akses Air Bersih, Akses 
  * System prompt lengkap dengan knowledge base aplikasi
  */
 const buildSystemPrompt = (pageContext = "") => {
-  return `Kamu adalah **Asisten AI resmi** dari Sistem Informasi Pemetaan Profil Desa Hutan.
+  return `Kamu adalah **Asisten Grawana**, asisten AI resmi dari Sistem Informasi Pemetaan Profil Desa.
 
 ## PERAN KAMU
 Kamu adalah asisten cerdas yang memahami secara mendalam seluruh fitur, alur kerja, dan data dalam aplikasi ini. Bantu pengguna dengan:
@@ -340,7 +340,7 @@ export const getOrCreateChatbotId = async () => {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        name: "Asisten Desa Hutan",
+        name: "Asisten Grawana",
         system_prompt: buildSystemPrompt(),
         model_name: "gpt-4o-mini",
       }),
@@ -354,7 +354,7 @@ export const getOrCreateChatbotId = async () => {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      name: "Asisten Desa Hutan",
+      name: "Asisten Grawana",
       system_prompt: buildSystemPrompt(),
       model_name: "gpt-4o-mini",
     }),

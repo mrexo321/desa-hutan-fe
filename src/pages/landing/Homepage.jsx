@@ -208,7 +208,7 @@ const Homepage = () => {
                   {/* Subheadline */}
                   <p className="text-emerald-100/90 text-base sm:text-lg md:text-xl max-w-3xl leading-relaxed font-medium tracking-wide mb-8 animate-fade-in-up animate-delay-2">
                     {hero.hero_subheadline ||
-                      "Sistem Informasi Pemetaan Profil Desa Hutan Untuk Identifikasi Potensi Ekonomi dan Pemberdayaan Masyarakat Desa secara Spasial."}
+                      "Sistem Informasi Pemetaan Profil Grawana Untuk Identifikasi Potensi Ekonomi dan Pemberdayaan Masyarakat Desa secara Spasial."}
                   </p>
 
                   {/* CTA Buttons */}
@@ -234,7 +234,7 @@ const Homepage = () => {
         </section>
 
         {/* ─────────────────────────────────────────── */}
-        {/* 2. PROFIL DESA HUTAN SECTION               */}
+        {/* 2. PROFIL Grawana SECTION               */}
         {/* ─────────────────────────────────────────── */}
         <section id="profil-section" className="py-24 max-w-7xl mx-auto px-6">
           {/* Section Header */}
@@ -243,7 +243,7 @@ const Homepage = () => {
               Profil Kawasan
             </span>
             <h2 className="text-2xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight mb-4 uppercase">
-              {profil.section_title || "PROFIL DESA HUTAN"}
+              {profil.section_title || "PROFIL Grawana"}
             </h2>
             <div className="w-16 h-1.5 bg-emerald-600 rounded-full mb-6"></div>
           </div>
@@ -252,7 +252,7 @@ const Homepage = () => {
             {/* Left: Highlight Text & Features List */}
             <div className="lg:col-span-7 flex flex-col">
               <HighlightedText
-                text={profil.section_description || "Desa Hutan merupakan garda terdepan pelestarian sumber daya alam tapak nasional..."}
+                text={profil.section_description || "Grawana merupakan garda terdepan pelestarian sumber daya alam tapak nasional..."}
                 highlight={profil.section_description_highlight || "kemandirian ekonomi lokal"}
               />
 
@@ -269,7 +269,7 @@ const Homepage = () => {
                 />
                 <FeatureCard
                   title={features.feature_data_desa_title || "DATA DESA TEREKAP"}
-                  description={features.feature_data_desa_description || "Tabel informasi komprehensif indikator performa pembangunan desa hutan yang terstruktur."}
+                  description={features.feature_data_desa_description || "Tabel informasi komprehensif indikator performa pembangunan Grawana yang terstruktur."}
                   iconName={features.feature_data_desa_icon || "table"}
                 />
               </div>
@@ -286,7 +286,7 @@ const Homepage = () => {
                   <div className="relative bg-white p-3 rounded-[2.5rem] shadow-2xl border border-slate-100 hover:scale-[1.02] transition-transform duration-500">
                     <img
                       src={logoSrc}
-                      alt="Logo Profil Desa Hutan"
+                      alt="Logo Profil Grawana"
                       className="w-72 h-72 md:w-96 md:h-96 object-contain rounded-[2rem] bg-slate-50"
                     />
                   </div>

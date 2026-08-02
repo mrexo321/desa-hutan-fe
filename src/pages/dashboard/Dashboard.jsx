@@ -845,10 +845,10 @@ const Dashboard = () => {
               </>
             )}
 
-            {/* MODAL CARD DITENGAH PETA (HANYA DITAMPILKAN SAAT TIDAK FULLSCREEN) */}
+            {/* POPUP CARD POJOK KIRI BAWAH PETA (HANYA DITAMPILKAN SAAT TIDAK FULLSCREEN) */}
             {!isFullscreen && clickedLocation && (
-              <div className="absolute inset-0 z-40 flex items-center justify-center p-4 bg-slate-900/15 backdrop-blur-[2px] animate-in fade-in duration-200 pointer-events-auto">
-                <div className="bg-white/95 backdrop-blur-2xl border border-slate-200/80 rounded-[28px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.3)] overflow-hidden w-[350px] sm:w-[460px] max-h-[85%] flex flex-col transition-all duration-300 ease-out animate-in zoom-in-95 duration-200">
+              <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 pointer-events-none max-w-[calc(100%-2rem)]">
+                <div className="pointer-events-auto bg-white/95 backdrop-blur-2xl border border-slate-200/80 rounded-[24px] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.25)] overflow-hidden w-[340px] sm:w-[420px] max-h-[460px] flex flex-col transition-all duration-300 ease-out animate-in slide-in-from-bottom-5 fade-in duration-300">
                   {/* Header Tab Bar */}
                   <div className="px-4 py-3 flex items-center justify-between border-b border-slate-100 bg-slate-50/90 shrink-0">
                     <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-2xl">
@@ -932,20 +932,13 @@ const Dashboard = () => {
                           <div className="flex flex-col gap-3">
                             {/* Header Info Banner */}
                             <div className="relative overflow-hidden bg-gradient-to-br from-[#0B241A] via-[#123E2E] to-[#1C5842] text-white p-3.5 rounded-xl shadow-xs border border-emerald-900/40">
-                              <div className="flex items-center justify-between gap-2 mb-1">
-                                <span className="bg-emerald-400/20 text-emerald-300 text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider border border-emerald-400/30 flex items-center gap-1 backdrop-blur-xs">
-                                  <Trees size={11} className="text-emerald-400" />
-                                  {irisan.jenisInteraksi ||
-                                    (status === "hanya_hutan"
-                                      ? "Kawasan Hutan"
-                                      : "Wilayah Desa")}
-                                </span>
-                                {desa.kodeKemendagri && (
-                                  <span className="font-mono text-[9px] font-extrabold text-emerald-200 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-700/50">
+                              {desa.kodeKemendagri && (
+                                <div className="mb-1">
+                                  <span className="font-mono text-[9px] font-extrabold text-emerald-200 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-700/50 inline-block">
                                     Kode: {desa.kodeKemendagri}
                                   </span>
-                                )}
-                              </div>
+                                </div>
+                              )}
                               <h3 className="font-black text-white text-base sm:text-lg leading-tight">
                                 {desa.nama
                                   ? `Desa ${desa.nama}`
@@ -965,10 +958,7 @@ const Dashboard = () => {
                                 <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div>
                                     <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block mb-0.5">
-                                      KAWASAN HUTAN(SESUAI TITIK)
-                                    </span>
-                                    <span className="text-xs font-black text-[#2D7344] block">
-                                      {irisan.jenisInteraksi || "Beririsan Kawasan Hutan"}
+                                      LUAS KAWASAN
                                     </span>
                                   </div>
                                   <div className="text-right shrink-0">
@@ -1011,7 +1001,7 @@ const Dashboard = () => {
                               <div className="bg-slate-50/90 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
                                 <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                                   <Trees size={12} className="text-emerald-600" />
-                                  Fungsi Kawasan
+                                  Nama Kawasan
                                 </span>
                                 <div>
                                   <p
@@ -1033,7 +1023,7 @@ const Dashboard = () => {
                             {(hutan.noSkKawasan ||
                               hutan.noSkPenetapan ||
                               luasHutanFormatted) && (
-                              <div className="bg-slate-50/90 rounded-xl p-2.5 border border-slate-200/60 space-y-1.5 text-[11px] shadow-xs">
+                              <div className="bg-slate-50/90 hidden rounded-xl p-2.5 border border-slate-200/60 space-y-1.5 text-[11px] shadow-xs">
                                 <div className="flex items-center justify-between text-[9px] font-extrabold text-slate-400 uppercase tracking-wider pb-1 border-b border-slate-200/80">
                                   <span>INFORMASI SK KAWASAN HUTAN</span>
                                   {luasHutanFormatted && (
@@ -1178,17 +1168,19 @@ const Dashboard = () => {
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* SIDEBAR DETAIL SPASIAL (HANYA DITAMPILKAN SAAT FULLSCREEN, TEPAT DI BAWAH SEARCH BAR) */}
-              {isFullscreen && clickedLocation && (
-                <div className="pointer-events-auto flex-1 min-h-0 bg-white/85 backdrop-blur-2xl border border-white/60 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.25)] rounded-[24px] overflow-hidden flex flex-col transition-all duration-300 ease-out animate-in fade-in-0 zoom-in-95 slide-in-from-top-4">
+            {/* POPUP CARD POJOK KIRI BAWAH PETA (SAAT FULLSCREEN) */}
+            {isFullscreen && clickedLocation && (
+              <div className="absolute bottom-4 left-4 sm:bottom-6 sm:left-6 z-40 pointer-events-none max-w-[calc(100%-2rem)] animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div className="pointer-events-auto bg-white/95 backdrop-blur-2xl border border-slate-200/80 rounded-[24px] shadow-[0_20px_50px_-10px_rgba(0,0,0,0.25)] overflow-hidden w-[340px] sm:w-[420px] max-h-[460px] flex flex-col transition-all duration-300 ease-out">
                   {/* Panel Header Tab Bar */}
-                  <div className="px-4 py-3 flex items-center justify-between border-b border-slate-200/60 bg-slate-50/80 shrink-0">
+                  <div className="px-3.5 py-2.5 flex items-center justify-between border-b border-slate-200/60 bg-slate-50/90 shrink-0">
                     <div className="flex items-center gap-1.5 bg-slate-200/70 p-1 rounded-2xl">
                       <button
                         type="button"
                         onClick={() => setPopupActiveTab("spasial")}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
                           popupActiveTab === "spasial"
                             ? "bg-[#2D7344] text-white shadow-md shadow-emerald-900/20"
                             : "text-slate-600 hover:text-slate-900 hover:bg-slate-300/40"
@@ -1200,7 +1192,7 @@ const Dashboard = () => {
                       <button
                         type="button"
                         onClick={() => setPopupActiveTab("potensi")}
-                        className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
+                        className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 cursor-pointer ${
                           popupActiveTab === "potensi"
                             ? "bg-[#2D7344] text-white shadow-md shadow-emerald-900/20"
                             : "text-slate-600 hover:text-slate-900 hover:bg-slate-300/40"
@@ -1215,15 +1207,15 @@ const Dashboard = () => {
                       className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 p-1.5 rounded-xl transition-colors cursor-pointer"
                       title="Tutup Detail"
                     >
-                      <X size={20} />
+                      <X size={18} />
                     </button>
                   </div>
 
                   {/* Panel Content Body */}
-                  <div className="flex-1 overflow-y-auto custom-scrollbar p-4 text-sm text-slate-700 space-y-3.5">
+                  <div className="max-h-[calc(100vh-12rem)] overflow-y-auto custom-scrollbar p-3 text-xs text-slate-700 space-y-2.5">
                     {isFetchingDetail ? (
-                      <div className="flex flex-col items-center justify-center py-16 gap-3">
-                        <div className="w-9 h-9 border-3 border-[#2D7344] border-t-transparent rounded-full animate-spin"></div>
+                      <div className="flex flex-col items-center justify-center py-10 gap-2.5">
+                        <div className="w-8 h-8 border-3 border-[#2D7344] border-t-transparent rounded-full animate-spin"></div>
                         <span className="text-xs text-slate-500 font-bold">
                           Menganalisis data spasial koordinat...
                         </span>
@@ -1262,31 +1254,24 @@ const Dashboard = () => {
                             : null;
 
                         return popupActiveTab === "spasial" ? (
-                          <div className="flex flex-col gap-3">
+                          <div className="flex flex-col gap-2.5">
                             {/* Header Info Banner */}
-                            <div className="relative overflow-hidden bg-gradient-to-br from-[#0B241A] via-[#123E2E] to-[#1C5842] text-white p-3.5 rounded-2xl shadow-md border border-emerald-900/40">
-                              <div className="flex items-center justify-between gap-2 mb-1.5">
-                                <span className="bg-emerald-400/20 text-emerald-300 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider border border-emerald-400/30 flex items-center gap-1.5 backdrop-blur-xs">
-                                  <Trees size={12} className="text-emerald-400" />
-                                  {irisan.jenisInteraksi ||
-                                    (status === "hanya_hutan"
-                                      ? "Kawasan Hutan"
-                                      : "Wilayah Desa")}
-                                </span>
-                                {desa.kodeKemendagri && (
-                                  <span className="font-mono text-[10px] font-extrabold text-emerald-200 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-700/50">
+                            <div className="relative overflow-hidden bg-gradient-to-br from-[#0B241A] via-[#123E2E] to-[#1C5842] text-white p-3 rounded-xl shadow-xs border border-emerald-900/40">
+                              {desa.kodeKemendagri && (
+                                <div className="mb-1">
+                                  <span className="font-mono text-[9px] font-extrabold text-emerald-200 bg-emerald-950/60 px-1.5 py-0.5 rounded border border-emerald-700/50 inline-block">
                                     Kode: {desa.kodeKemendagri}
                                   </span>
-                                )}
-                              </div>
-                              <h3 className="font-black text-white text-xl leading-tight">
+                                </div>
+                              )}
+                              <h3 className="font-black text-white text-base sm:text-lg leading-tight">
                                 {desa.nama
                                   ? `Desa ${desa.nama}`
                                   : hutan.fungsiKawasan?.nama || "Area Spasial"}
                               </h3>
                               {locationString && (
-                                <p className="text-xs text-emerald-100/90 font-medium mt-1 flex items-center gap-1.5">
-                                  <MapPin size={13} className="text-emerald-400 shrink-0" />
+                                <p className="text-[11px] text-emerald-100/90 font-medium mt-0.5 flex items-center gap-1">
+                                  <MapPin size={12} className="text-emerald-400 shrink-0" />
                                   <span className="truncate">{locationString}</span>
                                 </p>
                               )}
@@ -1294,28 +1279,25 @@ const Dashboard = () => {
 
                             {/* Irisan Interaksi Hero Card */}
                             {irisan.luasPersen != null && (
-                              <div className="bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 border border-emerald-200/90 rounded-2xl p-3.5 shadow-xs relative overflow-hidden">
-                                <div className="flex items-center justify-between gap-3 mb-2">
+                              <div className="bg-gradient-to-br from-emerald-50/90 via-white to-slate-50 border border-emerald-200/90 rounded-xl p-3 shadow-xs relative overflow-hidden">
+                                <div className="flex items-center justify-between gap-2 mb-1.5">
                                   <div>
-                                    <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-widest block mb-0.5">
-                                      KAWASAN HUTAN(SESUAI TITIK)
-                                    </span>
-                                    <span className="text-xs font-black text-[#2D7344] block">
-                                      {irisan.jenisInteraksi || "Beririsan Kawasan Hutan"}
+                                    <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-widest block mb-0.5">
+                                      LUAS KAWASAN
                                     </span>
                                   </div>
                                   <div className="text-right shrink-0">
-                                    <span className="text-2xl font-black text-slate-900 leading-none block">
+                                    <span className="text-xl sm:text-2xl font-black text-slate-900 leading-none block">
                                       {luasIrisanPersenFormatted}%
                                     </span>
                                     {luasIrisanHaFormatted && (
-                                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-100/80 px-2 py-0.5 rounded-md border border-emerald-200 mt-1 inline-block">
+                                      <span className="text-[9px] font-bold text-emerald-800 bg-emerald-100/80 px-1.5 py-0.5 rounded border border-emerald-200 mt-0.5 inline-block">
                                         {luasIrisanHaFormatted} Ha
                                       </span>
                                     )}
                                   </div>
                                 </div>
-                                <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/80 shadow-inner">
+                                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden p-0.5 border border-slate-200/80 shadow-inner">
                                   <div
                                     className="h-full bg-gradient-to-r from-emerald-400 via-emerald-500 to-[#2D7344] rounded-full transition-all duration-700 ease-out shadow-xs"
                                     style={{
@@ -1330,31 +1312,31 @@ const Dashboard = () => {
                             )}
 
                             {/* Metrics Grid Cards (2 Kolom) */}
-                            <div className="grid grid-cols-2 gap-2.5">
-                              <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-100 flex flex-col justify-between shadow-xs">
-                                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                                  <MapPin size={13} className="text-emerald-600" />
+                            <div className="grid grid-cols-2 gap-2">
+                              <div className="bg-slate-50/90 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
+                                <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                  <MapPin size={12} className="text-emerald-600" />
                                   Luas Wilayah Desa
                                 </span>
-                                <p className="font-black text-slate-900 text-base mt-1">
+                                <p className="font-black text-slate-900 text-sm mt-0.5">
                                   {luasDesaFormatted ? `${luasDesaFormatted} Ha` : "-"}
                                 </p>
                               </div>
 
-                              <div className="bg-slate-50/90 p-3 rounded-2xl border border-slate-100 flex flex-col justify-between shadow-xs">
-                                <span className="text-[10px] font-extrabold text-slate-400 uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                                  <Trees size={13} className="text-emerald-600" />
-                                  Fungsi Kawasan
+                              <div className="bg-slate-50/90 p-2.5 rounded-xl border border-slate-100 flex flex-col justify-between shadow-xs">
+                                <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider flex items-center gap-1">
+                                  <Trees size={12} className="text-emerald-600" />
+                                  Nama Kawasan
                                 </span>
                                 <div>
                                   <p
-                                    className="font-black text-slate-900 text-base truncate mt-1"
+                                    className="font-black text-slate-900 text-sm truncate mt-0.5"
                                     title={hutan.fungsiKawasan?.nama}
                                   >
                                     {hutan.fungsiKawasan?.nama || "Tidak terdata"}
                                   </p>
                                   {hutan.fungsiKawasan?.kode && (
-                                    <span className="text-[10px] font-mono text-slate-400 font-bold block mt-0.5">
+                                    <span className="text-[9px] font-mono text-slate-400 font-bold block mt-0.5">
                                       Kode: {hutan.fungsiKawasan.kode}
                                     </span>
                                   )}
@@ -1366,7 +1348,7 @@ const Dashboard = () => {
                             {(hutan.noSkKawasan ||
                               hutan.noSkPenetapan ||
                               luasHutanFormatted) && (
-                              <div className="bg-slate-50/90 rounded-2xl p-4 border border-slate-200/60 space-y-2.5 text-xs shadow-xs">
+                              <div className="bg-slate-50/90 hidden rounded-2xl p-4 border border-slate-200/60 space-y-2.5 text-xs shadow-xs">
                                 <div className="flex items-center justify-between text-[10px] font-extrabold text-slate-400 uppercase tracking-wider pb-2 border-b border-slate-200/80">
                                   <span>INFORMASI SK KAWASAN HUTAN</span>
                                   {luasHutanFormatted && (
@@ -1427,8 +1409,8 @@ const Dashboard = () => {
                     )}
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* --- HUD KANAN ATAS: TOOLBAR FULLSCREEN & KONTROL MAP --- */}
             <div className="absolute top-6 right-6 z-10 flex flex-col gap-3 items-end pointer-events-none">

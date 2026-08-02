@@ -375,10 +375,10 @@ export default function DataDesaPublic() {
               Portal Layanan Data
             </span>
             <h1 className="text-3xl sm:text-5xl font-black tracking-tight leading-tight mb-4 uppercase">
-              Permintaan Data Desa Hutan
+              Permintaan Data Desa
             </h1>
             <p className="text-sm sm:text-base text-emerald-100/80 max-w-2xl mx-auto leading-relaxed font-medium">
-              Silahkan diisi formulir berikut untuk permintaan data desa hutan
+              Silahkan diisi formulir berikut untuk permintaan data desa
             </p>
           </div>
         </section>
@@ -756,7 +756,7 @@ export default function DataDesaPublic() {
                     </>
                   ) : (
                     <>
-                      Kirim Permintaan Data Excel
+                      Kirim Permintaan Data
                       <ArrowRight size={18} />
                     </>
                   )}
@@ -770,4 +770,3 @@ export default function DataDesaPublic() {
     </HomeLayout>
   );
 }
-

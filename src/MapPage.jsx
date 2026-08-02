@@ -591,14 +591,13 @@ export default function MapPage() {
                     <div className="flex flex-col gap-3">
                       {/* Header Info Banner */}
                       <div className="relative overflow-hidden bg-gradient-to-br from-[#0B241A] via-[#123E2E] to-[#1C5842] text-white p-3.5 rounded-2xl shadow-md border border-emerald-900/40">
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-
-                          {desa.kodeKemendagri && (
-                            <span className="font-mono text-[10px] font-extrabold text-emerald-200 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-700/50">
+                        {desa.kodeKemendagri && (
+                          <div className="mb-1.5">
+                            <span className="font-mono text-[10px] font-extrabold text-emerald-200 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-700/50 inline-block">
                               Kode: {desa.kodeKemendagri}
                             </span>
-                          )}
-                        </div>
+                          </div>
+                        )}
                         <h3 className="font-black text-white text-lg leading-tight">
                           {desa.nama
                             ? `Desa ${desa.nama}`

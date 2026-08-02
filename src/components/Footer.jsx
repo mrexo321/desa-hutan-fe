@@ -19,7 +19,7 @@ const Footer = () => {
             </div>
             <div className="flex flex-col">
               <span className="font-extrabold text-sm md:text-base leading-tight tracking-tight uppercase text-white">
-                GRAWARNA
+                GRAWANA
               </span>
               <span className="text-[10px] text-emerald-300 font-bold uppercase tracking-widest leading-none mt-0.5">
                 GeoBaseline Desa Hutan Integrasi Data , Menguatkan Desa
@@ -52,13 +52,16 @@ const Footer = () => {
             Kontak Layanan
           </h4>
           <div className="flex flex-col gap-3.5 text-xs md:text-sm font-semibold text-emerald-200/80">
-            <a href="mailto:p2semh@gmail.com" className="flex items-center gap-2.5 hover:text-white transition-colors">
+            <a href="#" className="flex items-center gap-2.5 hover:text-white transition-colors">
               <Mail size={16} className="text-emerald-400 shrink-0" />
-              <span>p2semh@gmail.com</span>
+              <div className="flex flex-col">
+                <span>p2semh.kehutanan@gmail.com</span>
+              <span>puspsemh@kehutanan.go.id</span>
+              </div>
             </a>
             <div className="flex items-start gap-2.5">
               <MapPin size={16} className="text-emerald-400 shrink-0 mt-0.5" />
-              <span className="leading-relaxed">RT.02/RW.03, Pasir Jaya, Bogor Barat, Kota Bogor, Jawa Barat 16119</span>
+              <span className="leading-relaxed">Jl. Gunung Batu No. 5, Kota Bogor, 16118</span>
             </div>
           </div>
         </div>

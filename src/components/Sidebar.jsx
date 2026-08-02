@@ -274,7 +274,7 @@ export default function Sidebar({ activeMenu }) {
             {!isCollapsed && (
               <div className="flex flex-col whitespace-nowrap">
                 <span className="font-bold text-white text-xl tracking-wide">
-                  GRAWARNA
+                  GRAWANA
                 </span>
                 <span className="text-[11px] font-medium text-[#6D9B87] tracking-wider mt-0.5">
                   Management System

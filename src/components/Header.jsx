@@ -54,13 +54,6 @@ const searchItems = [
     icon: <UserIcon size={18} />,
     category: "Akun Saya",
   },
-  {
-    id: "p2",
-    title: "Pengaturan Akun",
-    path: "/settings",
-    icon: <Settings size={18} />,
-    category: "Akun Saya",
-  },
 ];
 
 const Header = React.memo(function Header() {
@@ -312,17 +305,6 @@ const Header = React.memo(function Header() {
                     className="opacity-70"
                   />
                   Profil Saya
-                </button>
-                <button
-                  onClick={() => handleNavigate("/settings")}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-sm font-semibold text-gray-600 hover:text-[#2D7344] hover:bg-green-50/80 rounded-xl transition-all duration-200"
-                >
-                  <Settings
-                    size={18}
-                    strokeWidth={2.5}
-                    className="opacity-70"
-                  />
-                  Pengaturan Akun
                 </button>
               </div>
               <div className="h-px bg-gray-100/80 my-2 mx-4"></div>

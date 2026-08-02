@@ -359,7 +359,7 @@ const Homepage = () => {
                         Utama
                       </span>
                     </div>
-                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">p2semh.kehutanan@gmail.com </div>
+                    <div className="text-sm font-bold text-emerald-700 truncate mt-0.5">p2semh.kehutanan@gmail.com</div>
                   </div>
                   <ExternalLink size={16} className="text-emerald-700 group-hover/item:translate-x-0.5 transition-transform shrink-0" />
                 </a>

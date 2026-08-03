@@ -14,11 +14,15 @@ import {
   Check,
   HelpCircle,
   Info,
+  Search,
+  X,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
 import { indikatorService } from "../../services/master/indikatorService";
+import { masterWilayahService } from "../../services/master/masterWilayahService";
 import { usePermission } from "../../hooks/usePermission";
 import DataTable from "../../components/DataTable";
 
@@ -52,12 +56,42 @@ export default function DomainDesaIndikatorPage() {
   // State Excel Upload
   const [uploadingExcel, setUploadingExcel] = useState(false);
 
-  // State Dimensi Desa DataTable
+  // State Dimensi Desa DataTable & Filters
   const [dimensiDesaData, setDimensiDesaData] = useState(null);
   const [loadingDimensiDesa, setLoadingDimensiDesa] = useState(false);
   const [errorDimensiDesa, setErrorDimensiDesa] = useState(false);
   const [dimensiDesaPage, setDimensiDesaPage] = useState(1);
   const [dimensiDesaSize, setDimensiDesaSize] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedProvinsiId, setSelectedProvinsiId] = useState("");
+  const [selectedKabupatenId, setSelectedKabupatenId] = useState("");
+  const [selectedKecamatanId, setSelectedKecamatanId] = useState("");
+
+  // ── Wilayah Filter Queries ──
+  const { data: provinsiList = [] } = useQuery({
+    queryKey: ["provinsi-list"],
+    queryFn: () => masterWilayahService.getAllProvinsi(),
+  });
+
+  const { data: kabupatenListRaw = [] } = useQuery({
+    queryKey: ["kabupaten-list", selectedProvinsiId],
+    queryFn: () => masterWilayahService.getAllKabupaten(null, null, "", selectedProvinsiId),
+    enabled: !!selectedProvinsiId,
+  });
+  const kabupatenList = useMemo(() => {
+    if (Array.isArray(kabupatenListRaw)) return kabupatenListRaw;
+    return kabupatenListRaw?.rows || kabupatenListRaw?.items || [];
+  }, [kabupatenListRaw]);
+
+  const { data: kecamatanListRaw = [] } = useQuery({
+    queryKey: ["kecamatan-list", selectedKabupatenId],
+    queryFn: () => masterWilayahService.getAllKecamatan(null, null, "", selectedKabupatenId),
+    enabled: !!selectedKabupatenId,
+  });
+  const kecamatanList = useMemo(() => {
+    if (Array.isArray(kecamatanListRaw)) return kecamatanListRaw;
+    return kecamatanListRaw?.rows || kecamatanListRaw?.items || [];
+  }, [kecamatanListRaw]);
 
   // ==================== FETCH DATA ====================
   const fetchTahunList = async () => {
@@ -99,15 +133,29 @@ export default function DomainDesaIndikatorPage() {
   };
 
   // Fetch data dimensi desa (tabel dinamis)
-  const fetchDimensiDesa = async (targetVal, page = 1, size = 10, isById = false) => {
+  const fetchDimensiDesa = async (
+    targetVal,
+    page = 1,
+    size = 10,
+    isById = false,
+    filters = {}
+  ) => {
     setLoadingDimensiDesa(true);
     setErrorDimensiDesa(false);
     try {
       let res;
+      const params = {
+        page,
+        size,
+        search: filters.search || undefined,
+        provinsiId: filters.provinsiId || undefined,
+        kabupatenId: filters.kabupatenId || undefined,
+        kecamatanId: filters.kecamatanId || undefined,
+      };
       if (isById) {
-        res = await dimensiDesaService.getDimensiDesaById(targetVal, { page, size });
+        res = await dimensiDesaService.getDimensiDesaById(targetVal, params);
       } else {
-        res = await dimensiDesaService.getDimensiDesa({ tahun: targetVal, page, size });
+        res = await dimensiDesaService.getDimensiDesa({ tahun: targetVal, ...params });
       }
       setDimensiDesaData(res?.data || null);
     } catch (err) {
@@ -128,19 +176,36 @@ export default function DomainDesaIndikatorPage() {
       const yearVal = tahunParam && !isNaN(parseInt(tahunParam)) ? parseInt(tahunParam) : null;
       const item = { tahun: yearVal || "-", indicatorId: indicatorIdParam };
       setSelectedTahun(item);
-      setDimensiDesaPage(1);
       fetchSchemaIndikator(indicatorIdParam);
-      fetchDimensiDesa(indicatorIdParam, 1, dimensiDesaSize, true);
     } else if (detailTahunParam) {
       const yearVal = parseInt(detailTahunParam);
       if (!isNaN(yearVal)) {
         const item = { tahun: yearVal };
         setSelectedTahun(item);
-        setDimensiDesaPage(1);
-        fetchDimensiDesa(yearVal, 1, dimensiDesaSize, false);
       }
     }
   }, [indicatorIdParam, detailTahunParam, tahunParam]);
+
+  useEffect(() => {
+    if (selectedTahun) {
+      const isById = !!selectedTahun.indicatorId;
+      const targetVal = isById ? selectedTahun.indicatorId : selectedTahun.tahun;
+      fetchDimensiDesa(targetVal, dimensiDesaPage, dimensiDesaSize, isById, {
+        search: searchQuery,
+        provinsiId: selectedProvinsiId,
+        kabupatenId: selectedKabupatenId,
+        kecamatanId: selectedKecamatanId,
+      });
+    }
+  }, [
+    selectedTahun,
+    dimensiDesaPage,
+    dimensiDesaSize,
+    searchQuery,
+    selectedProvinsiId,
+    selectedKabupatenId,
+    selectedKecamatanId,
+  ]);
 
   // Switch ke Detail View (Arahkan ke /dashboard/indikator/:tahun)
   const handleSelectTahun = (item) => {
@@ -277,25 +342,46 @@ export default function DomainDesaIndikatorPage() {
   };
 
 
-  // Handler pagination
+  // Handler filter & pagination
   const handleDimensiDesaPageChange = (newPage) => {
     setDimensiDesaPage(newPage);
-    if (selectedTahun?.indicatorId) {
-      fetchDimensiDesa(selectedTahun.indicatorId, newPage, dimensiDesaSize, true);
-    } else if (selectedTahun?.tahun) {
-      fetchDimensiDesa(selectedTahun.tahun, newPage, dimensiDesaSize, false);
-    }
   };
 
   const handleDimensiDesaSizeChange = (newSize) => {
     const size = parseInt(newSize);
     setDimensiDesaSize(size);
     setDimensiDesaPage(1);
-    if (selectedTahun?.indicatorId) {
-      fetchDimensiDesa(selectedTahun.indicatorId, 1, size, true);
-    } else if (selectedTahun?.tahun) {
-      fetchDimensiDesa(selectedTahun.tahun, 1, size, false);
-    }
+  };
+
+  const handleProvinsiChange = (provId) => {
+    setSelectedProvinsiId(provId);
+    setSelectedKabupatenId("");
+    setSelectedKecamatanId("");
+    setDimensiDesaPage(1);
+  };
+
+  const handleKabupatenChange = (kabId) => {
+    setSelectedKabupatenId(kabId);
+    setSelectedKecamatanId("");
+    setDimensiDesaPage(1);
+  };
+
+  const handleKecamatanChange = (kecId) => {
+    setSelectedKecamatanId(kecId);
+    setDimensiDesaPage(1);
+  };
+
+  const handleSearchChange = (query) => {
+    setSearchQuery(query);
+    setDimensiDesaPage(1);
+  };
+
+  const handleResetFilter = () => {
+    setSearchQuery("");
+    setSelectedProvinsiId("");
+    setSelectedKabupatenId("");
+    setSelectedKecamatanId("");
+    setDimensiDesaPage(1);
   };
 
 
@@ -521,7 +607,9 @@ export default function DomainDesaIndikatorPage() {
               <div>
                 <div className="flex items-center gap-2.5">
                   <h2 className="text-lg font-extrabold text-slate-800">
-                    Dimensi Desa Tahun {selectedTahun.tahun}
+                    {dimensiDesaData?.dimensiDesa?.nama
+                      ? `Dimensi ${dimensiDesaData.dimensiDesa.nama} — Tahun ${selectedTahun.tahun}`
+                      : `Dimensi Desa — Tahun ${selectedTahun.tahun}`}
                   </h2>
                   <span className="px-2.5 py-0.5 bg-emerald-50 text-[#2D7344] border border-emerald-100/50 text-[10px] font-extrabold rounded-full uppercase tracking-wider">
                     Skema Aktif
@@ -683,31 +771,107 @@ export default function DomainDesaIndikatorPage() {
 
           {/* ================= SECTION 3: DATA TABLE DIMENSI DESA ================= */}
           <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden mt-6">
-            <div className="p-5 border-b border-slate-100 bg-slate-50/30 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-              <div>
-                <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
-                  <Award size={16} className="text-[#2D7344]" />
-                  Data Dimensi Desa — Tahun {selectedTahun.tahun}
-                </h3>
-                <p className="text-xs text-slate-400 font-medium mt-0.5">
-                  {dimensiDesaData?.pagination
-                    ? `Menampilkan ${dimensiDesaData.items?.length || 0} dari ${dimensiDesaData.pagination.total} data`
-                    : "Memuat data..."}
-                </p>
+            <div className="p-5 border-b border-slate-100 bg-slate-50/30 flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center gap-2">
+                    <Award size={16} className="text-[#2D7344]" />
+                    {dimensiDesaData?.dimensiDesa?.nama
+                      ? `Data Dimensi ${dimensiDesaData.dimensiDesa.nama} — Tahun ${selectedTahun.tahun}`
+                      : `Data Dimensi Desa — Tahun ${selectedTahun.tahun}`}
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium mt-0.5">
+                    {dimensiDesaData?.pagination
+                      ? `Menampilkan ${dimensiDesaData.items?.length || 0} dari ${dimensiDesaData.pagination.total} data`
+                      : "Memuat data..."}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <label className="text-xs font-semibold text-slate-500">Tampilkan:</label>
+                  <select
+                    value={dimensiDesaSize}
+                    onChange={(e) => handleDimensiDesaSizeChange(e.target.value)}
+                    className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                  >
+                    {[5, 10, 25, 50, 100].map((s) => (
+                      <option key={s} value={s}>
+                        {s} data
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-xs font-semibold text-slate-500">Tampilkan:</label>
+
+              {/* FILTER BAR: Search, Provinsi, Kabupaten, Kecamatan */}
+              <div className="flex flex-wrap items-center gap-3 pt-3 border-t border-slate-100 font-sans">
+                {/* Search Input */}
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" size={15} />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearchChange(e.target.value)}
+                    placeholder="Cari desa, kecamatan, kabupaten, provinsi, atau kode..."
+                    className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                  />
+                </div>
+
+                {/* Dropdown Provinsi */}
                 <select
-                  value={dimensiDesaSize}
-                  onChange={(e) => handleDimensiDesaSizeChange(e.target.value)}
-                  className="bg-white border border-slate-200 rounded-lg px-3 py-1.5 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                  value={selectedProvinsiId}
+                  onChange={(e) => handleProvinsiChange(e.target.value)}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer min-w-[150px]"
                 >
-                  {[5, 10, 25, 50, 100].map((s) => (
-                    <option key={s} value={s}>
-                      {s} data
+                  <option value="">Semua Provinsi</option>
+                  {provinsiList.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name || p.nama || p.provinsi}
                     </option>
                   ))}
                 </select>
+
+                {/* Dropdown Kabupaten */}
+                <select
+                  value={selectedKabupatenId}
+                  onChange={(e) => handleKabupatenChange(e.target.value)}
+                  disabled={!selectedProvinsiId}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer min-w-[150px] disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option value="">Semua Kabupaten/Kota</option>
+                  {kabupatenList.map((k) => (
+                    <option key={k.id} value={k.id}>
+                      {k.name || k.nama || k.kabupaten}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Dropdown Kecamatan */}
+                <select
+                  value={selectedKecamatanId}
+                  onChange={(e) => handleKecamatanChange(e.target.value)}
+                  disabled={!selectedKabupatenId}
+                  className="bg-white border border-slate-200 rounded-xl px-3 py-2 text-xs font-semibold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer min-w-[150px] disabled:bg-slate-50 disabled:text-slate-400 disabled:cursor-not-allowed"
+                >
+                  <option value="">Semua Kecamatan</option>
+                  {kecamatanList.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name || c.nama || c.kecamatan}
+                    </option>
+                  ))}
+                </select>
+
+                {/* Reset Filter Button */}
+                {(searchQuery || selectedProvinsiId || selectedKabupatenId || selectedKecamatanId) && (
+                  <button
+                    type="button"
+                    onClick={handleResetFilter}
+                    className="px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                    title="Reset Filter"
+                  >
+                    <X size={14} />
+                    Reset
+                  </button>
+                )}
               </div>
             </div>
 
@@ -757,11 +921,10 @@ export default function DomainDesaIndikatorPage() {
                       <button
                         key={p}
                         onClick={() => handleDimensiDesaPageChange(p)}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${
-                          p === current
+                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors cursor-pointer ${p === current
                             ? "bg-[#2D7344] text-white border-[#2D7344] shadow-sm"
                             : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
-                        }`}
+                          }`}
                       >
                         {p}
                       </button>

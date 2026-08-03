@@ -97,23 +97,35 @@ export const dimensiDesaService = {
 
   // Ambil data dimensi desa (tabel dengan kolom dinamis) per tahun
   async getDimensiDesa(params = {}) {
+    const queryParams = {
+      tahun: params.tahun,
+      page: params.page || 1,
+      size: params.size || 10,
+    };
+    if (params.search) queryParams.search = params.search;
+    if (params.provinsiId) queryParams.provinsiId = params.provinsiId;
+    if (params.kabupatenId) queryParams.kabupatenId = params.kabupatenId;
+    if (params.kecamatanId) queryParams.kecamatanId = params.kecamatanId;
+
     const response = await masterInstance.get("/dimensi-desa", {
-      params: {
-        tahun: params.tahun,
-        page: params.page || 1,
-        size: params.size || 10,
-      },
+      params: queryParams,
     });
     return response.data;
   },
 
   // Ambil data dimensi desa (tabel dengan kolom dinamis) per ID indikator (/dimensi-desa/:id)
   async getDimensiDesaById(id, params = {}) {
+    const queryParams = {
+      page: params.page || 1,
+      size: params.size || 10,
+    };
+    if (params.search) queryParams.search = params.search;
+    if (params.provinsiId) queryParams.provinsiId = params.provinsiId;
+    if (params.kabupatenId) queryParams.kabupatenId = params.kabupatenId;
+    if (params.kecamatanId) queryParams.kecamatanId = params.kecamatanId;
+
     const response = await masterInstance.get(`/dimensi-desa/${id}`, {
-      params: {
-        page: params.page || 1,
-        size: params.size || 10,
-      },
+      params: queryParams,
     });
     return response.data;
   },

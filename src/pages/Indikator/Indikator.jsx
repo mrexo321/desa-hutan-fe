@@ -351,7 +351,7 @@ const Indikator = () => {
         ),
       },
       {
-        header: "Nama Kategori",
+        header: "Nama Dimensi",
         accessor: "nama",
         render: (row) => (
           <span className="text-slate-800 font-semibold">{row.nama}</span>
@@ -410,17 +410,16 @@ const Indikator = () => {
                   setSearchQuery("");
                   setSearchParams({ tab });
                 }}
-                className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${
-                  activeTab === tab
+                className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${activeTab === tab
                     ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
                     : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
-                }`}
+                  }`}
               >
                 {tab === "dimensi"
                   ? "Indikator Desa (Tahun)"
                   : tab === "kategori"
-                  ? "Dimensi"
-                  : "Indikator Rumus Indeks"}
+                    ? "Dimensi"
+                    : "Indikator Rumus Indeks"}
               </button>
             ))}
           </div>
@@ -452,13 +451,13 @@ const Indikator = () => {
                   </div>
                   {((activeTab === 'utama' && can('master_indikator_utama:create')) ||
                     (activeTab === 'kategori' && can('master_kategori_indikator:create'))) && (
-                    <button
-                      onClick={handleAddClick}
-                      className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
-                    >
-                      <Plus size={18} strokeWidth={3} /> Tambah Data
-                    </button>
-                  )}
+                      <button
+                        onClick={handleAddClick}
+                        className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#2D7344] hover:bg-[#235c36] text-white px-5 py-2.5 rounded-xl text-sm font-bold transition-all shadow-sm"
+                      >
+                        <Plus size={18} strokeWidth={3} /> Tambah Data
+                      </button>
+                    )}
                 </div>
               </div>
 
@@ -520,7 +519,7 @@ const Indikator = () => {
                   </div>
                   <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
                     <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Nama Kategori
+                      Nama Dimensi
                     </p>
                     <p className="text-base font-semibold text-slate-900">
                       {previewData.nama || "-"}
@@ -558,7 +557,7 @@ const Indikator = () => {
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
               <h3 className="text-lg font-bold text-slate-800">
-                Tambah Kategori Indikator
+                Tambah Dimensi
               </h3>
               <button
                 onClick={() => setIsAddModalOpen(false)}
@@ -595,7 +594,7 @@ const Indikator = () => {
                     htmlFor="namaAdd"
                     className="block text-sm font-semibold text-slate-700 mb-1.5"
                   >
-                    Nama Kategori
+                    Nama Dimensi
                   </label>
                   <input
                     type="text"
@@ -605,7 +604,7 @@ const Indikator = () => {
                       setAddForm({ ...addForm, nama: e.target.value })
                     }
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
-                    placeholder="Masukkan nama kategori..."
+                    placeholder="Masukkan nama dimensi..."
                     required
                   />
                 </div>
@@ -685,7 +684,7 @@ const Indikator = () => {
                     htmlFor="namaEdit"
                     className="block text-sm font-semibold text-slate-700 mb-1.5"
                   >
-                    Nama Kategori
+                    Nama Dimensi
                   </label>
                   <input
                     type="text"
@@ -695,7 +694,7 @@ const Indikator = () => {
                       setEditForm({ ...editForm, nama: e.target.value })
                     }
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#2D7344]/20 focus:border-[#2D7344] transition-all"
-                    placeholder="Masukkan nama kategori..."
+                    placeholder="Masukkan nama dimensi..."
                     required
                   />
                 </div>

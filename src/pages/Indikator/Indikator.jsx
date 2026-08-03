@@ -433,8 +433,8 @@ const Indikator = () => {
               <div className="p-5 sm:p-6 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-slate-50/30">
                 <h2 className="text-lg font-bold text-slate-800">
                   {activeTab === "utama"
-                    ? "Tabel Data Indikator Utama"
-                    : "Tabel Data Kategori"}
+                    ? "Tabel Data Indikator Rumus Indeks"
+                    : "Tabel Data Dimensi"}
                 </h2>
                 <div className="flex flex-col sm:flex-row items-center gap-3">
                   <div className="relative w-full sm:w-72 group">

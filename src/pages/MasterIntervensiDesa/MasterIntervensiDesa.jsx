@@ -211,6 +211,7 @@ const MasterIntervensiDesa = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadTahunId, setUploadTahunId] = useState("");
   const [uploadFile, setUploadFile] = useState(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const {
     data: listResponse,
@@ -567,6 +568,32 @@ const MasterIntervensiDesa = () => {
     }
   };
 
+  const handleExportIntervensi = async () => {
+    if (!selectedTahunId) {
+      toast.error("Silakan pilih tahun intervensi terlebih dahulu.");
+      return;
+    }
+    setIsExporting(true);
+    try {
+      const response = await intervensiDesaService.exportExcel(selectedTahunId);
+      const blob = new Blob([response.data], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Data_Intervensi_Desa_${selectedTahunObj?.tahun || "semua"}.xlsx`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error("Gagal mengekspor data intervensi desa.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const uploadMutation = useMutation({
     mutationFn: (formDataPayload) => intervensiDesaService.uploadExcel(formDataPayload),
     onSuccess: (res) => {
@@ -666,6 +693,16 @@ const MasterIntervensiDesa = () => {
                     </p>
                   </div>
                 </div>
+                {can("intervensi_desa:create") && (
+                  <button
+                    type="button"
+                    onClick={() => setIsTahunModalOpen(true)}
+                    className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-xl text-xs font-bold transition-all shadow-sm cursor-pointer"
+                  >
+                    <Plus size={16} strokeWidth={2.5} />
+                    Tambah Tahun
+                  </button>
+                )}
               </div>
 
               {/* Grid pilihan tahun */}
@@ -752,6 +789,40 @@ const MasterIntervensiDesa = () => {
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+                  <button
+                      onClick={handleDownloadTemplate}
+                      title="Unduh Template Excel"
+                      className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                  >
+                    <Download size={16} />
+                    <span className="hidden lg:inline">Template</span>
+                  </button>
+                  {(can("intervensi_desa:import") || can("intervensi_desa:create")) && (
+                      <button
+                          onClick={() => {
+                            setUploadTahunId(selectedTahunId);
+                            setIsUploadModalOpen(true);
+                          }}
+                          title="Upload Excel"
+                          className="flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-gray-600 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer"
+                      >
+                        <Upload size={16} />
+                        <span className="hidden lg:inline">Upload</span>
+                      </button>
+                  )}
+                  <button
+                      onClick={handleExportIntervensi}
+                      disabled={isExporting}
+                      title="Export Excel"
+                      className="flex items-center justify-center gap-2 bg-white hover:bg-emerald-50 text-emerald-700 border border-emerald-200 px-4 py-2.5 rounded-lg text-sm font-semibold transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  >
+                    {isExporting ? (
+                        <Loader2 size={16} className="animate-spin" />
+                    ) : (
+                        <FileSpreadsheet size={16} />
+                    )}
+                    <span className="hidden lg:inline">Export</span>
+                  </button>
                   <div className="relative w-full sm:w-64 group">
                     <Search
                       className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors"
@@ -923,6 +994,217 @@ const MasterIntervensiDesa = () => {
               />
             </div>
           )}
+
+      {/* ============================================== */}
+      {/* MODAL: TAMBAH TAHUN INTERVENSI                 */}
+      {/* ============================================== */}
+      {isTahunModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-[#2D7344] flex items-center justify-center font-bold">
+                  <Calendar size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">
+                    Tambah Tahun Intervensi
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Daftarkan tahun program intervensi baru
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsTahunModalOpen(false);
+                  setFormTahun("");
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitTahun} className="p-6 space-y-4 font-sans">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Tahun Intervensi <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  placeholder="Contoh: 2026"
+                  value={formTahun}
+                  onChange={(e) => setFormTahun(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 placeholder-slate-400 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all"
+                  required
+                  min="2000"
+                  max="2100"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsTahunModalOpen(false);
+                    setFormTahun("");
+                  }}
+                  className="px-4 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={createTahunMutation.isPending}
+                  className="px-5 py-2.5 text-xs font-bold text-white bg-[#2D7344] hover:bg-[#1E5230] rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {createTahunMutation.isPending ? (
+                    <>
+                      <Loader2 size={14} className="animate-spin" />
+                      Menyimpan...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={14} />
+                      Simpan Tahun
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================== */}
+      {/* MODAL: UPLOAD EXCEL INTERVENSI DESA            */}
+      {/* ============================================== */}
+      {isUploadModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#2D7344] flex items-center justify-center font-bold">
+                  <Upload size={20} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">
+                    Upload Data Intervensi Desa
+                  </h3>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Unggah berkas Excel data intervensi desa
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsUploadModalOpen(false);
+                  setUploadFile(null);
+                }}
+                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            <form onSubmit={handleSubmitUpload} className="p-6 space-y-4 font-sans">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Tahun Intervensi <span className="text-rose-500">*</span>
+                </label>
+                <select
+                  value={uploadTahunId}
+                  onChange={(e) => setUploadTahunId(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-700 focus:outline-none focus:border-[#2D7344] focus:ring-2 focus:ring-emerald-500/10 transition-all cursor-pointer"
+                  required
+                >
+                  <option value="">-- Pilih Tahun Intervensi --</option>
+                  {tahunList.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      Tahun {t.tahun}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                  Berkas Excel (.xlsx / .xls) <span className="text-rose-500">*</span>
+                </label>
+                <div className="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center hover:border-[#2D7344] transition-colors bg-slate-50/50 relative">
+                  <input
+                    type="file"
+                    accept=".xlsx, .xls"
+                    onChange={(e) => setUploadFile(e.target.files[0] || null)}
+                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    required
+                  />
+                  <div className="flex flex-col items-center gap-2 pointer-events-none">
+                    <FileSpreadsheet className="text-[#2D7344]" size={36} />
+                    {uploadFile ? (
+                      <span className="text-xs font-bold text-slate-800 bg-emerald-50 text-emerald-700 px-3 py-1 rounded-lg border border-emerald-200">
+                        {uploadFile.name}
+                      </span>
+                    ) : (
+                      <>
+                        <span className="text-xs font-bold text-slate-700">
+                          Klik atau seret file Excel ke sini
+                        </span>
+                        <span className="text-[11px] text-slate-400 font-medium">
+                          Format yang didukung: .xlsx, .xls
+                        </span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={handleDownloadTemplate}
+                  className="flex items-center gap-1.5 text-xs font-bold text-[#2D7344] hover:underline cursor-pointer"
+                >
+                  <Download size={14} /> Unduh Template
+                </button>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsUploadModalOpen(false);
+                      setUploadFile(null);
+                    }}
+                    className="px-4 py-2.5 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+                  >
+                    Batal
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={uploadMutation.isPending || !uploadFile}
+                    className="px-5 py-2.5 text-xs font-bold text-white bg-[#2D7344] hover:bg-[#1E5230] rounded-xl transition-all shadow-sm flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                  >
+                    {uploadMutation.isPending ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin" />
+                        Mengunggah...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} />
+                        Unggah Berkas
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* ============================================== */}
       {/* MODAL: VIEW DETAIL INTERVENSI                   */}

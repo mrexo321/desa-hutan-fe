@@ -3,6 +3,8 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { analystSpatialService } from "../../services/master/analystSpatialService";
 import { dimensiDesaService } from "../../services/master/dimensiDesaService";
+import { potensiDesaService } from "../../services/master/potensiDesaService";
+import { intervensiDesaService } from "../../services/master/intervensiDesaService";
 import { useAuthReady } from "../../hooks/useAuthReady";
 import { Loading } from "../../components/Loading";
 import DashboardLayout from "../../components/DashboardLayout";
@@ -35,15 +37,121 @@ const formatJenisInteraksi = (jenis) => {
     .join(" ");
 };
 
+const renderRuns = (value, emptyLabel = "-") => {
+  if (!value) return emptyLabel;
+
+  if (Array.isArray(value)) {
+    const isParagraphArray = value.some(
+      (item) => item && typeof item === "object" && Array.isArray(item.runs)
+    );
+
+    if (isParagraphArray) {
+      let numberedCounter = 0;
+      const elements = [];
+
+      value.forEach((para, pIdx) => {
+        const listType = para?.listType;
+        const runs = Array.isArray(para?.runs) ? para.runs : [];
+        const validRuns = runs.filter((r) => r.text);
+        if (validRuns.length === 0) return;
+
+        if (listType === "numbered") {
+          numberedCounter++;
+        } else {
+          numberedCounter = 0;
+        }
+
+        const runContent = validRuns.map((run, rIdx) => {
+          if (run.text === "\n") return <br key={rIdx} />;
+          let spanNode = (
+            <span
+              key={rIdx}
+              className={`${run.bold ? "font-bold" : ""} ${
+                run.italic ? "italic" : ""
+              } ${run.underline ? "underline" : ""} ${
+                run.strike ? "line-through" : ""
+              }`}
+              style={{
+                color: run.color || undefined,
+                fontSize: run.size ? `${run.size}px` : undefined,
+              }}
+            >
+              {run.text}
+            </span>
+          );
+
+          if (run.subscript) {
+            spanNode = <sub key={rIdx} className="text-[0.8em]">{spanNode}</sub>;
+          }
+          if (run.superscript) {
+            spanNode = <sup key={rIdx} className="text-[0.8em]">{spanNode}</sup>;
+          }
+
+          return spanNode;
+        });
+
+        if (listType === "numbered") {
+          elements.push(
+            <div key={pIdx} className="flex items-start gap-2 my-1">
+              <span className="font-bold text-emerald-700 min-w-[20px] shrink-0 text-right font-mono text-sm">
+                {numberedCounter}.
+              </span>
+              <div className="flex-1 text-slate-800 text-sm">{runContent}</div>
+            </div>
+          );
+        } else if (listType === "bullet") {
+          elements.push(
+            <div key={pIdx} className="flex items-start gap-2 my-1">
+              <span className="font-bold text-emerald-600 shrink-0 text-sm">•</span>
+              <div className="flex-1 text-slate-800 text-sm">{runContent}</div>
+            </div>
+          );
+        } else {
+          elements.push(
+            <div key={pIdx} className="my-1 text-slate-800 text-sm leading-relaxed">
+              {runContent}
+            </div>
+          );
+        }
+      });
+
+      return elements.length > 0 ? elements : emptyLabel;
+    }
+
+    const validRuns = value.filter((run) => run && run.text);
+    if (validRuns.length === 0) return emptyLabel;
+    return validRuns.map((run, idx) => {
+      if (run.text === "\n") return <br key={idx} />;
+      let spanNode = (
+        <span
+          key={idx}
+          className={`${run.bold ? "font-bold" : ""} ${run.italic ? "italic" : ""}`}
+        >
+          {run.text}
+        </span>
+      );
+      if (run.subscript) spanNode = <sub key={idx} className="text-[0.8em]">{spanNode}</sub>;
+      if (run.superscript) spanNode = <sup key={idx} className="text-[0.8em]">{spanNode}</sup>;
+      return spanNode;
+    });
+  }
+
+  if (typeof value === "string") return value;
+  return emptyLabel;
+};
+
 const DesaDetail = () => {
   const { desaId } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
 
   const isAuthReady = useAuthReady();
+  const [activeSectionTab, setActiveSectionTab] = useState("indeks");
   const [selectedLabel, setSelectedLabel] = useState("");
   const [indikatorPage, setIndikatorPage] = useState(1);
   const [selectedIndikatorId, setSelectedIndikatorId] = useState(null);
+  const [selectedPotensiCategory, setSelectedPotensiCategory] = useState(null);
+  const [selectedIntervensiItem, setSelectedIntervensiItem] = useState(null);
 
   const { data: desaResponse, isLoading, isError, error } = useQuery({
     queryKey: ["desaDetail", desaId],
@@ -87,6 +195,58 @@ const DesaDetail = () => {
   });
 
   const detailData = detailIndikatorResponse?.data || detailIndikatorResponse;
+
+  // 4. Fetch Data Potensi Desa (GET /potensi-desa/:desaId)
+  const {
+    data: potensiResponse,
+    isLoading: isLoadingPotensi,
+    isError: isErrorPotensi,
+  } = useQuery({
+    queryKey: ["potensiDesaDetailByDesa", desaId],
+    queryFn: async () => {
+      try {
+        return await potensiDesaService.getPotensiDetail(desaId);
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          return { data: null };
+        }
+        throw err;
+      }
+    },
+    enabled: isAuthReady && !!desaId && activeSectionTab === "potensi",
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 404) return false;
+      return failureCount < 2;
+    },
+  });
+  const potensiData = potensiResponse?.data || potensiResponse || null;
+  const potensiList = potensiData?.potensi || (Array.isArray(potensiData) ? potensiData : []);
+
+  // 5. Fetch Data Intervensi Desa (GET /intervensi-desa/:desaId)
+  const {
+    data: intervensiResponse,
+    isLoading: isLoadingIntervensi,
+    isError: isErrorIntervensi,
+  } = useQuery({
+    queryKey: ["intervensiDesaDetailByDesa", desaId],
+    queryFn: async () => {
+      try {
+        return await intervensiDesaService.getById(desaId);
+      } catch (err) {
+        if (err?.response?.status === 404) {
+          return { data: null };
+        }
+        throw err;
+      }
+    },
+    enabled: isAuthReady && !!desaId && activeSectionTab === "intervensi",
+    retry: (failureCount, error) => {
+      if (error?.response?.status === 404) return false;
+      return failureCount < 2;
+    },
+  });
+  const intervensiData = intervensiResponse?.data || intervensiResponse || null;
+  const intervensiList = intervensiData?.intervensi || (Array.isArray(intervensiData) ? intervensiData : []);
 
   const desa = desaResponse;
   const provinceName = location.state?.provinceName || desa?.provinsi || "Provinsi";
@@ -431,118 +591,296 @@ const DesaDetail = () => {
             </div>
           </div>
 
-          {/* --- DIMENSI DESA DATA --- */}
+          {/* --- DATA SECTION WITH 3 ACTIVE TABS --- */}
           <div className="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden mb-10">
-            <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="bg-emerald-50 p-3 rounded-2xl">
-                  <BookOpen size={24} className="text-emerald-600" />
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-gray-900">
-                    Data Indeks & Dimensi Desa
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    Rekapitulasi indikator dan rincian dimensi pembangunan desa.
-                  </p>
-                </div>
-              </div>
+            {/* TAB BAR NAVIGATION */}
+            <div className="border-b border-gray-100 bg-[#FAFAFA] p-3 flex flex-wrap items-center gap-2 font-sans">
+              <button
+                type="button"
+                onClick={() => setActiveSectionTab("indeks")}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                  activeSectionTab === "indeks"
+                    ? "bg-white text-emerald-700 shadow-sm border border-gray-100"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/60"
+                }`}
+              >
+                <BookOpen size={18} className={activeSectionTab === "indeks" ? "text-emerald-600" : "text-gray-400"} />
+                <span>Data Indeks</span>
+              </button>
 
-              {/* Dropdown Labels */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Label:</span>
-                <select
-                  value={activeLabel}
-                  onChange={(e) => {
-                    setSelectedLabel(e.target.value);
-                    setIndikatorPage(1);
-                  }}
-                  disabled={isLoadingLabels}
-                  className="bg-[#F8FAFC] border border-gray-200 text-gray-800 text-xs sm:text-sm font-extrabold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all cursor-pointer shadow-sm min-w-[200px]"
-                >
-                  {labelsList.map((labelItem, idx) => (
-                    <option key={idx} value={labelItem}>
-                      {labelItem}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveSectionTab("potensi")}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                  activeSectionTab === "potensi"
+                    ? "bg-white text-emerald-700 shadow-sm border border-gray-100"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/60"
+                }`}
+              >
+                <Tag size={18} className={activeSectionTab === "potensi" ? "text-emerald-600" : "text-gray-400"} />
+                <span>Data Potensi</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveSectionTab("intervensi")}
+                className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold transition-all cursor-pointer ${
+                  activeSectionTab === "intervensi"
+                    ? "bg-white text-emerald-700 shadow-sm border border-gray-100"
+                    : "text-gray-500 hover:text-gray-900 hover:bg-gray-100/60"
+                }`}
+              >
+                <Activity size={18} className={activeSectionTab === "intervensi" ? "text-emerald-600" : "text-gray-400"} />
+                <span>Data Intervensi</span>
+              </button>
             </div>
 
-            <div className="p-6 md:p-8 bg-[#FAFAFA]">
-              <DataTable
-                columns={[
-                  {
-                    header: "NO",
-                    className: "w-16 text-center",
-                    render: (row, idx) => {
-                      const currentPage = indikatorPagination?.currentPage || indikatorPage;
-                      const perPage = indikatorPagination?.perPage || 10;
-                      return <span className="font-bold text-gray-400">{(currentPage - 1) * perPage + idx + 1}</span>;
-                    },
-                  },
-                  {
-                    header: "NAMA INDIKATOR",
-                    render: (row) => <span className="font-extrabold text-slate-900">{row.nama || "-"}</span>,
-                  },
-                  {
-                    header: "TAHUN",
-                    render: (row) => (
-                      <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100/80 px-2.5 py-1 rounded-lg text-xs">
-                        {row.tahunIndikatorDimensi?.tahun || row.tahun || "-"}
-                      </span>
-                    ),
-                  },
-                  {
-                    header: "AKSI",
-                    className: "text-center w-24",
-                    render: (row) => (
-                      <div className="flex justify-center">
-                        <button
-                          onClick={() => setSelectedIndikatorId(row.id)}
-                          className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors cursor-pointer"
-                          title="Lihat Detail Indikator"
-                        >
-                          <Eye size={16} strokeWidth={2.5} />
-                        </button>
-                      </div>
-                    ),
-                  },
-                ]}
-                data={indikatorItems}
-                isLoading={isLoadingIndikatorList || isLoadingLabels}
-                isError={isErrorIndikatorList}
-                emptyMessage="Tidak ada data indikator dimensi desa untuk label ini."
-              />
+            {/* TAB CONTENT 1: DATA INDEKS */}
+            {activeSectionTab === "indeks" && (
+              <div>
+                <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-emerald-50 p-3 rounded-2xl">
+                      <BookOpen size={24} className="text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        Data Indeks
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Rekapitulasi indikator dan rincian dimensi.
+                      </p>
+                    </div>
+                  </div>
 
-              {/* Pagination Controls */}
-              {indikatorPagination && indikatorPagination.totalPage > 1 && (
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200/60">
-                  <span className="text-xs text-gray-500 font-semibold">
-                    Menampilkan <span className="font-extrabold text-gray-800">{indikatorItems.length}</span> dari <span className="font-extrabold text-gray-800">{indikatorPagination.total}</span> data
-                  </span>
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => setIndikatorPage(prev => Math.max(prev - 1, 1))}
-                      disabled={indikatorPage <= 1}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                  {/* Dropdown Labels */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider hidden sm:inline">Label:</span>
+                    <select
+                      value={activeLabel}
+                      onChange={(e) => {
+                        setSelectedLabel(e.target.value);
+                        setIndikatorPage(1);
+                      }}
+                      disabled={isLoadingLabels}
+                      className="bg-[#F8FAFC] border border-gray-200 text-gray-800 text-xs sm:text-sm font-extrabold rounded-xl px-4 py-2.5 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-200 transition-all cursor-pointer shadow-sm min-w-[200px]"
                     >
-                      Sebelumnya
-                    </button>
-                    <span className="px-3 py-1 text-xs font-extrabold text-gray-700">
-                      {indikatorPage} / {indikatorPagination.totalPage}
-                    </span>
-                    <button
-                      onClick={() => setIndikatorPage(prev => Math.min(prev + 1, indikatorPagination.totalPage))}
-                      disabled={indikatorPage >= indikatorPagination.totalPage}
-                      className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                      Selanjutnya
-                    </button>
+                      {labelsList.map((labelItem, idx) => (
+                        <option key={idx} value={labelItem}>
+                          {labelItem}
+                        </option>
+                      ))}
+                    </select>
                   </div>
                 </div>
-              )}
-            </div>
+
+                <div className="p-6 md:p-8 bg-[#FAFAFA]">
+                  <DataTable
+                    columns={[
+                      {
+                        header: "NO",
+                        className: "w-16 text-center",
+                        render: (row, idx) => {
+                          const currentPage = indikatorPagination?.currentPage || indikatorPage;
+                          const perPage = indikatorPagination?.perPage || 10;
+                          return <span className="font-bold text-gray-400">{(currentPage - 1) * perPage + idx + 1}</span>;
+                        },
+                      },
+                      {
+                        header: "NAMA INDIKATOR",
+                        render: (row) => <span className="font-extrabold text-slate-900">{row.nama || "-"}</span>,
+                      },
+                      {
+                        header: "TAHUN",
+                        render: (row) => (
+                          <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100/80 px-2.5 py-1 rounded-lg text-xs">
+                            {row.tahunIndikatorDimensi?.tahun || row.tahun || "-"}
+                          </span>
+                        ),
+                      },
+                      {
+                        header: "AKSI",
+                        className: "text-center w-24",
+                        render: (row) => (
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => setSelectedIndikatorId(row.id)}
+                              className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors cursor-pointer"
+                              title="Lihat Detail Indikator"
+                            >
+                              <Eye size={16} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={indikatorItems}
+                    isLoading={isLoadingIndikatorList || isLoadingLabels}
+                    isError={isErrorIndikatorList}
+                    emptyMessage="Tidak ada data indikator dimensi desa untuk label ini."
+                  />
+
+                  {/* Pagination Controls */}
+                  {indikatorPagination && indikatorPagination.totalPage > 1 && (
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-gray-200/60">
+                      <span className="text-xs text-gray-500 font-semibold">
+                        Menampilkan <span className="font-extrabold text-gray-800">{indikatorItems.length}</span> dari <span className="font-extrabold text-gray-800">{indikatorPagination.total}</span> data
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setIndikatorPage(prev => Math.max(prev - 1, 1))}
+                          disabled={indikatorPage <= 1}
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          Sebelumnya
+                        </button>
+                        <span className="px-3 py-1 text-xs font-extrabold text-gray-700">
+                          {indikatorPage} / {indikatorPagination.totalPage}
+                        </span>
+                        <button
+                          onClick={() => setIndikatorPage(prev => Math.min(prev + 1, indikatorPagination.totalPage))}
+                          disabled={indikatorPage >= indikatorPagination.totalPage}
+                          className="px-3 py-1.5 rounded-lg border border-gray-200 text-xs font-bold text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        >
+                          Selanjutnya
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT 2: DATA POTENSI */}
+            {activeSectionTab === "potensi" && (
+              <div>
+                <div className="p-6 md:p-8 border-b border-gray-100 flex items-center gap-4">
+                  <div className="bg-emerald-50 p-3 rounded-2xl">
+                    <Tag size={24} className="text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-gray-900">
+                      Data Potensi Desa
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Kategori potensi ekonomi, pariwisata, lingkungan, dan infrastruktur desa.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-6 md:p-8 bg-[#FAFAFA]">
+                  <DataTable
+                    columns={[
+                      {
+                        header: "NO",
+                        className: "w-16 text-center",
+                        render: (_, idx) => <span className="font-bold text-gray-400">{idx + 1}</span>,
+                      },
+                      {
+                        header: "KATEGORI POTENSI",
+                        render: (row) => (
+                          <span className="font-extrabold text-slate-900">
+                            {row.kategori || row.header || "Kategori Potensi"}
+                          </span>
+                        ),
+                      },
+                      {
+                        header: "JUMLAH SUB-POTENSI",
+                        render: (row) => (
+                          <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-lg text-xs font-mono">
+                            {row.sub?.length || 0} Sub-Potensi
+                          </span>
+                        ),
+                      },
+                      {
+                        header: "AKSI",
+                        className: "text-center w-24",
+                        render: (row) => (
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => setSelectedPotensiCategory(row)}
+                              className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors cursor-pointer"
+                              title="Lihat Detail Potensi"
+                            >
+                              <Eye size={16} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={potensiList}
+                    isLoading={isLoadingPotensi}
+                    isError={isErrorPotensi}
+                    emptyMessage="Belum ada data potensi desa yang tercatat untuk desa ini."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* TAB CONTENT 3: DATA INTERVENSI */}
+            {activeSectionTab === "intervensi" && (
+              <div>
+                <div className="p-6 md:p-8 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-4">
+                    <div className="bg-emerald-50 p-3 rounded-2xl">
+                      <Activity size={24} className="text-emerald-600" />
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-bold text-gray-900">
+                        Data Intervensi Desa
+                      </h3>
+                      <p className="text-sm text-gray-500 mt-1">
+                        Program dan bantuan intervensi desa per tahun.
+                      </p>
+                    </div>
+                  </div>
+                  {intervensiData?.tahunIntervensiDesa?.tahun && (
+                    <span className="text-xs font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3.5 py-2 rounded-xl w-fit">
+                      Tahun {intervensiData.tahunIntervensiDesa.tahun}
+                    </span>
+                  )}
+                </div>
+
+                <div className="p-6 md:p-8 bg-[#FAFAFA]">
+                  <DataTable
+                    columns={[
+                      {
+                        header: "NO",
+                        className: "w-16 text-center",
+                        render: (_, idx) => <span className="font-bold text-gray-400">{idx + 1}</span>,
+                      },
+                      {
+                        header: "PROGRAM INTERVENSI / HEADER",
+                        render: (row) => (
+                          <span className="font-extrabold text-slate-900">
+                            {row.header || "Program Intervensi"}
+                          </span>
+                        ),
+                      },
+                      {
+                        header: "AKSI",
+                        className: "text-center w-24",
+                        render: (row) => (
+                          <div className="flex justify-center">
+                            <button
+                              onClick={() => setSelectedIntervensiItem(row)}
+                              className="p-2 text-slate-400 hover:bg-emerald-50 hover:text-emerald-600 rounded-lg transition-colors cursor-pointer"
+                              title="Lihat Rincian Program"
+                            >
+                              <Eye size={16} strokeWidth={2.5} />
+                            </button>
+                          </div>
+                        ),
+                      },
+                    ]}
+                    data={intervensiList}
+                    isLoading={isLoadingIntervensi}
+                    isError={isErrorIntervensi}
+                    emptyMessage="Belum ada data program intervensi desa yang tercatat untuk desa ini."
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
@@ -734,6 +1072,139 @@ const DesaDetail = () => {
           </div>
         );
       })()}
+
+      {/* MODAL DETAIL POTENSI CATEGORY */}
+      {selectedPotensiCategory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#F8FAFC] rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200/50 animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            <div className="h-1.5 bg-gradient-to-r from-emerald-600 to-[#10B981]" />
+
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div>
+                <span className="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg uppercase tracking-wider font-mono">
+                  Detail Potensi Desa
+                </span>
+                <h3 className="text-xl font-bold text-slate-800 mt-1.5">
+                  {selectedPotensiCategory.kategori || selectedPotensiCategory.header || "Detail Potensi"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedPotensiCategory(null)}
+                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 space-y-4">
+              {selectedPotensiCategory.sub && selectedPotensiCategory.sub.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {selectedPotensiCategory.sub.map((subItem, subIdx) => (
+                    <div
+                      key={subIdx}
+                      className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between"
+                    >
+                      <div>
+                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                          Nama Indikator / Sub-Potensi
+                        </span>
+                        <h5 className="font-bold text-slate-800 text-sm mt-1 leading-snug">
+                          {subItem.nama}
+                        </h5>
+                      </div>
+
+                      <div className="mt-5 pt-3 border-t border-slate-50 flex justify-between items-end">
+                        <div>
+                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                            Satuan
+                          </span>
+                          <span className="block text-xs font-semibold text-slate-500 mt-0.5">
+                            {subItem.unit || "-"}
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider font-mono block mb-0.5">
+                            Nilai
+                          </span>
+                          <span className="text-base font-black text-slate-800 font-mono bg-slate-50 border border-slate-100 px-3 py-1 rounded-xl">
+                            {subItem.nilai ?? "-"}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-slate-400 bg-white rounded-3xl border border-dashed border-slate-200">
+                  <Info size={32} className="mb-2.5 text-slate-300 mx-auto" />
+                  <p className="text-xs font-bold text-slate-500">
+                    Kategori ini belum memiliki rincian sub-potensi.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="px-8 py-5 border-t border-slate-100 flex justify-end bg-white">
+              <button
+                type="button"
+                onClick={() => setSelectedPotensiCategory(null)}
+                className="px-6 py-2.5 text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETAIL INTERVENSI ITEM */}
+      {selectedIntervensiItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-[#F8FAFC] rounded-[32px] shadow-2xl w-full max-w-2xl overflow-hidden border border-slate-200/50 animate-in zoom-in-95 duration-200 flex flex-col max-h-[85vh]">
+            <div className="h-1.5 bg-gradient-to-r from-emerald-600 to-[#10B981]" />
+
+            <div className="px-8 py-6 border-b border-slate-100 flex justify-between items-center bg-white">
+              <div>
+                <span className="text-[10px] font-bold px-2.5 py-1 bg-emerald-50 border border-emerald-100 text-emerald-700 rounded-lg uppercase tracking-wider font-mono">
+                  Detail Program Intervensi
+                </span>
+                <h3 className="text-xl font-bold text-slate-800 mt-1.5">
+                  {selectedIntervensiItem.header || "Program Intervensi"}
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedIntervensiItem(null)}
+                className="p-2 hover:bg-slate-100 text-slate-400 hover:text-slate-600 rounded-2xl transition-colors cursor-pointer"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-8 overflow-y-auto custom-scrollbar flex-1 bg-white">
+              <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100">
+                <span className="text-xs font-bold text-slate-400 uppercase tracking-wider font-mono block mb-3">
+                  Rincian Deskripsi Program
+                </span>
+                <div className="text-slate-800">
+                  {renderRuns(selectedIntervensiItem.value)}
+                </div>
+              </div>
+            </div>
+
+            <div className="px-8 py-5 border-t border-slate-100 flex justify-end bg-white">
+              <button
+                type="button"
+                onClick={() => setSelectedIntervensiItem(null)}
+                className="px-6 py-2.5 text-xs font-black text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 };

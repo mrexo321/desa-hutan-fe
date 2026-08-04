@@ -18,6 +18,7 @@ import {
   ChevronDown,
   ChevronRight,
   Info,
+  Calendar,
 } from "lucide-react";
 import DashboardLayout from "../../components/DashboardLayout";
 import { performaDesaService } from "../../services/master/performaDesaService";
@@ -183,18 +184,28 @@ export default function PermintaanData() {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
 
   // ── Fetch all requests for stats and listing ──
   const { data: allRequestsRes, isLoading, isError, refetch } = useQuery({
-    queryKey: ["request-excel-all-stats"],
-    queryFn: () => performaDesaService.getAllRequestExcel({ page: 1, size: 1000 }),
+    queryKey: ["request-excel-all-stats", searchQuery, statusFilter, startDate, endDate],
+    queryFn: () =>
+      performaDesaService.getAllRequestExcel({
+        page: 1,
+        size: 1000,
+        search: searchQuery,
+        status: statusFilter,
+        startDate,
+        endDate,
+      }),
   });
 
   const allRequests = React.useMemo(() => {
     return allRequestsRes?.data?.items || allRequestsRes?.items || [];
   }, [allRequestsRes]);
 
-  // ── Client-side search & status filter ──
+  // ── Client-side search, status & date filter ──
   const filteredRequests = React.useMemo(() => {
     let list = [...allRequests];
 
@@ -204,6 +215,19 @@ export default function PermintaanData() {
       list = list.filter((r) => String(r.email).toLowerCase() === userEmail);
     }
 
+    // Apply date range filter (startDate & endDate)
+    if (startDate) {
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      list = list.filter((r) => r.createdAt && new Date(r.createdAt) >= start);
+    }
+
+    if (endDate) {
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      list = list.filter((r) => r.createdAt && new Date(r.createdAt) <= end);
+    }
+
     // Apply search query
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -211,6 +235,8 @@ export default function PermintaanData() {
         const namaVal = String(r.nama || "").toLowerCase();
         const hpVal = String(r.no_hp || r.noHp || "").toLowerCase();
         const emailVal = String(r.email || "").toLowerCase();
+        const instansiVal = String(r.instansi || "").toLowerCase();
+        const tujuanVal = String(r.tujuan || "").toLowerCase();
         const statusVal = String(r.status || "").toLowerCase();
         const tahunVal = String(r.filters?.tahun || "").toLowerCase();
         const exportType = String(r.export_type || "").toLowerCase();
@@ -224,6 +250,8 @@ export default function PermintaanData() {
           namaVal.includes(q) ||
           hpVal.includes(q) ||
           emailVal.includes(q) ||
+          instansiVal.includes(q) ||
+          tujuanVal.includes(q) ||
           statusVal.includes(q) ||
           tahunVal.includes(q) ||
           exportType.includes(q) ||
@@ -242,7 +270,7 @@ export default function PermintaanData() {
     }
 
     return list;
-  }, [allRequests, isAdmin, user, searchQuery, statusFilter]);
+  }, [allRequests, isAdmin, user, searchQuery, statusFilter, startDate, endDate]);
 
   // ── Pagination ──
   const pagination = React.useMemo(() => {
@@ -322,7 +350,7 @@ export default function PermintaanData() {
     rejectMutation.mutate({ id: rejectingReqId, alasan: alasanReject.trim() });
   };
 
-  const colCount = 10;
+  const colCount = 12;
 
   return (
     <DashboardLayout activeMenu="Permintaan Data">
@@ -397,8 +425,55 @@ export default function PermintaanData() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 w-full md:w-auto">
-                <div className="relative flex-1 md:w-72 group">
+              <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                {/* Date Filter Inputs */}
+                <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-2 rounded-xl text-xs font-semibold">
+                    <Calendar size={14} className="text-gray-400 shrink-0" />
+                    <span className="text-gray-400 font-bold text-[10px] uppercase">Dari:</span>
+                    <input
+                      type="date"
+                      value={startDate}
+                      onChange={(e) => {
+                        setStartDate(e.target.value);
+                        setPage(1);
+                      }}
+                      className="bg-transparent border-none text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-2 rounded-xl text-xs font-semibold">
+                    <Calendar size={14} className="text-gray-400 shrink-0" />
+                    <span className="text-gray-400 font-bold text-[10px] uppercase">Sampai:</span>
+                    <input
+                      type="date"
+                      value={endDate}
+                      onChange={(e) => {
+                        setEndDate(e.target.value);
+                        setPage(1);
+                      }}
+                      className="bg-transparent border-none text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
+                    />
+                  </div>
+
+                  {(startDate || endDate) && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setStartDate("");
+                        setEndDate("");
+                        setPage(1);
+                      }}
+                      className="px-2.5 py-2 text-[11px] font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-100 rounded-xl transition-all cursor-pointer flex items-center gap-1"
+                      title="Reset Filter Tanggal"
+                    >
+                      <X size={12} />
+                      Reset Tanggal
+                    </button>
+                  )}
+                </div>
+
+                <div className="relative flex-1 md:w-64 group">
                   <Search
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-[#2D7344] transition-colors"
                     size={16}
@@ -439,6 +514,8 @@ export default function PermintaanData() {
                     <th className="py-4 px-6 w-12 text-center">No</th>
                     <th className="py-4 px-6">Tanggal Permintaan</th>
                     <th className="py-4 px-6">Pemohon</th>
+                    <th className="py-4 px-6">Instansi</th>
+                    <th className="py-4 px-6">Tujuan Permintaan</th>
                     <th className="py-4 px-6">Tipe Ekspor</th>
                     <th className="py-4 px-6 text-center">Tahun</th>
                     <th className="py-4 px-6">Tingkat Daerah</th>
@@ -509,6 +586,12 @@ export default function PermintaanData() {
                                 <span className="text-emerald-700 font-mono text-[10px] font-bold">{noHpVal}</span>
                               )}
                             </div>
+                          </td>
+                          <td className="py-4 px-6 font-bold text-gray-800">
+                            {item.instansi || "-"}
+                          </td>
+                          <td className="py-4 px-6 text-gray-600 font-medium max-w-[200px] truncate" title={item.tujuan || ""}>
+                            {item.tujuan || "-"}
                           </td>
                           <td className="py-4 px-6 font-bold text-gray-800">{exportType}</td>
                           <td className="py-4 px-6 text-center font-mono font-bold text-gray-600">
@@ -639,6 +722,8 @@ export default function PermintaanData() {
 
               <div className="p-6 space-y-0 font-sans max-h-[75vh] overflow-y-auto custom-scrollbar">
                 <DetailRow label="Nama Pemohon" value={selectedRequest.nama || "-"} bold />
+                <DetailRow label="Instansi Pemohon" value={selectedRequest.instansi || "-"} bold />
+                <DetailRow label="Tujuan Permintaan" value={selectedRequest.tujuan || "-"} />
                 <DetailRow label="No. HP / WA" value={selectedRequest.no_hp || selectedRequest.noHp || "-"} mono />
                 <DetailRow label="Email Pemohon" value={selectedRequest.email || "-"} />
                 <DetailRow

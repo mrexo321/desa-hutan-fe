@@ -859,11 +859,10 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setPopupActiveTab("spasial")}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                            popupActiveTab === "spasial"
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "spasial"
                               ? "bg-white text-[#00B67A] shadow-sm"
                               : "text-gray-500 hover:text-gray-800"
-                          }`}
+                            }`}
                         >
                           <Activity size={14} strokeWidth={2.5} />
                           <span>Detail Spasial</span>
@@ -871,11 +870,10 @@ const Dashboard = () => {
                         <button
                           type="button"
                           onClick={() => setPopupActiveTab("potensi")}
-                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                            popupActiveTab === "potensi"
+                          className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "potensi"
                               ? "bg-white text-[#00B67A] shadow-sm"
                               : "text-gray-500 hover:text-gray-800"
-                          }`}
+                            }`}
                         >
                           <Zap size={14} strokeWidth={2.5} />
                           <span>Potensi</span>
@@ -1821,7 +1819,7 @@ const Dashboard = () => {
                   </tbody>
                 </table>
               </div>
-              <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
+              {/* <div className="p-5 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs font-bold text-gray-500 bg-gray-50/30">
                 <div>Menampilkan 1-7 dari 268 data provinsi</div>
                 <div className="flex items-center gap-1.5">
                   <button className="w-8 h-8 flex items-center justify-center rounded-[8px] border border-gray-200 hover:bg-gray-100 hover:text-gray-800 transition-colors">
@@ -1844,7 +1842,7 @@ const Dashboard = () => {
                     <ChevronRight size={16} />
                   </button>
                 </div>
-              </div>
+              </div> */}
             </div>
           </>
         )}

@@ -240,7 +240,7 @@ const Homepage = () => {
           {/* Section Header */}
           <div className="max-w-3xl mb-12">
             <span className="text-xs font-bold text-emerald-700 uppercase tracking-widest bg-emerald-50 border border-emerald-100 px-3.5 py-1.5 rounded-full inline-block mb-3">
-              Profil Kawasan
+              Profil GRAWANA
             </span>
             <h2 className="text-2xl md:text-4xl font-extrabold text-slate-800 tracking-tight leading-tight mb-4 uppercase">
               {profil.section_title || "PROFIL Grawana"}
@@ -396,40 +396,108 @@ const Homepage = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                  {/* Instagram */}
-                  <a
-                    href="https://www.instagram.com/kementeriankehutanan"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-pink-50 text-pink-600 border border-pink-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <Instagram size={18} />
+                <div className="space-y-4">
+                  {/* KATEGORI 1: KEMENTERIAN KEHUTANAN */}
+                  <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/60 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        <h4 className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                          Kementerian Kehutanan
+                        </h4>
+                      </div>
+                      <span className="text-[9px] font-extrabold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full border border-emerald-200 uppercase tracking-wider">
+                        Kemenhut
+                      </span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-extrabold text-slate-800 truncate">Instagram</div>
-                      <div className="text-[11px] font-semibold text-slate-400 truncate">@kemenhut</div>
-                    </div>
-                    <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                  </a>
 
-                  {/* Facebook */}
-                  <a
-                    href="https://www.facebook.com/kementeriankehutanan"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-3.5 p-3.5 rounded-2xl border border-slate-100 bg-slate-50/50 hover:bg-emerald-50/40 hover:border-emerald-200 transition-all group"
-                  >
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-                      <Facebook size={18} />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* IG Kemenhut */}
+                      <a
+                        href="https://www.instagram.com/kementeriankehutanan"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/60 bg-white hover:bg-emerald-50/40 hover:border-emerald-300 transition-all group shadow-xs"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-pink-50 text-pink-600 border border-pink-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <Instagram size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-extrabold text-slate-800 truncate">Instagram</div>
+                          <div className="text-[10px] font-semibold text-slate-400 truncate">@kemenhut</div>
+                        </div>
+                        <ExternalLink size={13} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                      </a>
+
+                      {/* FB Kemenhut */}
+                      <a
+                        href="https://www.facebook.com/kementeriankehutanan"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/60 bg-white hover:bg-emerald-50/40 hover:border-emerald-300 transition-all group shadow-xs"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <Facebook size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-extrabold text-slate-800 truncate">Facebook</div>
+                          <div className="text-[10px] font-semibold text-slate-400 truncate">Kementerian Kehutanan</div>
+                        </div>
+                        <ExternalLink size={13} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                      </a>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-extrabold text-slate-800 truncate">Facebook</div>
-                      <div className="text-[11px] font-semibold text-slate-400 truncate">Kementerian Kehutanan</div>
+                  </div>
+
+                  {/* KATEGORI 2: P2SEMH */}
+                  <div className="bg-slate-50/70 p-3.5 rounded-2xl border border-slate-200/60 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-teal-500"></span>
+                        <h4 className="text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                          P2SEMH Kemenhut
+                        </h4>
+                      </div>
+                      <span className="text-[9px] font-extrabold text-teal-700 bg-teal-100/80 px-2 py-0.5 rounded-full border border-teal-200 uppercase tracking-wider">
+                        P2SEMH
+                      </span>
                     </div>
-                    <ExternalLink size={14} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
-                  </a>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {/* IG P2SEMH */}
+                      <a
+                        href="https://www.instagram.com/p2semh.kemenhut"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/60 bg-white hover:bg-emerald-50/40 hover:border-emerald-300 transition-all group shadow-xs"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-pink-50 text-pink-600 border border-pink-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <Instagram size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-extrabold text-slate-800 truncate">Instagram</div>
+                          <div className="text-[10px] font-semibold text-slate-400 truncate">@p2semh.kemenhut</div>
+                        </div>
+                        <ExternalLink size={13} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                      </a>
+
+                      {/* FB P2SEMH */}
+                      <a
+                        href="https://www.facebook.com/p2semh/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/60 bg-white hover:bg-emerald-50/40 hover:border-emerald-300 transition-all group shadow-xs"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 border border-blue-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <Facebook size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-extrabold text-slate-800 truncate">Facebook</div>
+                          <div className="text-[10px] font-semibold text-slate-400 truncate">P2SEMH Kemenhut</div>
+                        </div>
+                        <ExternalLink size={13} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                      </a>
+                    </div>
+                  </div>
                 </div>
               </div>
 

@@ -1,35 +1,25 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { Menu, X, TreePine } from "lucide-react";
-
-const API_BASE = "https://api-simpeg.uika-bogor.ac.id/desa/v1";
+import { useQuery } from "@tanstack/react-query";
+import { siteSettingService } from "../services/auth/siteSettingService";
 
 const Navbar = () => {
   const location = useLocation();
   const isHome = location.pathname === "/";
 
-  const [siteLogo, setSiteLogo] = useState(null);
-  const [siteName, setSiteName] = useState("Desa Hutan");
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  useEffect(() => {
-    const fetchSiteSettings = async () => {
-      try {
-        const res = await fetch(`${API_BASE}/site-settings/category/general`);
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          const logoItem = json.data.find((d) => d.key === "site_logo");
-          const nameItem = json.data.find((d) => d.key === "site_name");
-          if (logoItem?.image_url) setSiteLogo(logoItem.image_url);
-          if (nameItem?.value) setSiteName(nameItem.value);
-        }
-      } catch (err) {
-        console.error("Gagal memuat site settings:", err);
-      }
-    };
-    fetchSiteSettings();
-  }, []);
+  const { data: generalArr = [] } = useQuery({
+    queryKey: ["siteSettings", "general"],
+    queryFn: () => siteSettingService.getByCategory("general"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const general = siteSettingService.toMap(generalArr);
+  const siteLogo = general.site_logo || null;
+  const siteName = general.site_name || "Desa Hutan";
 
   useEffect(() => {
     const handleScroll = () => {

@@ -30,6 +30,7 @@ import {
   Loader2,
   Zap,
   FileDown,
+  Download,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -67,8 +68,12 @@ import Map, {
   Popup,
   FullscreenControl, // Native fullscreen opsional, tapi kita pakai custom
 } from "react-map-gl/mapbox";
+import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
 import environment from "../../config/environment";
+
+// Nonaktifkan pengiriman telemetry ke events.mapbox.com untuk mempercepat koneksi
+mapboxgl.config.SEND_EVENTS = false;
 
 // Komponen Loading Sederhana
 const Loading = () => (
@@ -91,6 +96,31 @@ const Dashboard = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const MAPBOX_TOKEN = environment.MAPBOX_URL;
+
+  const [isDownloadingDesa, setIsDownloadingDesa] = useState(false);
+
+  const handleDownloadDesaExcel = async (desaId, namaDesa) => {
+    if (!desaId) return;
+    try {
+      setIsDownloadingDesa(true);
+      const res = await masterInstance.get(`/public/export/desa/${desaId}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      const safeNama = (namaDesa || "Desa").replace(/[^a-zA-Z0-9_-]/g, "_");
+      link.setAttribute("download", `Data_Desa_${safeNama}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Gagal mendownload data desa:", err);
+    } finally {
+      setIsDownloadingDesa(false);
+    }
+  };
 
   const handleExportRekap = async () => {
     try {
@@ -850,9 +880,9 @@ const Dashboard = () => {
                   closeOnClick={false}
                   offset={15}
                   className="custom-popup"
-                  maxWidth="320px"
+                  maxWidth="360px"
                 >
-                  <div className="bg-white/95 backdrop-blur-xl border border-white rounded-[20px] shadow-2xl overflow-hidden w-[280px] sm:w-[320px]">
+                  <div className="bg-white/95 backdrop-blur-xl border border-white rounded-[20px] shadow-2xl overflow-hidden w-[300px] sm:w-[360px]">
                     {/* Header Tab Bar */}
                     <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 bg-gray-50/70">
                       <div className="flex items-center gap-1 bg-gray-200/60 p-1 rounded-xl">
@@ -878,6 +908,21 @@ const Dashboard = () => {
                           <Zap size={14} strokeWidth={2.5} />
                           <span>Potensi</span>
                         </button>
+                        {detailData?.desa?.id && (
+                          <button
+                            type="button"
+                            onClick={() => handleDownloadDesaExcel(detailData.desa.id, detailData.desa.nama)}
+                            disabled={isDownloadingDesa}
+                            title="Download Data Desa (.xlsx)"
+                            className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 text-emerald-700 bg-emerald-100/80 hover:bg-emerald-200/90 cursor-pointer disabled:opacity-50"
+                          >
+                            {isDownloadingDesa ? (
+                              <Loader2 size={14} className="animate-spin text-emerald-700" />
+                            ) : (
+                              <Download size={14} strokeWidth={2.5} />
+                            )}
+                          </button>
+                        )}
                       </div>
                       <button
                         onClick={() => setClickedLocation(null)}
@@ -899,13 +944,25 @@ const Dashboard = () => {
                         popupActiveTab === "spasial" ? (
                           <div className="flex flex-col gap-4">
                             <div>
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
-                                  {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
-                                </span>
-                                <span className="font-mono text-xs font-semibold text-gray-400">
-                                  {detailData.desa?.kodeKemendagri || '-'}
-                                </span>
+                              <div className="flex items-center justify-between mb-1.5 gap-2">
+                                <div className="flex items-center gap-2">
+                                  <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
+                                    {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
+                                  </span>
+                                  <span className="font-mono text-xs font-semibold text-gray-400">
+                                    {detailData.desa?.kodeKemendagri || '-'}
+                                  </span>
+                                </div>
+                                {detailData.desa?.id && (
+                                  <button
+                                    type="button"
+                                    onClick={() => navigate(`/dashboard/desa-detail/${detailData.desa.id}`)}
+                                    className="text-xs font-bold text-white bg-[#00B67A] hover:bg-[#009b68] px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 cursor-pointer shadow-xs shrink-0"
+                                  >
+                                    <span>Detail Desa</span>
+                                    <ChevronRight size={13} strokeWidth={2.5} />
+                                  </button>
+                                )}
                               </div>
                               <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
                                 {detailData.desa?.nama || 'Area Tidak Diketahui'}
@@ -956,16 +1013,6 @@ const Dashboard = () => {
                                     <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
                                       Luas Kawasan
                                     </p>
-                                    {/* <div className="flex flex-col">
-                                      <span className="font-extrabold text-[#2D7344] text-sm">
-                                        {detailData.irisan?.jenisInteraksi || detailData.status?.replace('_', ' ') || '-'}
-                                      </span>
-                                      {detailData.status && detailData.status !== detailData.irisan?.jenisInteraksi && (
-                                        <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
-                                          {detailData.status.replace('_', ' ')}
-                                        </span>
-                                      )}
-                                    </div> */}
                                   </div>
                                   <div className="text-left shrink-0">
                                     <span className="text-xl font-extrabold text-gray-800 block leading-none">
@@ -993,6 +1040,57 @@ const Dashboard = () => {
                                   </span>
                                 </div>
                               </div>
+                            </div>
+                          </div>
+                        ) : detailData.desa?.potensi && detailData.desa.potensi.length > 0 ? (
+                          <div className="flex flex-col gap-3">
+                            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                              <span className="text-xs font-bold text-gray-800">
+                                Data Potensi Desa {detailData.desa.nama ? `(${detailData.desa.nama})` : ""}
+                              </span>
+                              <span className="text-[10px] font-bold text-[#00B67A] bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded font-mono">
+                                {detailData.desa.potensi.length} Kategori
+                              </span>
+                            </div>
+
+                            <div className="space-y-3 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                              {detailData.desa.potensi.map((cat, catIdx) => (
+                                <div
+                                  key={catIdx}
+                                  className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 space-y-2"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs font-extrabold text-[#00B67A] uppercase tracking-wide">
+                                      {cat.kategori || cat.header || `Kategori ${catIdx + 1}`}
+                                    </span>
+                                    <span className="text-[9px] font-bold text-gray-400 font-mono">
+                                      {cat.sub?.length || 0} sub
+                                    </span>
+                                  </div>
+
+                                  {cat.sub && cat.sub.length > 0 ? (
+                                    <div className="space-y-1.5 pt-1">
+                                      {cat.sub.map((item, itemIdx) => (
+                                        <div
+                                          key={itemIdx}
+                                          className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border border-gray-100 shadow-2xs"
+                                        >
+                                          <span className="font-semibold text-gray-700 truncate pr-2">
+                                            {item.nama}
+                                          </span>
+                                          <span className="font-bold text-gray-900 shrink-0 font-mono text-[11px]">
+                                            {item.nilai ?? "-"} {item.unit || ""}
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  ) : (
+                                    <p className="text-[10px] text-gray-400 italic">
+                                      Tidak ada rincian sub-potensi
+                                    </p>
+                                  )}
+                                </div>
+                              ))}
                             </div>
                           </div>
                         ) : (

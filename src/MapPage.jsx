@@ -9,7 +9,11 @@ import Map, {
   Layer,
   Popup,
 } from "react-map-gl/mapbox";
+import mapboxgl from "mapbox-gl";
 import "mapbox-gl/dist/mapbox-gl.css";
+
+// Nonaktifkan pengiriman telemetry ke events.mapbox.com untuk mempercepat koneksi
+mapboxgl.config.SEND_EVENTS = false;
 import {
   Search,
   Globe,
@@ -28,14 +32,15 @@ import {
   Loader2,
   ArrowLeft,
   Zap,
+  Download,
+  ChevronRight
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import environment from "./config/environment";
 import { analystSpatialService } from "./services/master/analystSpatialService";
-// --- IMPORT SERVICE DESA ---
-// Pastikan path ini sesuai dengan struktur folder Anda
 import { wilayahDesaService } from "./services/master/wilayahDesaService";
+import masterInstance from "./api/masterInstance";
 import { useNavigate } from "react-router-dom";
 
 export default function MapPage() {
@@ -52,14 +57,37 @@ export default function MapPage() {
     bearing: 0,
   });
 
-
   const lngRef = useRef(null);
   const latRef = useRef(null);
 
   // --- STATE INTERAKSI KLIK PETA ---
   const [clickedLocation, setClickedLocation] = useState(null);
   const [popupActiveTab, setPopupActiveTab] = useState("spasial"); // "spasial" | "potensi"
+  const [isDownloading, setIsDownloading] = useState(false);
   const navigate = useNavigate();
+
+  const handleDownloadExcel = async (desaId, namaDesa) => {
+    if (!desaId) return;
+    try {
+      setIsDownloading(true);
+      const res = await masterInstance.get(`/public/export/desa/${desaId}`, {
+        responseType: "blob",
+      });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      const safeNama = (namaDesa || "Desa").replace(/[^a-zA-Z0-9_-]/g, "_");
+      link.setAttribute("download", `Data_Desa_${safeNama}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error("Gagal mendownload data desa:", err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   // --- STATE PENCARIAN (API SEARCH-MAP) ---
   const [searchQuery, setSearchQuery] = useState("");
@@ -397,20 +425,19 @@ export default function MapPage() {
               closeOnClick={false}
               offset={15}
               className="custom-popup"
-              maxWidth="320px"
+              maxWidth="360px"
             >
-              <div className="bg-white/95 backdrop-blur-xl border border-white rounded-[20px] shadow-2xl overflow-hidden w-[280px] sm:w-[320px]">
+              <div className="bg-white/95 backdrop-blur-xl border border-white rounded-[20px] shadow-2xl overflow-hidden w-[300px] sm:w-[360px]">
                 {/* Header Tab Bar */}
                 <div className="px-3 py-2 flex items-center justify-between border-b border-gray-100 bg-gray-50/70">
                   <div className="flex items-center gap-1 bg-gray-200/60 p-1 rounded-xl">
                     <button
                       type="button"
                       onClick={() => setPopupActiveTab("spasial")}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                        popupActiveTab === "spasial"
-                          ? "bg-white text-[#2D7344] shadow-sm"
-                          : "text-gray-500 hover:text-gray-800"
-                      }`}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "spasial"
+                        ? "bg-white text-[#2D7344] shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                        }`}
                     >
                       <Activity size={14} strokeWidth={2.5} />
                       <span>Detail Spasial</span>
@@ -418,15 +445,29 @@ export default function MapPage() {
                     <button
                       type="button"
                       onClick={() => setPopupActiveTab("potensi")}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
-                        popupActiveTab === "potensi"
-                          ? "bg-white text-[#2D7344] shadow-sm"
-                          : "text-gray-500 hover:text-gray-800"
-                      }`}
+                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "potensi"
+                        ? "bg-white text-[#2D7344] shadow-sm"
+                        : "text-gray-500 hover:text-gray-800"
+                        }`}
                     >
                       <Zap size={14} strokeWidth={2.5} />
                       <span>Potensi</span>
                     </button>
+                    {detailData?.desa?.id && (
+                      <button
+                        type="button"
+                        onClick={() => handleDownloadExcel(detailData.desa.id, detailData.desa.nama)}
+                        disabled={isDownloading}
+                        title="Download Data Desa (.xlsx)"
+                        className="px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 text-emerald-700 bg-emerald-100/80 hover:bg-emerald-200/90 cursor-pointer disabled:opacity-50"
+                      >
+                        {isDownloading ? (
+                          <Loader2 size={14} className="animate-spin text-emerald-700" />
+                        ) : (
+                          <Download size={14} strokeWidth={2.5} />
+                        )}
+                      </button>
+                    )}
                   </div>
                   <button
                     onClick={() => setClickedLocation(null)}
@@ -445,119 +486,155 @@ export default function MapPage() {
                       </span>
                     </div>
                   ) : detailData ? (
-                    popupActiveTab === "spasial" ? (
-                      <div className="flex flex-col gap-4">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
-                              {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
-                            </span>
-                            <span className="font-mono text-xs font-semibold text-gray-400">
-                              {detailData.desa?.kodeKemendagri || '-'}
-                            </span>
+                    <div className="flex flex-col gap-3">
+                      {popupActiveTab === "spasial" ? (
+                        <div className="flex flex-col gap-4">
+                          <div>
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="bg-emerald-50 text-[#2D7344] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider border border-emerald-100">
+                                {detailData.status === 'hanya_hutan' ? 'Hutan' : 'Desa'}
+                              </span>
+                              <span className="font-mono text-xs font-semibold text-gray-400">
+                                {detailData.desa?.kodeKemendagri || '-'}
+                              </span>
+                            </div>
+                            <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
+                              {detailData.desa?.nama || 'Area Tidak Diketahui'}
+                            </h3>
+                            {detailData.desa && (
+                              <p className="text-xs text-gray-500 font-medium mt-1 leading-snug">
+                                {[
+                                  detailData.desa.kecamatan && (typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan.nama : detailData.desa.kecamatan),
+                                  detailData.desa.kabupaten && (typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten.nama : detailData.desa.kabupaten),
+                                  detailData.desa.provinsi && (typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi.nama : detailData.desa.provinsi),
+                                ]
+                                  .filter(Boolean)
+                                  .join(" • ")}
+                              </p>
+                            )}
                           </div>
-                          <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
-                            {detailData.desa?.nama || 'Area Tidak Diketahui'}
-                          </h3>
-                          {detailData.desa && (
-                            <p className="text-xs text-gray-500 font-medium mt-1 leading-snug">
-                              {[
-                                detailData.desa.kecamatan && (typeof detailData.desa.kecamatan === 'object' ? detailData.desa.kecamatan.nama : detailData.desa.kecamatan),
-                                detailData.desa.kabupaten && (typeof detailData.desa.kabupaten === 'object' ? detailData.desa.kabupaten.nama : detailData.desa.kabupaten),
-                                detailData.desa.provinsi && (typeof detailData.desa.provinsi === 'object' ? detailData.desa.provinsi.nama : detailData.desa.provinsi),
-                              ]
-                                .filter(Boolean)
-                                .join(" • ")}
-                            </p>
-                          )}
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                              Luas Desa
-                            </p>
-                            <p className="font-bold text-gray-800 text-sm">
-                              {detailData.desa?.luasDesaHa || '-'}{" "}
-                              {detailData.desa?.luasDesaHa && (
-                                <span className="text-xs text-gray-500 font-medium">Ha</span>
-                              )}
-                            </p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                Luas Desa
+                              </p>
+                              <p className="font-bold text-gray-800 text-sm">
+                                {detailData.desa?.luasDesaHa || '-'}{" "}
+                                {detailData.desa?.luasDesaHa && (
+                                  <span className="text-xs text-gray-500 font-medium">Ha</span>
+                                )}
+                              </p>
+                            </div>
+                            <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
+                              <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                Nama Kawasan (Sesuai titik)
+                              </p>
+                              <p
+                                className="font-bold text-gray-800 text-sm"
+                                title={detailData.hutan?.fungsiKawasan?.nama}
+                              >
+                                {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
+                              </p>
+                            </div>
                           </div>
-                          <div className="bg-gray-50 p-3 rounded-xl border border-gray-100 flex flex-col justify-center">
-                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                              Nama Kawasan (Sesuai titik)
-                            </p>
-                            <p
-                              className="font-bold text-gray-800 text-sm"
-                              title={detailData.hutan?.fungsiKawasan?.nama}
-                            >
-                              {detailData.hutan?.fungsiKawasan?.nama || 'Tidak terdata'}
-                            </p>
-                          </div>
-                        </div>
 
-                        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
-                          <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
-                          <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-3">
-                              <div>
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
-                                  Luas Kawasan
-                                </p>
-                                {/* <div className="flex flex-col">
-                                  <span className="font-extrabold text-[#2D7344] text-sm">
-                                    {detailData.irisan?.jenisInteraksi || detailData.status?.replace('_', ' ') || '-'}
-                                  </span>
-                                  {detailData.status && detailData.status !== detailData.irisan?.jenisInteraksi && (
-                                    <span className="text-gray-400 text-[10px] uppercase tracking-wider font-semibold">
-                                      {detailData.status.replace('_', ' ')}
+                          <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-16 h-16 bg-emerald-50 rounded-bl-full -z-0 opacity-60 pointer-events-none"></div>
+                            <div className="relative z-10">
+                              <div className="flex justify-between items-start mb-3">
+                                <div>
+                                  <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-1">
+                                    Luas Kawasan
+                                  </p>
+                                  <div className="text-left shrink-0 flex justify-between items-center">
+                                    <span className="text-xl font-extrabold text-gray-800 block leading-none">
+                                      {detailData.irisan?.luasPersen ?? 0}%
                                     </span>
-                                  )}
-                                </div> */}
-                                <div className="text-left shrink-0 flex justify-between items-center">
-                                <span className="text-xl font-extrabold text-gray-800 block leading-none">
-                                  {detailData.irisan?.luasPersen ?? 0}%
-                                </span>
-                                {detailData.irisan?.luasHa != null && (
-                                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 mt-1 inline-block">
-                                    {Number(detailData.irisan.luasHa).toLocaleString("id-ID")} Ha
+                                    {detailData.irisan?.luasHa != null && (
+                                      <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-100 mt-1 inline-block">
+                                        {Number(detailData.irisan.luasHa).toLocaleString("id-ID")} Ha
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
+                                  style={{
+                                    width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
+                                  }}
+                                ></div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ) : detailData.desa?.potensi && detailData.desa.potensi.length > 0 ? (
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                            <span className="text-xs font-bold text-gray-800">
+                              Data Potensi Desa {detailData.desa.nama ? `(${detailData.desa.nama})` : ""}
+                            </span>
+                            <span className="text-[10px] font-bold text-[#2D7344] bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded font-mono">
+                              {detailData.desa.potensi.length} Kategori
+                            </span>
+                          </div>
+
+                          <div className="space-y-3 max-h-[220px] overflow-y-auto custom-scrollbar pr-1">
+                            {detailData.desa.potensi.map((cat, catIdx) => (
+                              <div
+                                key={catIdx}
+                                className="bg-gray-50/80 p-3 rounded-xl border border-gray-100 space-y-2"
+                              >
+                                <div className="flex items-center justify-between">
+                                  <span className="text-xs font-extrabold text-[#2D7344] uppercase tracking-wide">
+                                    {cat.kategori || cat.header || `Kategori ${catIdx + 1}`}
                                   </span>
+                                  <span className="text-[9px] font-bold text-gray-400 font-mono">
+                                    {cat.sub?.length || 0} sub
+                                  </span>
+                                </div>
+
+                                {cat.sub && cat.sub.length > 0 ? (
+                                  <div className="space-y-1.5 pt-1">
+                                    {cat.sub.map((item, itemIdx) => (
+                                      <div
+                                        key={itemIdx}
+                                        className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border border-gray-100 shadow-2xs"
+                                      >
+                                        <span className="font-semibold text-gray-700 truncate pr-2">
+                                          {item.nama}
+                                        </span>
+                                        <span className="font-bold text-gray-900 shrink-0 font-mono text-[11px]">
+                                          {item.nilai ?? "-"} {item.unit || ""}
+                                        </span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : (
+                                  <p className="text-[10px] text-gray-400 italic">
+                                    Tidak ada rincian sub-potensi
+                                  </p>
                                 )}
                               </div>
-                              </div>
-
-                            </div>
-                            <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-emerald-400 to-[#2D7344] rounded-full transition-all duration-1000 ease-out"
-                                style={{
-                                  width: `${Math.min(Number(detailData.irisan?.luasPersen) || 0, 100)}%`,
-                                }}
-                              ></div>
-                            </div>
-                            <div className="flex justify-between items-center mt-2 text-[10px] text-gray-400 font-medium">
-                              {/* <span>Luas Irisan Kawasan:</span>
-                              <span className="font-extrabold text-gray-700">
-                                {detailData.irisan?.luasHa != null ? `${Number(detailData.irisan.luasHa).toLocaleString("id-ID")} Ha (${detailData.irisan?.luasPersen ?? 0}%)` : '-'}
-                              </span> */}
-                            </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
-                        <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#2D7344] flex items-center justify-center mb-3 border border-emerald-100 shadow-inner">
-                          <Zap size={22} strokeWidth={2} />
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 px-3 text-center">
+                          <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-[#2D7344] flex items-center justify-center mb-3 border border-emerald-100 shadow-inner">
+                            <Zap size={22} strokeWidth={2} />
+                          </div>
+                          <h4 className="font-extrabold text-gray-800 text-sm mb-1">
+                            Potensi Desa
+                          </h4>
+                          <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[240px]">
+                            Belum terdapat data potensi desa pada desa ini
+                          </p>
                         </div>
-                        <h4 className="font-extrabold text-gray-800 text-sm mb-1">
-                          Potensi Desa
-                        </h4>
-                        <p className="text-xs text-gray-500 font-medium leading-relaxed max-w-[240px]">
-                          Belum terdapat data potensi desa pada desa ini
-                        </p>
-                      </div>
-                    )
+                      )}
+                    </div>
                   ) : (
                     <div className="text-center py-6 text-gray-500 text-xs">
                       Tidak ada data di titik ini.

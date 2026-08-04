@@ -650,7 +650,7 @@ export default function Infografis() {
                           <span className="w-1.5 h-1.5 rounded-full bg-[#0B8457] mt-1.5 shrink-0"></span>
                           <div>
                             <strong className="text-gray-800 font-bold block">Kode &amp; Nama Wilayah Administrasi</strong>
-                            <span>Kementerian Dalam Negeri (Keputusan Menteri Dalam Negeri Nomor Nomor 300.2.2-2138 Tahun 2025 tentang Pemberian dan Pemutakhiran Kode, Data Wilayah Administrasi Pemerintahan, dan Pulau)</span>
+                            <span>Kementerian Dalam Negeri (Keputusan Menteri Dalam Negeri Nomor 300.2.2-2138 Tahun 2025 tentang Pemberian dan Pemutakhiran Kode, Data Wilayah Administrasi Pemerintahan, dan Pulau)</span>
                           </div>
                         </li>
                       </ul>

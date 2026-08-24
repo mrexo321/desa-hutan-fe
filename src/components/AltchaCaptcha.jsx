@@ -17,18 +17,7 @@ const AltchaCaptcha = forwardRef(({ onVerify, onExpire, autoSolve = false, class
   // Status state: 'idle' | 'fetching' | 'solving' | 'verified' | 'error'
   const [status, setStatus] = useState("idle");
   const [errorMessage, setErrorMessage] = useState("");
-  const [, setSolvedPayload] = useState("");
-
-  // Temporary bypass for captcha verification
-  useEffect(() => {
-    if (status !== "verified") {
-      setStatus("verified");
-      setSolvedPayload("bypass-captcha");
-      if (onVerify) {
-        onVerify("bypass-captcha", {});
-      }
-    }
-  }, [status, onVerify]);
+  const [solvedPayload, setSolvedPayload] = useState("");
 
   // Handler untuk meriset captcha
   const resetCaptcha = useCallback(() => {
@@ -89,9 +78,7 @@ const AltchaCaptcha = forwardRef(({ onVerify, onExpire, autoSolve = false, class
     }
   }, [autoSolve, status, handleSolve]);
 
-  const showWidget = false;
-
-  return !showWidget ? null : (
+  return (
     <div
       className={`relative w-full rounded-2xl border transition-all duration-300 select-none overflow-hidden ${
         status === "verified"

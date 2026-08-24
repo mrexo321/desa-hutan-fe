@@ -33,11 +33,24 @@ import environment from "../../config/environment";
  */
 const resolveImageUrl = (path) => {
   if (!path) return null;
-  if (path.startsWith("http://") || path.startsWith("https://")) return path;
-  const baseUrl = environment.API_URL || "http://localhost:3001";
-  const cleanBase = baseUrl.replace(/\/$/, "");
+  const baseUrl = (environment.API_URL || "http://localhost:3001").replace(/\/$/, "");
+  // Jika path adalah URL absolute (termasuk IP internal), ganti origin-nya
+  // dengan API_URL dari .env agar tidak terjadi mixed content.
+  if (path.startsWith("http://") || path.startsWith("https://")) {
+    try {
+      const parsed = new URL(path);
+      const base = new URL(baseUrl);
+      // Ganti protocol + host dengan yang ada di .env
+      parsed.protocol = base.protocol;
+      parsed.host = base.host;
+      return parsed.toString();
+    } catch {
+      // Jika parsing gagal, fallback ke path saja
+      return path;
+    }
+  }
   const cleanPath = path.startsWith("/") ? path : `/${path}`;
-  return `${cleanBase}${cleanPath}`;
+  return `${baseUrl}${cleanPath}`;
 };
 
 // ─────────────────────────────────────────
@@ -129,11 +142,11 @@ const Homepage = () => {
   const features = siteSettingService.toMap(featuresArr);
   const general = siteSettingService.toMap(generalArr);
 
-  const logoSrc = profil.section_logo_image || general.site_logo || null;
+  const logoSrc = resolveImageUrl(profil.section_logo_image || general.site_logo || null);
   const isLoading = heroLoading || profilLoading || featuresLoading || generalLoading;
 
   const heroBg = hero.hero_background_image
-    ? `url('${hero.hero_background_image}')`
+    ? `url('${resolveImageUrl(hero.hero_background_image)}')`
     : `url(${defaultHeroBg})`;
 
   return (

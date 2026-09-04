@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "../../components/DashboardLayout";
 import { siteSettingService } from "../../services/auth/siteSettingService";
@@ -19,6 +19,16 @@ import {
   Search,
   CheckSquare,
   Square,
+  Bold,
+  Italic,
+  Underline,
+  List,
+  ListOrdered,
+  AlignCenter,
+  AlignJustify,
+  Code,
+  Undo,
+  Redo
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -42,6 +52,194 @@ const CATEGORY_BADGE = {
 };
 
 const EMPTY_FORM = { category: "", key: "", value: "", image: null };
+
+// ─────────────────────────────────────────────────────
+// HELPER: Strip HTML tags untuk tampilan tabel
+// ─────────────────────────────────────────────────────
+const stripHtml = (html) => {
+  if (!html) return "";
+  return html.replace(/<[^>]*>?/gm, "").trim();
+};
+
+// ─────────────────────────────────────────────────────
+// RICH TEXT EDITOR COMPONENT (Alinea, Bold, Italic, List, Alignment)
+// ─────────────────────────────────────────────────────
+const RichTextEditor = ({ value, onChange, placeholder = "Tulis konten di sini..." }) => {
+  const editorRef = useRef(null);
+  const [isSourceMode, setIsSourceMode] = useState(false);
+
+  // Helper untuk mengubah plain text dengan newline ke paragraf HTML
+  const formatInitialHtml = (str) => {
+    if (!str) return "";
+    if (/<[a-z][\s\S]*>/i.test(str)) return str;
+    return str
+      .split(/\n\s*\n/)
+      .map((p) => `<p>${p.replace(/\n/g, "<br/>")}</p>`)
+      .join("");
+  };
+
+  // Sync value ke editor saat berganti mode atau initial render
+  useEffect(() => {
+    if (editorRef.current && !isSourceMode) {
+      const currentHtml = editorRef.current.innerHTML;
+      const targetHtml = formatInitialHtml(value || "");
+      if (currentHtml !== targetHtml && document.activeElement !== editorRef.current) {
+        editorRef.current.innerHTML = targetHtml;
+      }
+    }
+  }, [value, isSourceMode]);
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const execute = (command, arg = null) => {
+    document.execCommand(command, false, arg);
+    if (editorRef.current) {
+      editorRef.current.focus();
+      handleInput();
+    }
+  };
+
+  return (
+    <div className="border border-gray-200 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-emerald-500/20 focus-within:border-emerald-500 bg-white">
+      {/* Toolbar */}
+      <div className="flex flex-wrap items-center gap-1 p-2 bg-gray-50/90 border-b border-gray-200 text-gray-600 select-none">
+        {/* Undo / Redo */}
+        <button
+          type="button"
+          onClick={() => execute("undo")}
+          title="Undo (Ctrl+Z)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors"
+        >
+          <Undo size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => execute("redo")}
+          title="Redo (Ctrl+Y)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors"
+        >
+          <Redo size={14} />
+        </button>
+
+        <span className="w-px h-4 bg-gray-300 mx-1"></span>
+
+        {/* Formatting */}
+        <button
+          type="button"
+          onClick={() => execute("bold")}
+          title="Tebal (Ctrl+B)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors font-bold"
+        >
+          <Bold size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => execute("italic")}
+          title="Miring (Ctrl+I)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors italic"
+        >
+          <Italic size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => execute("underline")}
+          title="Garis Bawah (Ctrl+U)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors underline"
+        >
+          <Underline size={14} />
+        </button>
+
+        <span className="w-px h-4 bg-gray-300 mx-1"></span>
+
+        {/* Lists */}
+        <button
+          type="button"
+          onClick={() => execute("insertUnorderedList")}
+          title="Daftar Poin (Bullet List)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors"
+        >
+          <List size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => execute("insertOrderedList")}
+          title="Daftar Angka (Numbered List)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors"
+        >
+          <ListOrdered size={14} />
+        </button>
+
+        <span className="w-px h-4 bg-gray-300 mx-1"></span>
+
+        {/* Alignment */}
+        <button
+          type="button"
+          onClick={() => execute("justifyLeft")}
+          title="Rata Kiri"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors"
+        >
+          <AlignLeft size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => execute("justifyCenter")}
+          title="Rata Tengah"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors"
+        >
+          <AlignCenter size={14} />
+        </button>
+        <button
+          type="button"
+          onClick={() => execute("justifyFull")}
+          title="Rata Kiri Kanan (Justify)"
+          className="p-1.5 hover:bg-gray-200 rounded text-gray-700 transition-colors"
+        >
+          <AlignJustify size={14} />
+        </button>
+
+        {/* Source Mode Toggle */}
+        <div className="ml-auto flex items-center">
+          <button
+            type="button"
+            onClick={() => setIsSourceMode(!isSourceMode)}
+            title={isSourceMode ? "Beralih ke Visual Editor" : "Lihat / Edit HTML Source"}
+            className={`px-2 py-1 rounded text-xs font-semibold flex items-center gap-1 transition-colors ${
+              isSourceMode
+                ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                : "hover:bg-gray-200 text-gray-600"
+            }`}
+          >
+            <Code size={13} />
+            <span>{isSourceMode ? "Visual" : "HTML"}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Editor Body */}
+      {isSourceMode ? (
+        <textarea
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          rows={6}
+          className="w-full p-3 text-xs font-mono text-slate-800 focus:outline-none bg-slate-50 resize-y"
+          placeholder="Tulis kode HTML atau teks di sini..."
+        />
+      ) : (
+        <div
+          ref={editorRef}
+          contentEditable
+          onInput={handleInput}
+          onBlur={handleInput}
+          className="min-h-[140px] max-h-[260px] overflow-y-auto p-3 text-sm text-slate-700 focus:outline-none space-y-2.5 [&_p]:mb-2.5 last:[&_p]:mb-0 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_blockquote]:border-l-4 [&_blockquote]:border-emerald-500 [&_blockquote]:pl-3 [&_blockquote]:italic"
+        />
+      )}
+    </div>
+  );
+};
 
 // ─────────────────────────────────────────────────────
 // MODAL FORM COMPONENT
@@ -86,7 +284,7 @@ const SettingModal = ({ mode, initialData, onClose, onSubmit, isPending }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className={`px-6 py-4 border-b flex items-center justify-between rounded-t-2xl ${mode === "edit" ? "bg-blue-50 text-blue-800" : "bg-emerald-50 text-emerald-800"}`}>
           <div className="flex items-center gap-3">
@@ -144,17 +342,19 @@ const SettingModal = ({ mode, initialData, onClose, onSubmit, isPending }) => {
 
           {/* Value */}
           <div>
-            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-              <AlignLeft size={13} /> Value (teks)
+            <label className="block text-xs font-bold text-gray-600 uppercase tracking-wider mb-1.5 flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                <AlignLeft size={13} /> Value (Konten Teks / Rich Text)
+              </span>
             </label>
-            <textarea
-              name="value"
+            <RichTextEditor
               value={form.value}
-              onChange={handleChange}
-              placeholder="Isi nilai teks di sini..."
-              rows={3}
-              className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 bg-gray-50 resize-none"
+              onChange={(val) => setForm((f) => ({ ...f, value: val }))}
+              placeholder="Tulis konten teks atau alinea di sini... (tekan Enter untuk alinea baru)"
             />
+            <p className="text-[11px] text-gray-400 mt-1">
+              Mendukung beberapa alinea / paragraf, teks tebal, miring, garis bawah, serta daftar poin.
+            </p>
           </div>
 
           {/* Image Upload */}
@@ -545,8 +745,8 @@ const SiteSettings = () => {
                               </a>
                             </div>
                           ) : setting.value ? (
-                            <p className="text-xs text-gray-600 leading-relaxed truncate max-w-[280px]" title={setting.value}>
-                              {setting.value}
+                            <p className="text-xs text-gray-600 leading-relaxed truncate max-w-[280px]" title={stripHtml(setting.value)}>
+                              {stripHtml(setting.value)}
                             </p>
                           ) : (
                             <span className="text-xs text-gray-300 italic">—</span>

@@ -20,7 +20,11 @@ import {
   ShieldCheck,
   TrendingUp,
   Award,
-  ExternalLink
+  ExternalLink,
+  Info,
+  X,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 
 import { Link } from "react-router-dom";
@@ -54,26 +58,107 @@ const resolveImageUrl = (path) => {
 };
 
 // ─────────────────────────────────────────
-// HELPER: HighlightedText with premium typography
+// HELPER: SectionDescription with multi-paragraph (alinea) and "View More" support
 // ─────────────────────────────────────────
-const HighlightedText = ({ text = "", highlight = "" }) => {
-  if (!highlight || !text.includes(highlight)) {
-    return <p className="text-slate-600 mb-12 text-base md:text-lg leading-relaxed text-justify md:text-left font-medium">{text}</p>;
+const SectionDescription = ({ content }) => {
+  const [isExpanded, setIsExpanded] = React.useState(false);
+
+  if (!content) return null;
+
+  const isHtml = /<[a-z][\s\S]*>/i.test(content);
+
+  // Ambil teks polos untuk menghitung jumlah kata
+  const textOnly = content.replace(/<[^>]*>?/gm, "").trim();
+  const wordCount = textOnly ? textOnly.split(/\s+/).filter(Boolean).length : 0;
+
+  // Hitung perkiraan jumlah paragraf / alinea
+  let paragraphCount = 1;
+  if (isHtml) {
+    const pMatches = content.match(/<p[\s>]/gi);
+    const brMatches = content.match(/<br\s*[\/]?>/gi);
+    paragraphCount = (pMatches ? pMatches.length : 1) + (brMatches && !pMatches ? brMatches.length : 0);
+  } else {
+    paragraphCount = content.split(/\n\s*\n/).filter(Boolean).length;
   }
-  const [before, after] = text.split(highlight);
+
+  // Aktifkan tombol View More jika lebih dari 1 paragraf atau lebih dari 70 kata
+  const isLong = paragraphCount > 1 || wordCount > 70;
+
   return (
-    <p className="text-slate-600 mb-12 text-base md:text-lg leading-relaxed text-justify md:text-left font-medium">
-      {before}
-      <span className="text-emerald-700 font-bold border-b-2 border-emerald-500/25 pb-0.5">{highlight}</span>
-      {after}
-    </p>
+    <div className="mb-12">
+      <div
+        className={`relative transition-all duration-500 overflow-hidden ${
+          !isExpanded && isLong ? "max-h-28 sm:max-h-32" : "max-h-[3000px]"
+        }`}
+      >
+        {isHtml ? (
+          <div
+            className="text-slate-600 text-base md:text-lg leading-relaxed font-medium text-justify md:text-left space-y-4 [&_p]:mb-4 last:[&_p]:mb-0 [&_strong]:text-slate-800 [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5"
+            dangerouslySetInnerHTML={{ __html: content }}
+          />
+        ) : (
+          <div className="text-slate-600 text-base md:text-lg leading-relaxed font-medium text-justify md:text-left space-y-4">
+            {content
+              .split(/\n\s*\n/)
+              .filter(Boolean)
+              .map((para, idx) => (
+                <p key={idx}>{para}</p>
+              ))}
+          </div>
+        )}
+
+        {/* Gradient Fade Overlay saat dalam keadaan ringkas */}
+        {!isExpanded && isLong && (
+          <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-slate-50/95 via-slate-50/60 to-transparent pointer-events-none" />
+        )}
+      </div>
+
+      {/* Tombol Lihat Selengkapnya / Tampilkan Lebih Sedikit */}
+      {isLong && (
+        <div className="mt-3">
+          <button
+            type="button"
+            onClick={() => setIsExpanded((prev) => !prev)}
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100/80 border border-emerald-200/80 px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer group"
+          >
+            <span>{isExpanded ? "Tampilkan Lebih Sedikit" : "Lihat Selengkapnya"}</span>
+            {isExpanded ? (
+              <ChevronUp size={15} className="group-hover:-translate-y-0.5 transition-transform" />
+            ) : (
+              <ChevronDown size={15} className="group-hover:translate-y-0.5 transition-transform" />
+            )}
+          </button>
+        </div>
+      )}
+    </div>
   );
 };
 
 // ─────────────────────────────────────────
 // HELPER: One premium feature card
 // ─────────────────────────────────────────
-const FeatureCard = ({ title, description, iconName }) => {
+const FeatureCard = ({ title, description, iconName, info }) => {
+  const [showInfo, setShowInfo] = React.useState(false);
+  const popoverRef = React.useRef(null);
+
+  React.useEffect(() => {
+    if (!showInfo) return;
+    const handleClickOutside = (e) => {
+      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
+        setShowInfo(false);
+      }
+    };
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setShowInfo(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [showInfo]);
+
   const renderIcon = () => {
     const props = { className: "text-emerald-600 transition-transform group-hover:scale-110 duration-300", size: 28 };
     if (iconName === "compass" || iconName === "map") return <Map {...props} />;
@@ -82,16 +167,81 @@ const FeatureCard = ({ title, description, iconName }) => {
   };
 
   return (
-    <div className="group bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row gap-5 items-start">
+    <div
+      className={`group relative bg-white p-6 md:p-8 rounded-3xl border border-slate-100 shadow-[0_10px_30px_rgba(0,0,0,0.02)] hover:shadow-[0_20px_40px_rgba(16,185,129,0.08)] hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row gap-5 items-start ${
+        showInfo ? "z-30" : "z-0"
+      }`}
+    >
       <div className="flex-shrink-0 w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-colors duration-300 shadow-sm border border-emerald-100/50">
         {renderIcon()}
       </div>
-      <div>
+      <div className="flex-1 pr-6 sm:pr-8">
         <h3 className="font-extrabold text-slate-800 text-base tracking-wide mb-2 uppercase font-sans">
           {title}
         </h3>
         <p className="text-slate-500 text-sm leading-relaxed font-medium">{description}</p>
       </div>
+
+      {/* Tombol Info Pop-up di Ujung Kanan Card */}
+      {info && (
+        <div
+          className="absolute top-5 right-5 sm:top-6 sm:right-6"
+          ref={popoverRef}
+          onMouseEnter={() => setShowInfo(true)}
+          onMouseLeave={() => setShowInfo(false)}
+        >
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowInfo((prev) => !prev);
+            }}
+            title={info.title ? `Informasi ${info.title}` : "Informasi"}
+            aria-label={info.title ? `Informasi ${info.title}` : "Informasi"}
+            className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 border ${
+              showInfo
+                ? "bg-emerald-600 text-white border-emerald-600 shadow-md scale-105"
+                : "bg-slate-100/80 text-slate-400 hover:text-emerald-700 hover:bg-emerald-50 hover:border-emerald-200 border-slate-200/70"
+            }`}
+          >
+            <Info size={14} className="stroke-[2.5]" />
+          </button>
+
+          {/* Popover Card */}
+          {showInfo && (
+            <div
+              className="absolute right-0 top-full mt-2.5 w-72 sm:w-80 bg-white/95 backdrop-blur-md rounded-2xl p-4 shadow-[0_15px_35px_rgba(0,0,0,0.12)] border border-emerald-100 z-30 animate-fade-in-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Popover Arrow */}
+              <div className="absolute -top-1.5 right-2.5 w-3 h-3 bg-white border-t border-l border-emerald-100 transform rotate-45"></div>
+
+              {/* Popover Header */}
+              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100 relative z-10">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                  <span className="text-xs font-extrabold text-emerald-800 uppercase tracking-wider">
+                    {info.title || "INFORMASI"}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInfo(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
+                  aria-label="Tutup"
+                >
+                  <X size={13} />
+                </button>
+              </div>
+
+              {/* Popover Body */}
+              <p className="text-xs text-slate-600 leading-relaxed font-medium relative z-10">
+                {info.description}
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -264,9 +414,8 @@ const Homepage = () => {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             {/* Left: Highlight Text & Features List */}
             <div className="lg:col-span-7 flex flex-col">
-              <HighlightedText
-                text={profil.section_description || "Grawana merupakan garda terdepan pelestarian sumber daya alam tapak nasional..."}
-                highlight={profil.section_description_highlight || "kemandirian ekonomi lokal"}
+              <SectionDescription
+                content={profil.section_description || "Grawana merupakan garda terdepan pelestarian sumber daya alam tapak nasional yang berkomitmen mendorong kemandirian ekonomi lokal melalui pemetaan potensi wilayah, integrasi batas kawasan hutan, serta pendampingan masyarakat tapak secara berkelanjutan."}
               />
 
               <div className="space-y-6">
@@ -274,16 +423,28 @@ const Homepage = () => {
                   title={features.feature_peta_title || "PETA INTERAKTIF"}
                   description={features.feature_peta_description || "Visualisasi sebaran koordinat desa, batas wilayah spasial, dan overlay tutupan hutan."}
                   iconName={features.feature_peta_icon || "compass"}
+                  info={{
+                    title: "DESA HUTAN",
+                    description: "Desa Hutan adalah desa yang dalam wilayahnya terdapat kawasan hutan"
+                  }}
                 />
                 <FeatureCard
                   title={features.feature_infografis_title || "INFOGRAFIS POTENSI"}
                   description={features.feature_infografis_description || "Penyajian bagan statistik, diagram perkembangan status kemandirian, dan grafik komoditas utama."}
                   iconName={features.feature_infografis_icon || "bar-chart"}
+                  info={{
+                    title: "DESA HUTAN",
+                    description: "Desa Hutan adalah desa yang dalam wilayahnya terdapat kawasan hutan"
+                  }}
                 />
                 <FeatureCard
                   title={features.feature_data_desa_title || "DATA DESA TEREKAP"}
                   description={features.feature_data_desa_description || "Tabel informasi komprehensif indikator performa pembangunan Grawana yang terstruktur."}
                   iconName={features.feature_data_desa_icon || "table"}
+                  info={{
+                    title: "DESA HUTAN",
+                    description: "Desa Hutan adalah desa yang dalam wilayahnya terdapat kawasan hutan"
+                  }}
                 />
               </div>
             </div>

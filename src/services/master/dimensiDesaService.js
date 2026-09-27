@@ -66,8 +66,8 @@ export const dimensiDesaService = {
   },
 
   // Download template Excel as a blob
-  async downloadTemplate(tahun) {
-    const response = await masterInstance.get(`/dimensi-desa/template/${tahun}`, {
+  async downloadTemplate(tahun, indikatorId) {
+    const response = await masterInstance.get(`/dimensi-desa/template/${tahun}/${indikatorId}`, {
       responseType: "blob",
     });
     return response;

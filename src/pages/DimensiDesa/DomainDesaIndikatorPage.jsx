@@ -292,7 +292,7 @@ export default function DomainDesaIndikatorPage() {
     }
     const toastId = toast.loading("Menyiapkan berkas template Excel...");
     try {
-      const response = await dimensiDesaService.downloadTemplate(selectedTahun.tahun);
+      const response = await dimensiDesaService.downloadTemplate(selectedTahun.tahun, selectedTahun.indicatorId);
       const blob = response.data || response;
       const url = window.URL.createObjectURL(
         new Blob([blob], {

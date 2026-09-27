@@ -1,5 +1,8 @@
 import React from "react";
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import { usePermission } from "./hooks/usePermission";
+import { getDefaultAccessibleRoute } from "./utils/navigationHelper";
 import ProtectedRoute from "./components/ProtectedRoute";
 import GuestRoute from "./components/GuestRoute";
 import ChatWidget from "./components/ChatWidget";
@@ -53,6 +56,35 @@ import DataDesaPublic from "./pages/landing/DataDesaPublic";
 import PermintaanData from "./pages/dashboard/PermintaanData";
 import ManajemenSitus from "./pages/ManajemenSitus/ManajemenSitus";
 
+// Komponen penentu pintu masuk /dashboard
+const DashboardEntry = () => {
+  const { can } = usePermission();
+  const { permissions, roles } = useSelector((state) => state.user || {});
+
+  if (can("dashboard:view")) {
+    return <Dashboard />;
+  }
+
+  let userPerms = permissions || [];
+  let userRoles = roles || [];
+  if (!userPerms.length && !userRoles.length) {
+    try {
+      const parsed = JSON.parse(localStorage.getItem("user_profile") || "{}");
+      userPerms = parsed.permissions || [];
+      userRoles = parsed.roles || [];
+    } catch {
+      // ignore
+    }
+  }
+
+  const target = getDefaultAccessibleRoute(userPerms, userRoles);
+  if (target.path !== "/dashboard") {
+    return <Navigate to={target.path} replace />;
+  }
+
+  return <Navigate to="/unauthorized" replace />;
+};
+
 const App = () => {
   return (
     <>
@@ -81,8 +113,8 @@ const App = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute allowedPermissions={["dashboard:view"]}>
-              <Dashboard />
+            <ProtectedRoute>
+              <DashboardEntry />
             </ProtectedRoute>
           }
         />

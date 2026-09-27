@@ -18,6 +18,7 @@ import {
 
 import { authService } from "../../services/auth/authService";
 import AltchaCaptcha from "../../components/AltchaCaptcha";
+import { getDefaultAccessibleRoute } from "../../utils/navigationHelper";
 
 const Login = () => {
   const [username, setUsername] = useState("");
@@ -38,7 +39,19 @@ const Login = () => {
     const refreshToken = localStorage.getItem("_rt");
 
     if (token || profileString || refreshToken) {
-      navigate("/dashboard", { replace: true });
+      let userPerms = [];
+      let userRoles = [];
+      if (profileString) {
+        try {
+          const parsed = JSON.parse(profileString);
+          userPerms = parsed.permissions || [];
+          userRoles = parsed.roles || [];
+        } catch {
+          // ignore
+        }
+      }
+      const target = getDefaultAccessibleRoute(userPerms, userRoles);
+      navigate(target.path, { replace: true });
     }
   }, [token, navigate]);
 
@@ -46,6 +59,8 @@ const Login = () => {
     mutationFn: authService.login,
     onSuccess: (res) => {
       const data = res?.data || res;
+      const userRoles = data?.user?.roles || data?.roles || [];
+      const userPerms = data?.user?.permissions || data?.permissions || [];
 
       dispatch(
         setUserData({
@@ -53,12 +68,15 @@ const Login = () => {
           username: data?.user?.username || null,
           accessToken: data?.accessToken || data?.token || data?.access_token || null,
           refreshToken: data?.refreshToken || data?.refresh_token || null,
-          roles: data?.user?.roles || data?.roles || [],
-          permissions: data?.user?.permissions || data?.permissions || [],
+          roles: userRoles,
+          permissions: userPerms,
         }),
       );
 
       toast.success("Login berhasil! Selamat datang.");
+
+      const target = getDefaultAccessibleRoute(userPerms, userRoles);
+      navigate(target.path, { replace: true });
     },
     onError: (error) => {
       toast.error(

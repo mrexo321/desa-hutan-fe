@@ -1,15 +1,43 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ShieldAlert, Map, ArrowLeft, Trees } from "lucide-react";
+import { useSelector } from "react-redux";
+import { ShieldAlert, Home, ArrowLeft } from "lucide-react";
+import { getDefaultAccessibleRoute } from "../../utils/navigationHelper";
 
 const Unauthorized = () => {
   const navigate = useNavigate();
   const [isMounted, setIsMounted] = useState(false);
 
+  const { permissions, roles } = useSelector((state) => state.user || {});
+
+  // Ambil profil dari localStorage jika Redux belum terisi
+  let userPerms = permissions || [];
+  let userRoles = roles || [];
+  if (!userPerms.length && !userRoles.length) {
+    try {
+      const profileString = localStorage.getItem("user_profile");
+      if (profileString) {
+        const parsed = JSON.parse(profileString);
+        userPerms = parsed.permissions || [];
+        userRoles = parsed.roles || [];
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  const defaultRoute = getDefaultAccessibleRoute(userPerms, userRoles);
+
   useEffect(() => {
     const t = setTimeout(() => setIsMounted(true), 50);
     return () => clearTimeout(t);
   }, []);
+
+  const getPrimaryButtonLabel = () => {
+    if (defaultRoute.path === "/dashboard") return "Kembali ke Dashboard";
+    if (defaultRoute.path === "/") return "Kembali ke Beranda";
+    return `Buka ${defaultRoute.name}`;
+  };
 
   return (
     <div className="min-h-screen bg-[#0B241A] relative flex items-center justify-center p-4 overflow-hidden">
@@ -44,29 +72,24 @@ const Unauthorized = () => {
           
           <div className="w-24 h-24 bg-red-500/10 border border-red-500/20 rounded-full flex items-center justify-center relative z-10">
             <ShieldAlert size={40} className="text-red-400" />
-            
-            {/* Tiny accent icon */}
-            <div className="absolute -bottom-2 -right-2 w-10 h-10 bg-[#0B241A] border border-white/10 rounded-full flex items-center justify-center shadow-lg">
-              <Trees size={18} className="text-[#00C47C]" />
-            </div>
           </div>
         </div>
 
         <h1 className="text-3xl md:text-4xl font-black text-white mb-4 tracking-tight">
-          Hutan Terlarang!
+          Akses Ditolak
         </h1>
         
         <p className="text-white/60 text-sm md:text-base leading-relaxed mb-8 max-w-sm mx-auto font-medium">
-          Waduh, sepertinya Anda tersesat. Area ini dilindungi oleh sistem keamanan desa dan Anda tidak memiliki izin untuk memasukinya.
+          Anda tidak memiliki izin untuk mengakses halaman ini.
         </p>
 
         <div className="flex flex-col gap-3">
           <button
-            onClick={() => navigate("/dashboard", { replace: true })}
+            onClick={() => navigate(defaultRoute.path, { replace: true })}
             className="w-full flex items-center justify-center gap-2 bg-[#00C47C] hover:bg-[#00a869] text-[#0B241A] font-bold py-3.5 px-6 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] shadow-[0_8px_25px_rgba(0,196,124,0.3)]"
           >
-            <Map size={18} />
-            Kembali ke Peradaban (Dashboard)
+            <Home size={18} />
+            {getPrimaryButtonLabel()}
           </button>
           
           <button
@@ -76,6 +99,15 @@ const Unauthorized = () => {
             <ArrowLeft size={18} className="opacity-70" />
             Kembali ke Halaman Sebelumnya
           </button>
+
+          {defaultRoute.path !== "/" && (
+            <button
+              onClick={() => navigate("/", { replace: true })}
+              className="text-xs text-white/50 hover:text-white transition-colors mt-2 underline underline-offset-4"
+            >
+              Kembali ke Beranda Utama
+            </button>
+          )}
         </div>
       </div>
     </div>

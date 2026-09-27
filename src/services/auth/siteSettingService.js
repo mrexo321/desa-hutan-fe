@@ -1,4 +1,20 @@
 import authInstance from "../../api/authInstance";
+import { resolveImageUrl } from "../../utils/resolveImageUrl";
+
+const normalizeSetting = (item) => {
+  if (!item) return item;
+  return {
+    ...item,
+    image_url: resolveImageUrl(item.image_url),
+  };
+};
+
+const normalizeSettingList = (data) => {
+  if (Array.isArray(data)) {
+    return data.map(normalizeSetting);
+  }
+  return normalizeSetting(data);
+};
 
 export const siteSettingService = {
   // ─────────────────────────────────────────
@@ -8,22 +24,22 @@ export const siteSettingService = {
   // ─────────────────────────────────────────
   async getAll() {
     const res = await authInstance.get("/site-settings");
-    return res.data.data;
+    return normalizeSettingList(res.data.data);
   },
 
   async getByCategory(category) {
     const res = await authInstance.get(`/site-settings/category/${category}`);
-    return res.data.data; // Array<{ id, category, key, value, image_url }>
+    return normalizeSettingList(res.data.data); // Array<{ id, category, key, value, image_url }>
   },
 
   async getByKey(key) {
     const res = await authInstance.get(`/site-settings/key/${key}`);
-    return res.data.data;
+    return normalizeSetting(res.data.data);
   },
 
   async getById(id) {
     const res = await authInstance.get(`/site-settings/${id}`);
-    return res.data.data;
+    return normalizeSetting(res.data.data);
   },
 
   // ─────────────────────────────────────────
@@ -61,7 +77,8 @@ export const siteSettingService = {
   // ─────────────────────────────────────────
   toMap(arr = []) {
     return arr.reduce((acc, item) => {
-      acc[item.key] = item.image_url ?? item.value;
+      const resolvedImg = resolveImageUrl(item.image_url);
+      acc[item.key] = resolvedImg ?? item.value;
       return acc;
     }, {});
   },

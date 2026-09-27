@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 
 // 1. Impor data menu dari folder constants
-import { homeMenus, metadataMenus } from "../constants/sidebarMenus";
+import { homeMenus, calculationMenus, metadataMenus } from "../constants/sidebarMenus";
 
 // =========================================================
 // DATA COMMAND PALETTE (Dibuat dinamis dari konstan)
@@ -31,6 +31,18 @@ const searchItems = [
       path: item.path,
       icon: <Icon size={18} />, // Render ikon dengan ukuran spesifik untuk search
       category: "Menu Utama",
+    };
+  }),
+
+  // Map data Perhitungan Indeks
+  ...(calculationMenus || []).map((item, index) => {
+    const Icon = item.icon;
+    return {
+      id: `c${index}`,
+      title: item.name,
+      path: item.path,
+      icon: <Icon size={18} />,
+      category: "Perhitungan Indeks",
     };
   }),
 

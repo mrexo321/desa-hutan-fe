@@ -44,7 +44,6 @@ export default function Sidebar({ activeMenu }) {
   const iconProps = { size: 20, strokeWidth: 2 };
 
   // ── DEFINISI MENU DENGAN PERMISSION ──
-  // Menu tanpa `permission` akan selalu tampil selama user login.
   // Menu dengan `permission` (string) dicek via `can()`.
   // Menu dengan `permissions` (array) dicek via `canAny()`.
   const homeMenus = [
@@ -52,17 +51,19 @@ export default function Sidebar({ activeMenu }) {
       name: "Dashboard",
       path: "/dashboard",
       icon: <LayoutDashboard {...iconProps} />,
+      permission: "dashboard:view",
     },
     {
       name: "Desa PSN",
       path: "/dashboard/desa-psn",
       icon: <Layers {...iconProps} />,
-      permission: "desa_psn:read",
+      permission: "desa_psn:view",
     },
     {
       name: "Permintaan Data",
       path: "/dashboard/permintaan-data",
       icon: <FileSpreadsheet {...iconProps} />,
+      permission: "permintaan_data:view",
     },
   ];
 
@@ -71,30 +72,26 @@ export default function Sidebar({ activeMenu }) {
       name: "Indikator",
       path: "/dashboard/indikator",
       icon: <Target {...iconProps} />,
-      permissions: [
-        "master_indikator_utama:read",
-        "master_kategori_indikator:read",
-        "dimensi_desa:read",
-      ],
+      permission: "indikator:view",
     },
     {
       name: "Rumus Indeks",
       path: "/dashboard/tahun-indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
-      permission: "master_tahun_indikator_perhitungan:read",
+      permission: "master_tahun_indikator_perhitungan:view",
     },
     {
       name: "Perhitungan Indeks",
       path: "/dashboard/performa-desa",
       icon: <LineChart {...iconProps} />,
-      permission: "performa_desa_hutan:read",
+      permission: "performa_desa:view",
     },
     {
       name: "Indeks Desa Hutan",
       path: "/dashboard/desa-hutan",
       icon: <Trees {...iconProps} />,
-      permission: "performa_desa_hutan:read",
-    }
+      permission: "performa_desa_hutan:view",
+    },
   ];
 
   const metadataMenus = [
@@ -102,54 +99,55 @@ export default function Sidebar({ activeMenu }) {
       name: "Klasifikasi",
       path: "/dashboard/klasifikasi",
       icon: <Layers {...iconProps} />,
-      permission: "master_klasifikasi_hutan:read",
+      permission: "master_klasifikasi:view",
     },
     {
       name: "Wilayah",
       path: "/dashboard/wilayah",
       icon: <Map {...iconProps} />,
-      permissions: ["wilayah_hutan:read", "wilayah_desa:read"],
+      permission: "wilayah:view",
     },
     {
       name: "Wilayah Administrasi",
       path: "/dashboard/master-wilayah",
       icon: <MapPinned {...iconProps} />,
-      permission: "wilayah_desa:read",
+      permission: "wilayah_administrasi:view",
     },
     {
       name: "Master Potensi",
       path: "/dashboard/master-potensi",
       icon: <Database {...iconProps} />,
-      permission: "performa_desa_hutan:read",
+      permission: "potensi:view",
     },
     {
       name: "Master Intervensi Desa",
       path: "/dashboard/master-intervensi-desa",
       icon: <ClipboardList {...iconProps} />,
-      permission: "intervensi_desa:read",
+      permission: "intervensi_desa:view",
     },
     {
       name: "Manajemen User",
       path: "/dashboard/manajemen-user",
       icon: <Users {...iconProps} />,
-      permission: "user:read",
+      permission: "user:view",
     },
     {
       name: "Manajemen Role",
       path: "/dashboard/manajemen-role",
       icon: <ShieldCheck {...iconProps} />,
-      permission: "role:read",
+      permission: "role:view",
     },
     {
       name: "Site Settings",
       path: "/dashboard/site-settings",
       icon: <Settings2 {...iconProps} />,
-      permission: "site:read",
+      permission: "site:view",
     },
     {
       name: "AI Asisten",
       path: "/dashboard/ai-asisten",
       icon: <BrainCircuit {...iconProps} />,
+      permission: "ai:view",
       isNew: true,
     },
   ];

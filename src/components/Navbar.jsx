@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Menu, X, TreePine } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { siteSettingService } from "../services/auth/siteSettingService";
+import { resolveImageUrl } from "../utils/resolveImageUrl";
 
 const Navbar = () => {
   const location = useLocation();
@@ -18,7 +19,7 @@ const Navbar = () => {
   });
 
   const general = siteSettingService.toMap(generalArr);
-  const siteLogo = general.site_logo || null;
+  const siteLogo = resolveImageUrl(general.site_logo) || null;
   const siteName = general.site_name || "Desa Hutan";
 
   useEffect(() => {

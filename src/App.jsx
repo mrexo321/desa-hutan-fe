@@ -81,7 +81,7 @@ const App = () => {
         <Route
           path="/dashboard"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedPermissions={["dashboard:view"]}>
               <Dashboard />
             </ProtectedRoute>
           }
@@ -97,26 +97,55 @@ const App = () => {
         <Route
           path="/dashboard/permintaan-data"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedPermissions={["permintaan_data:view"]}>
               <PermintaanData />
             </ProtectedRoute>
           }
         />
         <Route
           path="/dashboard/provinsi/:provinceName"
-          element={<ProvinceDetail />}
+          element={
+            <ProtectedRoute allowedPermissions={["dashboard:view"]}>
+              <ProvinceDetail />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/dashboard/desa-hutan" element={<DesaHutan />} />
-        <Route path="/dashboard/performa-desa" element={<PerformaDesa />} />
+        <Route
+          path="/dashboard/desa-hutan"
+          element={
+            <ProtectedRoute allowedPermissions={["performa_desa_hutan:view"]}>
+              <DesaHutan />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/performa-desa"
+          element={
+            <ProtectedRoute allowedPermissions={["performa_desa:view"]}>
+              <PerformaDesa />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard/performa-desa/edit"
-          element={<EditPerformaDesa />}
+          element={
+            <ProtectedRoute allowedPermissions={["performa_desa:view", "performa_desa_hutan:update"]}>
+              <EditPerformaDesa />
+            </ProtectedRoute>
+          }
         />
-        <Route path="/dashboard/potensi-desa" element={<PotensiDesa />} />
+        <Route
+          path="/dashboard/potensi-desa"
+          element={
+            <ProtectedRoute allowedPermissions={["potensi:view"]}>
+              <PotensiDesa />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard/desa-psn"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedPermissions={["desa_psn:view"]}>
               <DesaPSN />
             </ProtectedRoute>
           }
@@ -124,42 +153,68 @@ const App = () => {
         <Route
           path="/dashboard/ai-asisten"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedPermissions={["ai:view"]}>
               <AiAsisten />
             </ProtectedRoute>
           }
         />
 
         {/* Indikator */}
-        <Route path="/dashboard/indikator" element={<Indikator />} />
+        <Route
+          path="/dashboard/indikator"
+          element={
+            <ProtectedRoute allowedPermissions={["indikator:view"]}>
+              <Indikator />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/dashboard/indikator/utama/:id"
-          element={<DetailMainIndikator />}
+          element={
+            <ProtectedRoute allowedPermissions={["indikator:view"]}>
+              <DetailMainIndikator />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/dashboard/indikator/utama/create"
-          element={<FormMainIndikator />}
+          element={
+            <ProtectedRoute allowedPermissions={["indikator:view", "master_indikator_utama:create"]}>
+              <FormMainIndikator />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/dashboard/indikator/utama/edit/:id"
-          element={<FormMainIndikator />}
+          element={
+            <ProtectedRoute allowedPermissions={["indikator:view", "master_indikator_utama:update"]}>
+              <FormMainIndikator />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/dashboard/indikator/:tahun"
           element={
-            <ProtectedRoute>
+            <ProtectedRoute allowedPermissions={["indikator:view"]}>
               <IndikatorDimensiTahun />
             </ProtectedRoute>
           }
         />
-        <Route path="/dashboard/desa-detail/:desaId" element={<DesaDetail />} />
+        <Route
+          path="/dashboard/desa-detail/:desaId"
+          element={
+            <ProtectedRoute allowedPermissions={["dashboard:view"]}>
+              <DesaDetail />
+            </ProtectedRoute>
+          }
+        />
 
 
       {/* --- INDIKATOR PERHITUNGAN (master_indikator_perhitungan) --- */}
       <Route
         path="/dashboard/indikator-perhitungan"
         element={
-          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:read"]}>
+          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:view"]}>
             <IndikatorPerhitungan />
           </ProtectedRoute>
         }
@@ -167,7 +222,7 @@ const App = () => {
       <Route
         path="/dashboard/indikator-perhitungan/:id"
         element={
-          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:read"]}>
+          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:view"]}>
             <DetailFormulaIndicator />
           </ProtectedRoute>
         }
@@ -175,7 +230,7 @@ const App = () => {
       <Route
         path="/dashboard/indikator-perhitungan/tambah"
         element={
-          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:create"]}>
+          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:view", "master_indikator_perhitungan:create"]}>
             <FormFormulaIndicator />
           </ProtectedRoute>
         }
@@ -183,7 +238,7 @@ const App = () => {
       <Route
         path="/dashboard/indikator-perhitungan/edit/:id"
         element={
-          <ProtectedRoute allowedPermissions={["master_indikator_perhitungan:update"]}>
+          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:view", "master_indikator_perhitungan:update"]}>
             <FormFormulaIndicator />
           </ProtectedRoute>
         }
@@ -193,7 +248,7 @@ const App = () => {
       <Route
         path="/dashboard/tahun-indikator-perhitungan"
         element={
-          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:read"]}>
+          <ProtectedRoute allowedPermissions={["master_tahun_indikator_perhitungan:view"]}>
             <TahunIndikatorPerhitungan />
           </ProtectedRoute>
         }
@@ -207,22 +262,22 @@ const App = () => {
         }
       />
 
-      {/* --- KLASIFIKASI (master_klasifikasi_hutan) --- */}
+      {/* --- KLASIFIKASI (master_klasifikasi) --- */}
       <Route
         path="/dashboard/klasifikasi"
         element={
-          <ProtectedRoute allowedPermissions={["master_klasifikasi_hutan:read"]}>
+          <ProtectedRoute allowedPermissions={["master_klasifikasi:view"]}>
             <Klasifikasi />
           </ProtectedRoute>
         }
       />
 
-      {/* --- WILAYAH (wilayah_hutan + wilayah_desa) --- */}
+      {/* --- WILAYAH --- */}
       <Route
         path="/dashboard/wilayah"
         element={
           <ProtectedRoute
-            allowedPermissions={["wilayah_hutan:read", "wilayah_desa:read"]}
+            allowedPermissions={["wilayah:view"]}
           >
             <Wilayah />
           </ProtectedRoute>
@@ -233,7 +288,7 @@ const App = () => {
       <Route
         path="/dashboard/master-wilayah"
         element={
-          <ProtectedRoute allowedPermissions={["wilayah_desa:read"]}>
+          <ProtectedRoute allowedPermissions={["wilayah_administrasi:view"]}>
             <MasterWilayah />
           </ProtectedRoute>
         }
@@ -243,7 +298,7 @@ const App = () => {
       <Route
         path="/dashboard/master-potensi"
         element={
-          <ProtectedRoute allowedPermissions={["performa_desa_hutan:read"]}>
+          <ProtectedRoute allowedPermissions={["potensi:view"]}>
             <MasterPotensi />
           </ProtectedRoute>
         }
@@ -253,7 +308,7 @@ const App = () => {
       <Route
         path="/dashboard/master-intervensi-desa"
         element={
-          <ProtectedRoute allowedPermissions={["intervensi_desa:read"]}>
+          <ProtectedRoute allowedPermissions={["intervensi_desa:view"]}>
             <MasterIntervensiDesa />
           </ProtectedRoute>
         }
@@ -263,7 +318,7 @@ const App = () => {
       <Route
         path="/dashboard/manajemen-situs"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedPermissions={["site:view"]}>
             <ManajemenSitus />
           </ProtectedRoute>
         }
@@ -277,7 +332,7 @@ const App = () => {
         element={
           <ProtectedRoute
             allowedPermissions={[
-              "user:read",
+              "user:view",
               "user:create",
               "user:update",
               "user:delete",
@@ -294,7 +349,7 @@ const App = () => {
         element={
           <ProtectedRoute
             allowedPermissions={[
-              "role:read",
+              "role:view",
               "role:create",
               "role:update",
               "role:delete",
@@ -326,7 +381,7 @@ const App = () => {
       <Route
         path="/dashboard/manajemen-role/detail/:id"
         element={
-          <ProtectedRoute allowedPermissions={["role:read"]}>
+          <ProtectedRoute allowedPermissions={["role:view"]}>
             <DetailRole />
           </ProtectedRoute>
         }
@@ -344,7 +399,7 @@ const App = () => {
         element={
           <ProtectedRoute
             allowedPermissions={[
-              "site:read",
+              "site:view",
               "site:update",
             ]}
           >

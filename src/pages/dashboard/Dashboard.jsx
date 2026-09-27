@@ -890,8 +890,8 @@ const Dashboard = () => {
                           type="button"
                           onClick={() => setPopupActiveTab("spasial")}
                           className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "spasial"
-                              ? "bg-white text-[#00B67A] shadow-sm"
-                              : "text-gray-500 hover:text-gray-800"
+                            ? "bg-white text-[#00B67A] shadow-sm"
+                            : "text-gray-500 hover:text-gray-800"
                             }`}
                         >
                           <Activity size={14} strokeWidth={2.5} />
@@ -901,8 +901,8 @@ const Dashboard = () => {
                           type="button"
                           onClick={() => setPopupActiveTab("potensi")}
                           className={`px-3 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${popupActiveTab === "potensi"
-                              ? "bg-white text-[#00B67A] shadow-sm"
-                              : "text-gray-500 hover:text-gray-800"
+                            ? "bg-white text-[#00B67A] shadow-sm"
+                            : "text-gray-500 hover:text-gray-800"
                             }`}
                         >
                           <Zap size={14} strokeWidth={2.5} />
@@ -2300,7 +2300,7 @@ const Dashboard = () => {
                   {[
                     { key: "", label: "Semua", count: totalRecords && kawasanFilter === "" ? totalRecords : ((detailKawasanSummary?.dalamKawasan || 0) + (detailKawasanSummary?.beririsan || 0) + (detailKawasanSummary?.luarKawasan || 0)) },
                     { key: "dalamKawasan", label: "Dalam Kawasan", count: detailKawasanSummary?.dalamKawasan || 0 },
-                    { key: "beririsan", label: "Beririsan Hutan", count: detailKawasanSummary?.beririsan || 0 },
+                    { key: "beririsan", label: "Beririsan Kawasan", count: detailKawasanSummary?.beririsan || 0 },
                     { key: "luarKawasan", label: "Luar Kawasan", count: detailKawasanSummary?.luarKawasan || 0 }
                   ].map((tab) => {
                     const isActive = kawasanFilter === tab.key;

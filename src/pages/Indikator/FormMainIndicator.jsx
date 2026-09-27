@@ -74,9 +74,9 @@ const FormMainIndikator = () => {
         arahPenilaian: detail.arahPenilaian || "positif",
         penilaianIndikator: detail.penilaianIndikator?.length
           ? detail.penilaianIndikator.map((item) => ({
-              label: item.label || "",
-              nilai: item.nilai !== undefined ? item.nilai : "",
-            }))
+            label: item.label || "",
+            nilai: item.nilai !== undefined ? item.nilai : "",
+          }))
           : [],
       });
 
@@ -107,7 +107,7 @@ const FormMainIndikator = () => {
     onError: (error) => {
       toast.error(
         error.response?.data?.message ||
-          "Terjadi kesalahan saat menyimpan data.",
+        "Terjadi kesalahan saat menyimpan data.",
       );
     },
   });
@@ -162,9 +162,9 @@ const FormMainIndikator = () => {
       tipe: formData.tipe, // Pastikan tipe dikirim ke backend
       penilaianIndikator: isShowScoring
         ? formData.penilaianIndikator.map((item) => ({
-            label: item.label,
-            nilai: Number(item.nilai),
-          }))
+          label: item.label,
+          nilai: Number(item.nilai),
+        }))
         : [],
     };
 
@@ -200,7 +200,7 @@ const FormMainIndikator = () => {
                 <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-700">
                   <Target size={18} strokeWidth={2.5} />
                 </div>
-                {isEditMode ? "Edit Indikator Utama" : "Tambah Indikator Utama"}
+                {isEditMode ? "Edit Indikator Rumus Indeks" : "Tambah Indikator Rumus Indeks"}
               </h1>
             </div>
 
@@ -238,11 +238,10 @@ const FormMainIndikator = () => {
           >
             {/* KOLOM KIRI: INFORMASI DASAR */}
             <div
-              className={`bg-white rounded-[24px] p-6 md:p-8 shadow-sm border border-slate-200 transition-all duration-300 ${
-                isShowScoring
+              className={`bg-white rounded-[24px] p-6 md:p-8 shadow-sm border border-slate-200 transition-all duration-300 ${isShowScoring
                   ? "xl:col-span-7"
                   : "xl:col-span-12 max-w-4xl mx-auto w-full"
-              }`}
+                }`}
             >
               <div className="flex items-center gap-3 mb-8 border-b border-slate-100 pb-4">
                 <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">

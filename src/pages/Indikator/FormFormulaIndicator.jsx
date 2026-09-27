@@ -39,6 +39,8 @@ const FormFormulaIndicator = () => {
   const [selectedIndicators, setSelectedIndicators] = useState([]);
   const [searchIndikator, setSearchIndikator] = useState("");
   const [showClearConfirm, setShowClearConfirm] = useState(false);
+  // Hanya dipakai di edit mode — menyimpan angka tahun (bukan ID) untuk ditampilkan
+  const [tahunDisplay, setTahunDisplay] = useState("");
 
   // Fetch Data Formula (Edit Mode)
   const { data: detailDataRes, isLoading: isFetchingDetail } = useQuery({
@@ -57,6 +59,11 @@ const FormFormulaIndicator = () => {
         tahunIndikatorPerhitunganId:
           detail.tahunIndikatorPerhitunganId || detail.tahunIndikator?.id || "",
       });
+
+      // Simpan angka tahun untuk ditampilkan sebagai label (bukan ID)
+      if (detail.tahunIndikator?.tahun) {
+        setTahunDisplay(detail.tahunIndikator.tahun);
+      }
 
       if (detail.indikatorUtama && Array.isArray(detail.indikatorUtama)) {
         setSelectedIndicators(detail.indikatorUtama);
@@ -241,10 +248,10 @@ const FormFormulaIndicator = () => {
 
     if (
       !formData.nama ||
-      !formData.formula ||
-      !formData.tahunIndikatorPerhitunganId
+      !formData.formula
+      // !formData.tahunIndikatorPerhitunganId
     ) {
-      alert("Nama, Tahun, dan Formula wajib diisi!");
+      alert("Nama dan Formula wajib diisi!");
       return;
     }
 
@@ -336,7 +343,7 @@ const FormFormulaIndicator = () => {
                 <div className="w-8 h-8 bg-emerald-100 rounded-lg flex items-center justify-center text-emerald-700">
                   <FunctionSquare size={18} strokeWidth={2.5} />
                 </div>
-                {isEditMode ? "Edit Formula Indikator" : "Tambah Formula Baru"}
+                {isEditMode ? "Edit Formula" : "Tambah Formula Baru"}
               </h1>
             </div>
 
@@ -397,29 +404,44 @@ const FormFormulaIndicator = () => {
                           size={18}
                           className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
                         />
-                        <select
-                          required
-                          value={formData.tahunIndikatorPerhitunganId}
-                          onChange={(e) =>
-                            setFormData({
-                              ...formData,
-                              tahunIndikatorPerhitunganId: e.target.value,
-                            })
-                          }
-                          disabled={isLoadingTahun || !!tahunIdParam} // Disable saat loading atau di-lock
-                          className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100"
-                        >
-                          <option value="" disabled>
-                            {isLoadingTahun
-                              ? "Memuat tahun..."
-                              : "-- Pilih Tahun --"}
-                          </option>
-                          {tahunList.map((thn) => (
-                            <option key={thn.id} value={thn.id}>
-                              {thn.tahun}
+                        {isEditMode ? (
+                          // Edit mode: tampilkan angka tahun sebagai field read-only
+                          <div className="w-full pl-11 pr-4 py-3.5 bg-slate-100 border border-slate-200 rounded-xl text-slate-600 font-bold text-base flex items-center gap-2 cursor-not-allowed select-none">
+                            {tahunDisplay ? (
+                              <>
+                                <span>{tahunDisplay}</span>
+                                {/* <span className="ml-auto text-xs font-semibold text-slate-400 bg-slate-200 px-2 py-0.5 rounded-full">Terkunci</span> */}
+                              </>
+                            ) : (
+                              <span className="text-slate-400">Memuat...</span>
+                            )}
+                          </div>
+                        ) : (
+                          // Create mode: tampilkan dropdown normal
+                          <select
+                            required
+                            value={formData.tahunIndikatorPerhitunganId}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                tahunIndikatorPerhitunganId: e.target.value,
+                              })
+                            }
+                            disabled={isLoadingTahun || !!tahunIdParam}
+                            className="w-full pl-11 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 focus:outline-none transition-all text-slate-800 font-bold text-base appearance-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:bg-slate-100"
+                          >
+                            <option value="" disabled>
+                              {isLoadingTahun
+                                ? "Memuat tahun..."
+                                : "-- Pilih Tahun --"}
                             </option>
-                          ))}
-                        </select>
+                            {tahunList.map((thn) => (
+                              <option key={thn.id} value={thn.id}>
+                                {thn.tahun}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </div>
                     </div>
                   </div>

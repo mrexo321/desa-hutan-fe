@@ -44,6 +44,7 @@ const ManajemenUser = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRoles, setSelectedRoles] = useState([]);
   const [initialRoles, setInitialRoles] = useState([]);
+  const [loadingUserRoleId, setLoadingUserRoleId] = useState(null);
 
   // =========================================================
   // 3. STATE UNTUK MODAL ADD (SINGLE & BULK) & EDIT
@@ -81,7 +82,7 @@ const ManajemenUser = () => {
   });
 
   // =========================================================
-  // 5. MUTASI CRUD USER (CREATE, CREATE BULK, DELETE, DELETE BULK)
+  // 5. MUTASI CRUD USER (CREATE, CREATE BULK, UPDATE, DELETE, DELETE BULK)
   // =========================================================
   const createUserMutation = useMutation({
     mutationFn: async (payload) => {
@@ -101,6 +102,22 @@ const ManajemenUser = () => {
         err?.response?.data?.message ||
         err?.response?.data?.errors?.[0]?.message ||
         "Gagal menyimpan user baru.";
+      toast.error(errorMsg);
+    },
+  });
+
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, payload }) => userService.updateUser(id, payload),
+    onSuccess: () => {
+      toast.success("Data user berhasil diperbarui!");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      closeEditModal();
+    },
+    onError: (err) => {
+      const errorMsg =
+        err?.response?.data?.message ||
+        err?.response?.data?.errors?.[0]?.message ||
+        "Gagal memperbarui data user.";
       toast.error(errorMsg);
     },
   });
@@ -163,19 +180,59 @@ const ManajemenUser = () => {
   // =========================================================
   // 7. HANDLERS ASSIGN ROLE
   // =========================================================
-  const openAssignRoleModal = (user) => {
-    setSelectedUser(user);
-    let currentRoleIds = [];
-    if (Array.isArray(user.roles)) {
-      currentRoleIds = user.roles.map((r) =>
-        typeof r === "object" ? r.id : r,
-      );
-    } else if (user.role_id || user.roleId) {
-      currentRoleIds = [user.role_id || user.roleId];
+  const extractRoleIds = (data) => {
+    if (!data) return [];
+    if (Array.isArray(data)) {
+      return data
+        .map((item) => {
+          if (typeof item === "string") return item;
+          return item.roleId || item.role_id || item.role?.id || item.id;
+        })
+        .filter(Boolean);
     }
-    setSelectedRoles(currentRoleIds);
-    setInitialRoles(currentRoleIds);
-    setIsRoleModalOpen(true);
+    if (Array.isArray(data.roles)) {
+      return data.roles
+        .map((r) => (typeof r === "object" ? r.id : r))
+        .filter(Boolean);
+    }
+    if (Array.isArray(data.user_roles)) {
+      return data.user_roles
+        .map((ur) => ur.roleId || ur.role_id || ur.role?.id || ur.id)
+        .filter(Boolean);
+    }
+    if (typeof data === "object") {
+      const singleId = data.roleId || data.role_id || data.role?.id;
+      if (singleId) return [singleId];
+    }
+    return [];
+  };
+
+  const openAssignRoleModal = async (user) => {
+    setLoadingUserRoleId(user.id);
+    try {
+      // Ambil data role user dari endpoint /user-roles/:id
+      const data = await userRoleService.getUserRolesByUserId(user.id);
+      const currentRoleIds = extractRoleIds(data);
+
+      setSelectedUser(user);
+      setSelectedRoles(currentRoleIds);
+      setInitialRoles(currentRoleIds);
+      setIsRoleModalOpen(true);
+    } catch (err) {
+      // Jika status 404 (user belum memiliki role), tetap buka modal dengan roles kosong
+      if (err?.response?.status === 404) {
+        setSelectedUser(user);
+        setSelectedRoles([]);
+        setInitialRoles([]);
+        setIsRoleModalOpen(true);
+      } else {
+        const errorMsg =
+          err?.response?.data?.message || "Gagal memuat data role pengguna.";
+        toast.error(errorMsg);
+      }
+    } finally {
+      setLoadingUserRoleId(null);
+    }
   };
 
   const closeAssignRoleModal = () => {
@@ -249,6 +306,19 @@ const ManajemenUser = () => {
       setEditData({ id: "", username: "", password: "" });
       setShowPassword(false);
     }, 200);
+  };
+
+  const handleSimpanEditUser = (e) => {
+    e.preventDefault();
+    if (!editData.username.trim()) {
+      return toast.error("Username tidak boleh kosong!");
+    }
+    // Hanya kirim password jika diisi
+    const payload = { username: editData.username.trim() };
+    if (editData.password.trim()) {
+      payload.password = editData.password.trim();
+    }
+    updateUserMutation.mutate({ id: editData.id, payload });
   };
 
   // =========================================================
@@ -359,10 +429,19 @@ const ManajemenUser = () => {
           {can("user_role:assign") && (
             <button
               onClick={() => openAssignRoleModal(row)}
-              className="px-3 py-1.5 flex items-center gap-1.5 text-[#2D7344] hover:text-white hover:bg-[#2D7344] border border-[#2D7344]/30 hover:border-[#2D7344] rounded-md transition-all text-xs font-bold bg-[#EAFBF0]"
+              disabled={loadingUserRoleId === row.id}
+              className="px-3 py-1.5 flex items-center gap-1.5 text-[#2D7344] hover:text-white hover:bg-[#2D7344] border border-[#2D7344]/30 hover:border-[#2D7344] rounded-md transition-all text-xs font-bold bg-[#EAFBF0] disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               title="Atur Role Akses"
             >
-              <ShieldPlus size={14} /> Roles
+              {loadingUserRoleId === row.id ? (
+                <>
+                  <Loader2 size={14} className="animate-spin" /> Roles
+                </>
+              ) : (
+                <>
+                  <ShieldPlus size={14} /> Roles
+                </>
+              )}
             </button>
           )}
           {can("user:update") && (
@@ -744,7 +823,10 @@ const ManajemenUser = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col animate-in fade-in zoom-in duration-200">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-              <h3 className="text-lg font-bold text-gray-800">Edit Pengguna</h3>
+              <div>
+                <h3 className="text-lg font-bold text-gray-800">Edit Pengguna</h3>
+                <p className="text-xs text-gray-400 mt-0.5">ID: {editData.id}</p>
+              </div>
               <button
                 onClick={closeEditModal}
                 className="p-2 text-gray-400 hover:text-red-500 rounded-full transition-colors"
@@ -753,77 +835,84 @@ const ManajemenUser = () => {
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                  Username
-                </label>
-                <div className="relative">
-                  <Mail
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    size={18}
-                  />
-                  <input
-                    type="text"
-                    value={editData.username}
-                    onChange={(e) =>
-                      setEditData({ ...editData, username: e.target.value })
-                    }
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#2D7344]"
-                  />
+            <form onSubmit={handleSimpanEditUser}>
+              <div className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    Username
+                  </label>
+                  <div className="relative">
+                    <Mail
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
+                    <input
+                      type="text"
+                      required
+                      value={editData.username}
+                      onChange={(e) =>
+                        setEditData({ ...editData, username: e.target.value })
+                      }
+                      className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#2D7344]"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-gray-700 mb-1.5">
+                    Password{" "}
+                    <span className="text-gray-400 font-normal text-xs">
+                      (Kosongkan jika tak diubah)
+                    </span>
+                  </label>
+                  <div className="relative">
+                    <Lock
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={editData.password}
+                      onChange={(e) =>
+                        setEditData({ ...editData, password: e.target.value })
+                      }
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#2D7344]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-bold text-gray-700 mb-1.5">
-                  Password{" "}
-                  <span className="text-gray-400 font-normal text-xs">
-                    (Kosongkan jika tak diubah)
-                  </span>
-                </label>
-                <div className="relative">
-                  <Lock
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
-                    size={18}
-                  />
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    value={editData.password}
-                    onChange={(e) =>
-                      setEditData({ ...editData, password: e.target.value })
-                    }
-                    placeholder="••••••••"
-                    className="w-full pl-10 pr-10 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:border-[#2D7344]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-            </div>
 
-            <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
-              <button
-                onClick={closeEditModal}
-                className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold bg-white"
-              >
-                Batal
-              </button>
-              <button
-                onClick={() => {
-                  toast.info(
-                    "Fungsi update backend dapat disambungkan di sini.",
-                  );
-                  closeEditModal();
-                }}
-                className="px-5 py-2 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-lg text-sm font-bold"
-              >
-                Simpan Perubahan
-              </button>
-            </div>
+              <div className="px-6 py-4 border-t border-gray-100 bg-gray-50 flex justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  disabled={updateUserMutation.isPending}
+                  className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-bold bg-white"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={updateUserMutation.isPending}
+                  className="flex items-center gap-2 px-5 py-2 bg-[#2D7344] hover:bg-[#1E5230] text-white rounded-lg text-sm font-bold transition-colors shadow-sm disabled:opacity-70"
+                >
+                  {updateUserMutation.isPending ? (
+                    <>
+                      <Loader2 size={16} className="animate-spin" /> Menyimpan...
+                    </>
+                  ) : (
+                    "Simpan Perubahan"
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

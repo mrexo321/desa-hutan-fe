@@ -2,7 +2,6 @@ import {
   LayoutDashboard,
   Trees,
   LineChart,
-  Sprout,
   Target,
   Calculator,
   Layers,
@@ -14,110 +13,111 @@ import {
   BrainCircuit,
   FileSpreadsheet,
   ClipboardList,
+  Settings2,
 } from "lucide-react";
-
 
 export const homeMenus = [
   {
     name: "Dashboard",
     path: "/dashboard",
     icon: LayoutDashboard,
-    // Dashboard biasanya dapat diakses oleh semua user yang login,
-    // jadi kita kosongkan agar tidak difilter.
-    permission: "",
+    permission: "dashboard:view",
   },
-  {
-    name: "Desa Hutan",
-    path: "/dashboard/desa-hutan",
-    icon: Trees,
-    permission: "wilayah_desa:read",
-  },
-  {
-    name: "Performa Desa",
-    path: "/dashboard/performa-desa",
-    icon: LineChart,
-    permission: "performa_desa_hutan:read",
-  },
-  // {
-  //   name: "Potensi Desa",
-  //   path: "/dashboard/potensi-desa",
-  //   icon: Sprout,
-  //   permission: "analisis_spasial:read", // Memakai ini karena erat kaitannya dengan potensi spasial
-  // },
   {
     name: "Desa PSN",
     path: "/dashboard/desa-psn",
     icon: Layers,
-    permission: "",
-  },
-  {
-    name: "AI Asisten",
-    path: "/dashboard/ai-asisten",
-    icon: BrainCircuit,
-    permission: "",
+    permission: "desa_psn:view",
   },
   {
     name: "Permintaan Data",
     path: "/dashboard/permintaan-data",
     icon: FileSpreadsheet,
-    permission: "",
+    permission: "permintaan_data:view",
+  },
+];
+
+export const calculationMenus = [
+  {
+    name: "Indikator",
+    path: "/dashboard/indikator",
+    icon: Target,
+    permission: "indikator:view",
+  },
+  {
+    name: "Rumus Indeks",
+    path: "/dashboard/tahun-indikator-perhitungan",
+    icon: Calculator,
+    permission: "master_tahun_indikator_perhitungan:view",
+  },
+  {
+    name: "Perhitungan Indeks",
+    path: "/dashboard/performa-desa",
+    icon: LineChart,
+    permission: "performa_desa:view",
+  },
+  {
+    name: "Indeks Desa Hutan",
+    path: "/dashboard/desa-hutan",
+    icon: Trees,
+    permission: "performa_desa_hutan:view",
   },
 ];
 
 export const metadataMenus = [
   {
-    name: "Indikator",
-    path: "/dashboard/indikator",
-    icon: Target,
-    permission: "master_indikator_utama:read",
-  },
-  {
-    name: "Tahun Indikator Perhitungan",
-    path: "/dashboard/tahun-indikator-perhitungan",
-    icon: Calculator,
-    permission: "master_tahun_indikator:read",
-  },
-  {
     name: "Klasifikasi",
     path: "/dashboard/klasifikasi",
     icon: Layers,
-    permission: "master_klasifikasi_desa:read",
+    permission: "master_klasifikasi:view",
   },
   {
     name: "Wilayah",
     path: "/dashboard/wilayah",
     icon: Map,
-    permission: "wilayah_hutan:read",
+    permission: "wilayah:view",
   },
   {
     name: "Wilayah Administrasi",
     path: "/dashboard/master-wilayah",
     icon: MapPinned,
-    permission: "master_provinsi:read",
-  },
-
-  {
-    name: "Manajemen User",
-    path: "/dashboard/manajemen-user",
-    icon: Users,
-    permission: "user:read",
+    permission: "wilayah_administrasi:view",
   },
   {
-    name: "Manajemen Role",
-    path: "/dashboard/manajemen-role",
-    icon: ShieldCheck,
-    permission: "role:read",
-  },
-  {
-    name: "Potensi",
+    name: "Master Potensi",
     path: "/dashboard/master-potensi",
     icon: Database,
-    permission: "master_fungsi_kawasan_hutan:read",
+    permission: "potensi:view",
   },
   {
     name: "Master Intervensi Desa",
     path: "/dashboard/master-intervensi-desa",
     icon: ClipboardList,
-    permission: "intervensi_desa:read",
+    permission: "intervensi_desa:view",
+  },
+  {
+    name: "Manajemen User",
+    path: "/dashboard/manajemen-user",
+    icon: Users,
+    permission: "user:view",
+  },
+  {
+    name: "Manajemen Role",
+    path: "/dashboard/manajemen-role",
+    icon: ShieldCheck,
+    permission: "role:view",
+  },
+  {
+    name: "Site Settings",
+    path: "/dashboard/site-settings",
+    icon: Settings2,
+    permission: "site:view",
+  },
+  {
+    name: "AI Asisten",
+    path: "/dashboard/ai-asisten",
+    icon: BrainCircuit,
+    permission: "ai:view",
+    isNew: true,
   },
 ];

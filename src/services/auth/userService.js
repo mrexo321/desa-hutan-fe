@@ -51,7 +51,7 @@ export const userService = {
   },
 
   async updateProfile(payload) {
-    const response = await authInstance.patch("/users/me", payload);
+    const response = await authInstance.put("/users/me", payload);
     return response.data;
   },
 };

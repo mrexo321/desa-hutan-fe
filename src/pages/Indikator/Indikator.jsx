@@ -411,8 +411,8 @@ const Indikator = () => {
                   setSearchParams({ tab });
                 }}
                 className={`px-6 py-2.5 text-sm font-semibold rounded-lg capitalize transition-all duration-300 ${activeTab === tab
-                    ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
-                    : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
+                  ? "bg-white text-[#2D7344] shadow-sm ring-1 ring-slate-900/5"
+                  : "text-slate-500 hover:text-slate-800 hover:bg-slate-200/50"
                   }`}
               >
                 {tab === "dimensi"
@@ -574,7 +574,7 @@ const Indikator = () => {
                     htmlFor="kodeAdd"
                     className="block text-sm font-semibold text-slate-700 mb-1.5"
                   >
-                    Kode Kategori
+                    Kode Dimensi
                   </label>
                   <input
                     type="text"

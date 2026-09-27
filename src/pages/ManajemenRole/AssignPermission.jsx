@@ -109,8 +109,9 @@ const AssignPermission = () => {
       if (searchUnassigned.trim()) {
         const q = searchUnassigned.toLowerCase();
         const matchesName = perm.name.toLowerCase().includes(q);
+        const matchesDesc = (perm.desc || "").toLowerCase().includes(q);
         const matchesCat = moduleName.toLowerCase().includes(q);
-        return matchesName || matchesCat;
+        return matchesName || matchesDesc || matchesCat;
       }
 
       return true;
@@ -133,8 +134,9 @@ const AssignPermission = () => {
       if (searchAssigned.trim()) {
         const q = searchAssigned.toLowerCase();
         const matchesName = perm.name.toLowerCase().includes(q);
+        const matchesDesc = (perm.desc || "").toLowerCase().includes(q);
         const matchesCat = moduleName.toLowerCase().includes(q);
-        return matchesName || matchesCat;
+        return matchesName || matchesDesc || matchesCat;
       }
 
       return true;
@@ -282,9 +284,9 @@ const AssignPermission = () => {
   // RENDER HELPERS
   // =========================================================
   const renderPermissionCard = (perm, type) => {
-    const actionName = perm.name.split(":")[1] || perm.name;
     const isAssigned = type === "assigned";
     const isDragged = draggedItemId === perm.id;
+    const displayLabel = perm.desc || perm.name;
 
     return (
       <div
@@ -303,8 +305,8 @@ const AssignPermission = () => {
             <GripVertical size={16} />
           </div>
           <div className="flex flex-col min-w-0 flex-1">
-            <span className="text-[13px] font-bold text-gray-800 capitalize truncate">
-              {actionName}
+            <span className="text-[13px] font-bold text-gray-800 truncate">
+              {displayLabel}
             </span>
             <span className="text-[10px] text-gray-400 font-mono mt-0.5 truncate">
               {perm.name}

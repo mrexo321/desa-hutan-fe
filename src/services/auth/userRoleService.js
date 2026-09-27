@@ -11,6 +11,11 @@ export const userRoleService = {
     return response.data.data;
   },
 
+  async getUserRolesByUserId(userId) {
+    const response = await authInstance.get(`/user-roles/${userId}`);
+    return response.data.data;
+  },
+
   async assignRole(payload){
     const response =await authInstance.post("/user-roles/assign", payload);
     return response.data;

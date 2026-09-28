@@ -351,9 +351,7 @@ export default function PermintaanData() {
               <div>
                 <h1 className="text-2xl font-black tracking-tight">Permintaan Data Desa</h1>
                 <p className="text-xs font-semibold text-green-200/80 mt-1 uppercase tracking-wider">
-                  {isAdmin
-                    ? "Kelola, setujui, dan tolak permintaan ekspor data desa dari pengguna"
-                    : "Pantau status permohonan data desa Anda dan unduh file hasil ekspor"}
+                  Kelola, setujui, dan tolak permintaan ekspor data desa dari pengguna
                 </p>
               </div>
             </div>

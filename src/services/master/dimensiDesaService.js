@@ -137,7 +137,7 @@ export const dimensiDesaService = {
 
   // Update indikator dimensi desa per ID (/dimensi-desa/:id)
   async updateIndikatorDimensi(id, payload) {
-    const response = await masterInstance.patch(`/dimensi-desa/${id}`, payload);
+    const response = await masterInstance.put(`/dimensi-desa/${id}`, payload);
     return response.data;
   },
 

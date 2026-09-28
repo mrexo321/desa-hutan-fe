@@ -47,8 +47,8 @@ const IndikatorDimensiTahun = () => {
   // Filter pencarian berdasarkan nama indikator
   const filteredData = Array.isArray(rawData)
     ? rawData.filter((item) =>
-        item.nama?.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      item.nama?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     : [];
 
   // Mutation Tambah Dimensi Desa (/dimensi-desa)
@@ -269,7 +269,7 @@ const IndikatorDimensiTahun = () => {
             <form onSubmit={handleSubmitAdd} className="space-y-4">
               <div>
                 <label className="block text-slate-700 text-xs font-bold mb-2 uppercase tracking-wide">
-                  Nama Dimensi Desa
+                  Nama Indikator Desa
                 </label>
                 <input
                   type="text"

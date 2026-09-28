@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { useSelector } from "react-redux";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
@@ -163,15 +162,6 @@ const formatJenisDataBadges = (jenisData) => {
 
 export default function PermintaanData() {
   const queryClient = useQueryClient();
-  const user = useSelector((state) => state.user);
-
-  // Check roles
-  const userRoles = user?.roles || [];
-  const isAdmin =
-    userRoles.includes("admin") ||
-    userRoles.includes("superadmin") ||
-    userRoles.includes("Superadmin") ||
-    userRoles.includes("super-admin");
 
   // State
   const [searchQuery, setSearchQuery] = useState("");
@@ -202,18 +192,18 @@ export default function PermintaanData() {
   });
 
   const allRequests = React.useMemo(() => {
-    return allRequestsRes?.data?.items || allRequestsRes?.items || [];
+    if (!allRequestsRes) return [];
+    if (Array.isArray(allRequestsRes)) return allRequestsRes;
+    if (Array.isArray(allRequestsRes.data)) return allRequestsRes.data;
+    if (Array.isArray(allRequestsRes.data?.items)) return allRequestsRes.data.items;
+    if (Array.isArray(allRequestsRes.data?.data)) return allRequestsRes.data.data;
+    if (Array.isArray(allRequestsRes.items)) return allRequestsRes.items;
+    return [];
   }, [allRequestsRes]);
 
   // ── Client-side search, status & date filter ──
   const filteredRequests = React.useMemo(() => {
     let list = [...allRequests];
-
-    // Filter by user role (normal user sees only their own request)
-    if (!isAdmin) {
-      const userEmail = String(user?.username || user?.email || "").toLowerCase();
-      list = list.filter((r) => String(r.email).toLowerCase() === userEmail);
-    }
 
     // Apply date range filter (startDate & endDate)
     if (startDate) {
@@ -270,7 +260,7 @@ export default function PermintaanData() {
     }
 
     return list;
-  }, [allRequests, isAdmin, user, searchQuery, statusFilter, startDate, endDate]);
+  }, [allRequests, searchQuery, statusFilter, startDate, endDate]);
 
   // ── Pagination ──
   const pagination = React.useMemo(() => {
@@ -291,13 +281,7 @@ export default function PermintaanData() {
 
   // ── Statistics ──
   const stats = React.useMemo(() => {
-    const list = isAdmin
-      ? allRequests
-      : allRequests.filter(
-          (r) =>
-            String(r.email).toLowerCase() ===
-            String(user?.username || user?.email || "").toLowerCase()
-        );
+    const list = allRequests;
 
     return {
       total: list.length,
@@ -306,7 +290,7 @@ export default function PermintaanData() {
       rejected: list.filter((r) => r.status === "rejected").length,
       failed: list.filter((r) => r.status === "failed").length,
     };
-  }, [allRequests, isAdmin, user]);
+  }, [allRequests]);
 
   // ── Mutations ──
   const approveMutation = useMutation({
@@ -620,8 +604,8 @@ export default function PermintaanData() {
                                 <Eye size={16} />
                               </button>
 
-                              {/* Admin actions: approve / reject */}
-                              {isAdmin && item.status === "pending" && (
+                              {/* Action buttons: approve / reject */}
+                              {item.status === "pending" && (
                                 <>
                                   <button
                                     onClick={() => setApprovingReqId(item.id)}

@@ -1,8 +1,11 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
+import { useQuery } from "@tanstack/react-query";
 import { usePermission } from "../hooks/usePermission";
 import { clearUserData } from "../store/userSlice";
+import { siteSettingService } from "../services/auth/siteSettingService";
+import { resolveImageUrl } from "../utils/resolveImageUrl";
 import {
   LayoutDashboard,
   Trees,
@@ -34,6 +37,16 @@ export default function Sidebar({ activeMenu }) {
   const { can, canAny } = usePermission();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isOpenMobile, setIsOpenMobile] = useState(false);
+
+  // Ambil site_logo dari site-settings category general
+  const { data: generalArr = [] } = useQuery({
+    queryKey: ["siteSettings", "general"],
+    queryFn: () => siteSettingService.getByCategory("general"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const general = siteSettingService.toMap(generalArr);
+  const siteLogo = resolveImageUrl(general.site_logo) || null;
 
   const handleLogout = () => {
     dispatch(clearUserData());
@@ -266,9 +279,19 @@ export default function Sidebar({ activeMenu }) {
           <div
             className={`flex items-center gap-4 overflow-hidden ${isCollapsed ? "justify-center w-full" : ""}`}
           >
-            <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20 flex-shrink-0">
-              <Leaf size={24} strokeWidth={2.5} />
-            </div>
+            {siteLogo ? (
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-white p-1.5 shadow-md shadow-black/20 flex-shrink-0">
+                <img
+                  src={siteLogo}
+                  alt="Site Logo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-[#00C47C] text-white shadow-lg shadow-[#00C47C]/20 flex-shrink-0">
+                <Leaf size={24} strokeWidth={2.5} />
+              </div>
+            )}
             {!isCollapsed && (
               <div className="flex flex-col whitespace-nowrap">
                 <span className="font-bold text-white text-xl tracking-wide">

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { setUserData } from "../../store/userSlice";
+import { siteSettingService } from "../../services/auth/siteSettingService";
+import { resolveImageUrl } from "../../utils/resolveImageUrl";
 import {
   User,
   Lock,
@@ -24,6 +26,16 @@ const Login = () => {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Ambil site_logo dari site-settings category general
+  const { data: generalArr = [] } = useQuery({
+    queryKey: ["siteSettings", "general"],
+    queryFn: () => siteSettingService.getByCategory("general"),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const general = siteSettingService.toMap(generalArr);
+  const siteLogo = resolveImageUrl(general.site_logo) || null;
 
   // Captcha State & Ref
   const [altchaPayload, setAltchaPayload] = useState("");
@@ -128,20 +140,33 @@ const Login = () => {
 
         {/* Centered Form Body */}
         <div className="w-full max-w-sm mx-auto my-auto py-2">
-          <div className="mb-6 text-center lg:text-left">
-            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-[#2D7344] to-[#154023] text-white shadow-lg shadow-green-900/20 mb-4">
-              <Leaf size={28} strokeWidth={1.5} />
-            </div>
+          {/* Header 2 Kolom: Kolom Kiri Logo, Kolom Kanan Teks */}
+          <div className="mb-6 flex items-center gap-3.5 sm:gap-4 text-left">
+            {siteLogo ? (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-white p-1 rounded-2xl border border-slate-200/80 shadow-xs flex items-center justify-center">
+                <img
+                  src={siteLogo}
+                  alt="Logo Kementerian Kehutanan"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br from-[#2D7344] to-[#154023] text-white shadow-md shadow-green-900/20 flex items-center justify-center shrink-0">
+                <Leaf size={30} strokeWidth={1.5} />
+              </div>
+            )}
 
-            <h1 className="text-[#2D7344] font-bold text-[10px] tracking-[0.2em] uppercase mb-1">
-              Kementerian Kehutanan RI
-            </h1>
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight">
-              GRAWANA
-            </h2>
-            <p className="text-xs text-gray-500 mt-1 font-medium">
-              Masuk untuk mengelola manajemen data.
-            </p>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-[#2D7344] font-bold text-[10px] sm:text-[11px] tracking-[0.18em] uppercase mb-0.5">
+                Kementerian Kehutanan RI
+              </h1>
+              <h2 className="text-2xl sm:text-3xl font-black text-gray-900 tracking-tight leading-tight">
+                GRAWANA
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5 font-medium leading-snug">
+                Masuk untuk mengelola manajemen data.
+              </p>
+            </div>
           </div>
 
           <form className="space-y-4" onSubmit={handleSubmit}>

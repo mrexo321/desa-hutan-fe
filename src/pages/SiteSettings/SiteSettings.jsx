@@ -42,6 +42,7 @@ const CATEGORIES = [
   { value: "hero", label: "Hero" },
   { value: "profil_desa_hutan", label: "Profil Desa Hutan" },
   { value: "features", label: "Features" },
+  { value: "about_us", label: "About Us" },
 ];
 
 const CATEGORY_BADGE = {
@@ -49,6 +50,7 @@ const CATEGORY_BADGE = {
   hero: "bg-blue-50 text-blue-700 border-blue-200",
   profil_desa_hutan: "bg-emerald-50 text-emerald-700 border-emerald-200",
   features: "bg-amber-50 text-amber-700 border-amber-200",
+  about_us: "bg-teal-50 text-teal-700 border-teal-200",
 };
 
 const EMPTY_FORM = { category: "", key: "", value: "", image: null };
@@ -467,6 +469,7 @@ const SiteSettings = () => {
       queryClient.invalidateQueries({ queryKey: ["siteSettings", "profil_desa_hutan"] });
       queryClient.invalidateQueries({ queryKey: ["siteSettings", "features"] });
       queryClient.invalidateQueries({ queryKey: ["siteSettings", "general"] });
+      queryClient.invalidateQueries({ queryKey: ["siteSettings", "about_us"] });
       setModalMode(null);
     },
     onError: (err) => toast.error(err.response?.data?.message || "Gagal menambahkan setting."),

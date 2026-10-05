@@ -141,6 +141,16 @@ export const dimensiDesaService = {
     return response.data;
   },
 
+  // Hapus indikator dimensi desa per ID (/dimensi-desa/:dimensiId)
+  async deleteDimensiDesa(dimensiId) {
+    const response = await masterInstance.delete(`/dimensi-desa/${dimensiId}`);
+    return response.data;
+  },
+
+  async deleteIndikatorDimensi(dimensiId) {
+    return this.deleteDimensiDesa(dimensiId);
+  },
+
 
 
   // Ambil detail desa untuk drill-down modal

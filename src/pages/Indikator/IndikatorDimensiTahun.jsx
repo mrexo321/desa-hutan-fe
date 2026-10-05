@@ -9,6 +9,7 @@ import {
   Search,
   Eye,
   Edit2,
+  Trash2,
   Calendar,
   ChevronLeft,
   X,
@@ -30,6 +31,9 @@ const IndikatorDimensiTahun = () => {
   // State Modal Tambah Dimensi Desa
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [newNama, setNewNama] = useState("");
+
+  // State Modal Konfirmasi Hapus Dimensi Desa
+  const [itemToDelete, setItemToDelete] = useState(null);
 
   // Fetch data indikator dimensi berdasarkan tahun
   const {
@@ -81,6 +85,21 @@ const IndikatorDimensiTahun = () => {
     onError: (error) => {
       toast.error(
         error.response?.data?.message || "Gagal memperbarui indikator dimensi"
+      );
+    },
+  });
+
+  // Mutation Hapus Dimensi Desa (/dimensi-desa/:dimensiId)
+  const deleteMutation = useMutation({
+    mutationFn: (id) => dimensiDesaService.deleteDimensiDesa(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["indikatorDimensiByTahun", tahun] });
+      toast.success("Dimensi desa berhasil dihapus!");
+      setItemToDelete(null);
+    },
+    onError: (error) => {
+      toast.error(
+        error.response?.data?.message || "Gagal menghapus dimensi desa"
       );
     },
   });
@@ -167,6 +186,13 @@ const IndikatorDimensiTahun = () => {
             title="Edit Indikator Dimensi"
           >
             <Edit2 size={16} strokeWidth={2.5} />
+          </button>
+          <button
+            onClick={() => setItemToDelete(row)}
+            className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+            title="Hapus Indikator Dimensi"
+          >
+            <Trash2 size={16} strokeWidth={2.5} />
           </button>
         </div>
       ),
@@ -353,6 +379,50 @@ const IndikatorDimensiTahun = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus Dimensi Desa */}
+      {itemToDelete && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-sm p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-start gap-4 mb-4">
+              <div className="w-11 h-11 rounded-2xl bg-red-50 border border-red-100 flex items-center justify-center text-red-600 shrink-0">
+                <Trash2 size={20} strokeWidth={2.2} />
+              </div>
+              <div>
+                <h3 className="text-base font-extrabold text-slate-900 leading-tight">
+                  Hapus Dimensi Desa?
+                </h3>
+                <p className="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                  Apakah Anda yakin ingin menghapus indikator dimensi{" "}
+                  <strong className="text-slate-800 font-bold">"{itemToDelete.nama}"</strong>? Tindakan ini tidak dapat dibatalkan.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2.5 mt-6 pt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setItemToDelete(null)}
+                disabled={deleteMutation.isPending || deleteMutation.isLoading}
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => deleteMutation.mutate(itemToDelete.id)}
+                disabled={deleteMutation.isPending || deleteMutation.isLoading}
+                className="flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition-all shadow-sm shadow-red-700/20 cursor-pointer disabled:opacity-50"
+              >
+                {(deleteMutation.isPending || deleteMutation.isLoading) && (
+                  <Loader2 size={13} className="animate-spin" />
+                )}
+                Ya, Hapus
+              </button>
+            </div>
           </div>
         </div>
       )}

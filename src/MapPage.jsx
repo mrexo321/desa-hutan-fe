@@ -498,9 +498,19 @@ export default function MapPage() {
                                 {detailData.desa?.kodeKemendagri || '-'}
                               </span>
                             </div>
-                            <h3 className="font-extrabold text-gray-900 text-lg leading-tight">
-                              {detailData.desa?.nama || 'Area Tidak Diketahui'}
-                            </h3>
+                            <div className="flex items-start justify-between gap-3">
+                              <h3 className="font-extrabold text-gray-900 text-lg leading-tight flex-1">
+                                {detailData.desa?.nama || 'Area Tidak Diketahui'}
+                              </h3>
+                              <div className="flex flex-col items-end shrink-0 text-right">
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
+                                  Status IDM
+                                </span>
+                                <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md mt-0.5">
+                                  {detailData.desa?.IDM || detailData.desa?.idm || '-'}
+                                </span>
+                              </div>
+                            </div>
                             {detailData.desa && (
                               <p className="text-xs text-gray-500 font-medium mt-1 leading-snug">
                                 {[

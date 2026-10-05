@@ -619,6 +619,42 @@ const Homepage = () => {
                         </div>
                         <ExternalLink size={13} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
                       </a>
+
+                      {/* X (Twitter) Kemenhut */}
+                      <a
+                        href="https://x.com/kemenhut_ri"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/60 bg-white hover:bg-emerald-50/40 hover:border-emerald-300 transition-all group shadow-xs"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-slate-100 text-slate-900 border border-slate-200 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+                          </svg>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-extrabold text-slate-800 truncate">X (Twitter)</div>
+                          <div className="text-[10px] font-semibold text-slate-400 truncate">@kemenhut_ri</div>
+                        </div>
+                        <ExternalLink size={13} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                      </a>
+
+                      {/* YouTube Kemenhut */}
+                      <a
+                        href="https://www.youtube.com/@Kemenhut_RI"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-3 p-2.5 rounded-xl border border-slate-200/60 bg-white hover:bg-emerald-50/40 hover:border-emerald-300 transition-all group shadow-xs"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-red-50 text-red-600 border border-red-100 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                          <Youtube size={16} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-extrabold text-slate-800 truncate">YouTube</div>
+                          <div className="text-[10px] font-semibold text-slate-400 truncate">@Kemenhut_RI</div>
+                        </div>
+                        <ExternalLink size={13} className="text-slate-400 group-hover:text-emerald-600 shrink-0" />
+                      </a>
                     </div>
                   </div>
 

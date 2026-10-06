@@ -50,10 +50,10 @@ const Navbar = () => {
   return (
     <header
       className={`w-full text-white transition-all duration-300 z-50 ${isHome
-          ? scrolled
-            ? "fixed top-0 left-0 bg-[#0F381F]/90 backdrop-blur-md shadow-lg border-b border-emerald-800/20 py-4"
-            : "absolute top-0 left-0 bg-transparent py-6"
-          : "relative bg-[#0F381F] py-4 shadow-md"
+        ? scrolled
+          ? "fixed top-0 left-0 bg-[#0F381F]/90 backdrop-blur-md shadow-lg border-b border-emerald-800/20 py-4"
+          : "absolute top-0 left-0 bg-transparent py-6"
+        : "relative bg-[#0F381F] py-4 shadow-md"
         }`}
     >
       <div className="max-w-7xl mx-auto px-6 md:px-8 flex justify-between items-center">
@@ -95,8 +95,8 @@ const Navbar = () => {
                 key={link.path}
                 to={link.path}
                 className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all duration-300 hover:bg-white/10 ${isActive
-                    ? "text-[#E6B93B] bg-white/5"
-                    : "text-emerald-100 hover:text-white"
+                  ? "text-[#E6B93B] bg-white/5"
+                  : "text-emerald-100 hover:text-white"
                   }`}
               >
                 {link.name}
@@ -104,12 +104,12 @@ const Navbar = () => {
             );
           })}
 
-          <Link
+          {/* <Link
             to="/login"
             className="ml-4 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-[#10B981] hover:from-emerald-600 hover:to-emerald-500 text-white font-bold rounded-xl text-sm transition-all shadow-md shadow-emerald-950/20 active:scale-[0.98]"
           >
             Sign In
-          </Link>
+          </Link> */}
         </nav>
 
         {/* Mobile Menu Toggle */}
@@ -135,8 +135,8 @@ const Navbar = () => {
                   key={link.path}
                   to={link.path}
                   className={`px-4 py-3 rounded-xl text-base font-bold transition-colors ${isActive
-                      ? "text-[#E6B93B] bg-emerald-950/40"
-                      : "text-emerald-100 hover:text-white hover:bg-white/5"
+                    ? "text-[#E6B93B] bg-emerald-950/40"
+                    : "text-emerald-100 hover:text-white hover:bg-white/5"
                     }`}
                 >
                   {link.name}

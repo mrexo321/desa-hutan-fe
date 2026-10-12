@@ -24,7 +24,16 @@ export const intervensiDesaService = {
   },
 
   async destroy(id) {
-    const response = await masterInstance.delete(`/intervensi-desa/${id}`);
+    const response = await masterInstance.delete("/intervensi-desa/bulk", {
+      data: { ids: [id] },
+    });
+    return response.data;
+  },
+
+  async bulkDestroy(ids) {
+    const response = await masterInstance.delete("/intervensi-desa/bulk", {
+      data: { ids },
+    });
     return response.data;
   },
 
@@ -59,4 +68,10 @@ export const intervensiDesaService = {
     const response = await masterInstance.post("/tahun-intervensi-desa", payload);
     return response.data;
   },
+
+  async destroyTahun(id) {
+    const response = await masterInstance.delete(`/tahun-intervensi-desa/${id}`);
+    return response.data;
+  },
 };
+

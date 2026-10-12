@@ -177,6 +177,7 @@ const MasterIntervensiDesa = () => {
 
   const handleSelectTahun = (t) => {
     setSelectedTahunId(t.id);
+    setSelectedIds([]);
     setPage(1);
     setSearchQuery("");
     setSearchParams({ tab: "data", tahunId: t.id });
@@ -184,6 +185,7 @@ const MasterIntervensiDesa = () => {
 
   const handleBackToTahunList = () => {
     setSelectedTahunId(null);
+    setSelectedIds([]);
     setPage(1);
     setSearchQuery("");
     setSearchParams({ tab: "data" });
@@ -195,6 +197,7 @@ const MasterIntervensiDesa = () => {
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedIds, setSelectedIds] = useState([]);
 
   const [viewId, setViewId] = useState(null);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -240,6 +243,28 @@ const MasterIntervensiDesa = () => {
       return name.includes(q) || code.includes(q);
     });
   }, [items, searchQuery]);
+
+  const isAllSelected =
+    filteredItems.length > 0 &&
+    filteredItems.every((row) => selectedIds.includes(row.id));
+
+  const handleSelectAll = () => {
+    if (isAllSelected) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredItems.map((row) => row.id));
+    }
+  };
+
+  const handleSelectRow = (id) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  useEffect(() => {
+    setSelectedIds([]);
+  }, [page, size, selectedTahunId]);
 
   const { data: tahunResponse } = useQuery({
     queryKey: ["tahunIntervensiDesaList"],
@@ -377,10 +402,20 @@ const MasterIntervensiDesa = () => {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (id) => intervensiDesaService.destroy(id),
-    onSuccess: () => {
-      toast.success("Data Intervensi Desa berhasil dihapus.");
+    mutationFn: (ids) => {
+      const idList = Array.isArray(ids) ? ids : [ids];
+      return intervensiDesaService.bulkDestroy(idList);
+    },
+    onSuccess: (res, variables) => {
+      const idList = Array.isArray(variables) ? variables : [variables];
+      const count = res?.data?.count || idList.length;
+      toast.success(
+        idList.length > 1
+          ? `${count} data intervensi desa berhasil dihapus.`
+          : "Data intervensi desa berhasil dihapus.",
+      );
       queryClient.invalidateQueries({ queryKey: ["intervensiDesaList"] });
+      setSelectedIds((prev) => prev.filter((id) => !idList.includes(id)));
     },
     onError: (err) => {
       toast.error(err?.response?.data?.message || "Gagal menghapus data intervensi.");
@@ -519,7 +554,7 @@ const MasterIntervensiDesa = () => {
                 </span>{" "}
                 tahun{" "}
                 <span className="font-bold text-slate-700">
-                  {row.tahunIntervensiDesa?.tahun || "-"}
+                  {row.tahunIntervensiDesa?.tahun || selectedTahunObj?.tahun || "-"}
                 </span>
                 ? Tindakan ini permanen dan tidak dapat dibatalkan.
               </p>
@@ -533,11 +568,58 @@ const MasterIntervensiDesa = () => {
                 <button
                   onClick={() => {
                     toast.dismiss(t);
-                    deleteMutation.mutate(row.id);
+                    deleteMutation.mutate([row.id]);
                   }}
-                  className="px-4 py-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm cursor-pointer"
+                  disabled={deleteMutation.isPending}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50"
                 >
                   Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      { duration: 10000, position: "top-center" },
+    );
+  };
+
+  const handleBulkDeleteConfirmation = () => {
+    if (selectedIds.length === 0) return;
+    toast.custom(
+      (t) => (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-red-900/5 p-5 w-full max-w-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0 text-red-500">
+              <AlertTriangle size={20} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-slate-800 mb-1">
+                Konfirmasi Hapus Massal
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                Apakah Anda yakin ingin menghapus{" "}
+                <span className="font-bold text-slate-700">
+                  {selectedIds.length} data
+                </span>{" "}
+                intervensi desa yang dipilih? Tindakan ini permanen dan tidak dapat dibatalkan.
+              </p>
+              <div className="flex items-center justify-end gap-2 mt-2">
+                <button
+                  onClick={() => toast.dismiss(t)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    toast.dismiss(t);
+                    deleteMutation.mutate(selectedIds);
+                  }}
+                  disabled={deleteMutation.isPending}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  Ya, Hapus ({selectedIds.length})
                 </button>
               </div>
             </div>
@@ -646,6 +728,70 @@ const MasterIntervensiDesa = () => {
     },
   });
 
+  const deleteTahunMutation = useMutation({
+    mutationFn: (id) => intervensiDesaService.destroyTahun(id),
+    onSuccess: (_, deletedId) => {
+      toast.success("Tahun intervensi berhasil dihapus.");
+      queryClient.invalidateQueries({ queryKey: ["tahunIntervensiDesaList"] });
+      queryClient.invalidateQueries({ queryKey: ["intervensiDesaList"] });
+      if (selectedTahunId === deletedId) {
+        setSelectedTahunId(null);
+        setSearchParams({ tab: "data" });
+      }
+    },
+    onError: (err) => {
+      toast.error(err?.response?.data?.message || "Gagal menghapus tahun intervensi.");
+    },
+  });
+
+  const handleDeleteTahunConfirmation = (tahunItem, e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    toast.custom(
+      (t) => (
+        <div className="bg-white border border-slate-200 rounded-2xl shadow-xl shadow-red-900/5 p-5 w-full max-w-sm">
+          <div className="flex items-start gap-4">
+            <div className="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center shrink-0 text-red-500">
+              <AlertTriangle size={20} />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-bold text-slate-800 mb-1">
+                Konfirmasi Penghapusan
+              </h3>
+              <p className="text-xs text-slate-500 leading-relaxed mb-4">
+                Apakah Anda yakin ingin menghapus{" "}
+                <span className="font-bold text-slate-700">
+                  Tahun {tahunItem.tahun}
+                </span>
+                ? Tindakan ini permanen dan tidak dapat dibatalkan.
+              </p>
+              <div className="flex items-center justify-end gap-2 mt-2">
+                <button
+                  onClick={() => toast.dismiss(t)}
+                  className="px-4 py-2 text-xs font-bold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    toast.dismiss(t);
+                    deleteTahunMutation.mutate(tahunItem.id);
+                  }}
+                  disabled={deleteTahunMutation.isPending}
+                  className="px-4 py-2 text-xs font-bold text-white bg-red-500 hover:bg-red-600 rounded-lg transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+      { duration: 10000, position: "top-center" },
+    );
+  };
+
   const handleSubmitTahun = (e) => {
     e.preventDefault();
     if (!formTahun) {
@@ -724,10 +870,20 @@ const MasterIntervensiDesa = () => {
                         </p>
                       </div>
                     </div>
-                    <ChevronRight
-                      size={18}
-                      className="text-gray-400 group-hover:translate-x-1 group-hover:text-[#2D7344] transition-all"
-                    />
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => handleDeleteTahunConfirmation(t, e)}
+                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all cursor-pointer opacity-80 group-hover:opacity-100"
+                        title="Hapus Tahun Intervensi"
+                      >
+                        <Trash2 size={18} strokeWidth={2} />
+                      </button>
+                      <ChevronRight
+                        size={18}
+                        className="text-gray-400 group-hover:translate-x-1 group-hover:text-[#2D7344] transition-all"
+                      />
+                    </div>
                   </div>
                 ))}
 
@@ -786,6 +942,30 @@ const MasterIntervensiDesa = () => {
                       <option value={100}>100 Baris</option>
                     </select>
                   </div>
+
+                  {selectedIds.length > 0 && (
+                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 px-3 py-1.5 rounded-xl animate-in fade-in duration-150">
+                      <span className="text-xs font-bold text-red-700">
+                        {selectedIds.length} dipilih
+                      </span>
+                      <button
+                        type="button"
+                        onClick={handleBulkDeleteConfirmation}
+                        disabled={deleteMutation.isPending}
+                        className="flex items-center gap-1.5 text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                      >
+                        <Trash2 size={14} />
+                        Hapus Terpilih
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedIds([])}
+                        className="text-xs font-bold text-slate-500 hover:text-slate-800 px-1 py-0.5 cursor-pointer transition-colors"
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
@@ -842,6 +1022,30 @@ const MasterIntervensiDesa = () => {
               <DataTable
                 columns={[
                   {
+                    header: (
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={isAllSelected}
+                          onChange={handleSelectAll}
+                          className="w-4 h-4 text-[#2D7344] accent-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344] cursor-pointer"
+                          title={isAllSelected ? "Batal pilih semua" : "Pilih semua baris"}
+                        />
+                      </div>
+                    ),
+                    className: "w-12 text-center",
+                    render: (row) => (
+                      <div className="flex items-center justify-center">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.includes(row.id)}
+                          onChange={() => handleSelectRow(row.id)}
+                          className="w-4 h-4 text-[#2D7344] accent-[#2D7344] rounded border-gray-300 focus:ring-[#2D7344] cursor-pointer"
+                        />
+                      </div>
+                    ),
+                  },
+                  {
                     header: "No",
                     className: "w-16 text-center",
                     render: (_, idx) => (
@@ -871,15 +1075,23 @@ const MasterIntervensiDesa = () => {
                   },
                   {
                     header: "Aksi",
-                    className: "text-center w-24",
+                    className: "text-center w-28",
                     render: (row) => (
-                      <div className="flex items-center justify-center">
+                      <div className="flex items-center justify-center gap-1">
                         <button
                           onClick={() => setViewId(row.id)}
                           className="p-1.5 text-gray-400 hover:text-[#0A66C2] hover:bg-blue-50 rounded-md transition-all cursor-pointer"
                           title="Lihat Detail Intervensi"
                         >
                           <Eye size={16} strokeWidth={2} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteConfirmation(row)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-md transition-all cursor-pointer"
+                          title="Hapus Intervensi"
+                        >
+                          <Trash2 size={16} strokeWidth={2} />
                         </button>
                       </div>
                     ),
@@ -984,6 +1196,22 @@ const MasterIntervensiDesa = () => {
                     header: "Tahun Intervensi",
                     render: (row) => (
                       <span className="font-bold text-slate-800 text-base">{row.tahun}</span>
+                    ),
+                  },
+                  {
+                    header: "Aksi",
+                    className: "w-24 text-center",
+                    render: (row) => (
+                      <div className="flex items-center justify-center">
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteTahunConfirmation(row, e)}
+                          className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all cursor-pointer"
+                          title="Hapus Tahun"
+                        >
+                          <Trash2 size={16} strokeWidth={2} />
+                        </button>
+                      </div>
                     ),
                   },
                 ]}

@@ -18,7 +18,9 @@ import {
   CheckSquare,
   Square,
   Building2,
-  FileText
+  FileText,
+  Bell,
+  X
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import HomeLayout from "../../components/HomeLayout";
@@ -49,6 +51,7 @@ export default function DataDesaPublic() {
   const [selectedJenisData, setSelectedJenisData] = useState([]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAnnouncement, setShowAnnouncement] = useState(true);
 
   // Captcha State & Ref
   const [altchaPayload, setAltchaPayload] = useState("");
@@ -224,6 +227,11 @@ export default function DataDesaPublic() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    toast.warning(
+      "GRAWANA dalam proses melengkapi data sampai akhir November 2026, sehingga permintaan data saat ini belum dapat diproses. Terima kasih."
+    );
+    return;
+
     // Validate based on basic requirements
     if (!selectedTahunId || !selectedWilayahLevel) {
       toast.warning("Harap pilih Tahun Data dan Tingkat Administrasi!");
@@ -368,6 +376,56 @@ export default function DataDesaPublic() {
 
   return (
     <HomeLayout>
+      {/* POP UP CARD PENGUMUMAN (POSISI TENGAH ATAS) */}
+      {showAnnouncement && (
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowAnnouncement(false);
+          }}
+          className="fixed inset-0 z-[100] flex items-start justify-center pt-8 sm:pt-14 px-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div
+            className="bg-white border-2 border-amber-300 rounded-3xl shadow-2xl max-w-lg w-full p-6 animate-in slide-in-from-top-6 duration-300 relative overflow-hidden"
+            role="alert"
+          >
+            {/* Top decorative accent bar */}
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-500" />
+
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowAnnouncement(false)}
+              className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+              title="Tutup pengumuman"
+            >
+              <X size={18} />
+            </button>
+
+            {/* Header Pengumuman sejejar icon Bell di sebelah kiri (Center) */}
+            <div className="flex items-center justify-center gap-2 mb-3">
+              <Bell size={22} className="text-amber-500 shrink-0" />
+              <h3 className="text-lg font-black text-slate-800 tracking-tight text-center">
+                Pengumuman
+              </h3>
+            </div>
+
+            <p className="text-sm text-slate-600 leading-relaxed font-medium text-justify">
+              GRAWANA dalam proses melengkapi data sampai akhir November 2026, sehingga permintaan data saat ini belum dapat diproses. Terima kasih.
+            </p>
+
+            <div className="mt-5 flex justify-center">
+              <button
+                type="button"
+                onClick={() => setShowAnnouncement(false)}
+                className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+              >
+                Mengerti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="bg-slate-50/50 font-sans text-slate-800 min-h-screen pb-20">
 
         {/* Banner Hero */}
@@ -782,29 +840,22 @@ export default function DataDesaPublic() {
                   onExpire={() => setAltchaPayload("")}
                 />
 
-                {/* SUBMIT BUTTON */}
-                <button
-                  type="submit"
-                  id="submit-request"
-                  disabled={isSubmitting || !altchaPayload}
-                  className={`w-full flex items-center justify-center gap-2 text-white text-sm font-extrabold py-4 rounded-2xl transition-all shadow-md ${
-                    isSubmitting || !altchaPayload
-                      ? "bg-slate-300 text-slate-500 cursor-not-allowed shadow-none"
-                      : "bg-gradient-to-r from-emerald-600 to-[#10B981] hover:from-emerald-700 hover:to-emerald-600 shadow-emerald-900/10 hover:shadow-emerald-900/20 hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
-                  } mt-6`}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 size={18} className="animate-spin" />
-                      Memproses Permintaan Data...
-                    </>
-                  ) : (
-                    <>
-                      Kirim Permintaan Data
-                      <ArrowRight size={18} />
-                    </>
-                  )}
-                </button>
+                {/* SUBMIT BUTTON (DI-DISABLE SEMENTARA) */}
+                <div className="mt-6 space-y-2.5">
+                  <button
+                    type="submit"
+                    id="submit-request"
+                    disabled={true}
+                    className="w-full flex items-center justify-center gap-2 bg-slate-200 text-slate-400 text-sm font-extrabold py-4 rounded-2xl cursor-not-allowed shadow-none"
+                    title="Permintaan data saat ini belum dapat diproses"
+                  >
+                    Kirim Permintaan Data
+                    <ArrowRight size={18} />
+                  </button>
+                  <p className="text-center text-xs text-amber-700 font-semibold bg-amber-50 border border-amber-200/80 py-2.5 px-4 rounded-xl">
+                    ⚠️ <strong>Pengumuman:</strong> GRAWANA dalam proses melengkapi data sampai akhir November 2026, sehingga permintaan data saat ini belum dapat diproses. Terima kasih.
+                  </p>
+                </div>
 
               </form>
             </div>

@@ -970,7 +970,7 @@ const Dashboard = () => {
                                 </h3>
                                 <div className="flex flex-col items-end shrink-0 text-right">
                                   <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
-                                    Status IDM
+                                    Status ID
                                   </span>
                                   <span className="text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200/80 px-2 py-0.5 rounded-md mt-0.5">
                                     {detailData.desa?.IDM || detailData.desa?.idm || '-'}

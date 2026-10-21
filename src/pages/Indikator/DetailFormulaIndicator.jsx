@@ -174,7 +174,7 @@ const DetailFormulaIndicator = () => {
                       <Calculator size={20} />
                     </div>
                     <h3 className="text-white font-bold text-lg">
-                      Rumus Perhitungan
+                      Rumus Tipologi
                     </h3>
                   </div>
                   <button
@@ -303,7 +303,7 @@ const DetailFormulaIndicator = () => {
 
                 <div className="p-4 flex-1 overflow-y-auto max-h-[600px] custom-scrollbar bg-slate-50/50">
                   {formula.indikatorUtama &&
-                  formula.indikatorUtama.length > 0 ? (
+                    formula.indikatorUtama.length > 0 ? (
                     <div className="space-y-4">
                       {formula.indikatorUtama.map((item, idx) => (
                         <div
@@ -338,7 +338,7 @@ const DetailFormulaIndicator = () => {
                             </span>
                             {item.arahPenilaian && (
                               <span className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-semibold border ${item.arahPenilaian === 'positif' ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-rose-50 text-rose-700 border-rose-100'}`}>
-                                {item.arahPenilaian === 'positif' ? <TrendingUp size={12} /> : <TrendingDown size={12} />} 
+                                {item.arahPenilaian === 'positif' ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
                                 Arah: {item.arahPenilaian}
                               </span>
                             )}

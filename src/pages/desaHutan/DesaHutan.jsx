@@ -464,7 +464,7 @@ export default function DesaHutan() {
         },
       },
       {
-        header: "Indeks Desa Hutan",
+        header: "Tipologi Desa Hutan",
         render: (row) => <span>{row.indeksDesaHutan || "-"}</span>,
       },
       {

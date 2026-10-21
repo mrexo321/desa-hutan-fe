@@ -197,11 +197,11 @@ const IndikatorPerhitungan = () => {
           </div>
           <div className="mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-slate-900 tracking-tight">
-              Rumus Perhitungan
+              Rumus Tipologi
             </h1>
             <p className="text-sm text-slate-500 mt-1">
               Kelola data formula dan tahun untuk referensi perhitungan
-              indikator.
+              tipologi.
             </p>
           </div>
 
@@ -234,10 +234,9 @@ const IndikatorPerhitungan = () => {
                   <button
                     onClick={() =>
                       navigate(
-                        `/dashboard/indikator-perhitungan/tambah${
-                          tahunIndikatorPerhitunganId
-                            ? `?tahunId=${tahunIndikatorPerhitunganId}`
-                            : ""
+                        `/dashboard/indikator-perhitungan/tambah${tahunIndikatorPerhitunganId
+                          ? `?tahunId=${tahunIndikatorPerhitunganId}`
+                          : ""
                         }`
                       )
                     }

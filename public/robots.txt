@@ -1,0 +1,8 @@
+# https://www.robotstxt.org/robotstxt.html
+User-agent: *
+Allow: /
+Disallow: /dashboard/
+Disallow: /auth/
+
+# Sitemap location (ganti https://grawana.id dengan domain aktif Anda)
+Sitemap: https://grawana-p2semh.kehutanan.go.id/

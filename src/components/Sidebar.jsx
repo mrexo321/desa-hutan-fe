@@ -88,19 +88,19 @@ export default function Sidebar({ activeMenu }) {
       permission: "indikator:view",
     },
     {
-      name: "Rumus Indeks",
+      name: "Rumus Tipologi",
       path: "/dashboard/tahun-indikator-perhitungan",
       icon: <Calculator {...iconProps} />,
       permission: "master_tahun_indikator_perhitungan:view",
     },
     {
-      name: "Perhitungan Indeks",
+      name: "Perhitungan Tipologi",
       path: "/dashboard/performa-desa",
       icon: <LineChart {...iconProps} />,
       permission: "performa_desa:view",
     },
     {
-      name: "Indeks Desa Hutan",
+      name: "Tipologi Desa Hutan",
       path: "/dashboard/desa-hutan",
       icon: <Trees {...iconProps} />,
       permission: "performa_desa_hutan:view",
@@ -203,7 +203,7 @@ export default function Sidebar({ activeMenu }) {
       );
     }
 
-    if (itemName === "Rumus Indeks") {
+    if (itemName === "Rumus Tipologi") {
       return (
         activeMenu === "Tahun Indikator Perhitungan" ||
         activeMenu === "Indikator Perhitungan" ||
@@ -212,14 +212,14 @@ export default function Sidebar({ activeMenu }) {
       );
     }
 
-    if (itemName === "Perhitungan Indeks") {
+    if (itemName === "Perhitungan Tipologi") {
       return (
         activeMenu === "Performa Desa" ||
         currentPath.includes("performa-desa")
       );
     }
 
-    if (itemName === "Indeks Desa Hutan") {
+    if (itemName === "Tipologi Desa Hutan") {
       return (
         activeMenu === "Desa Hutan" ||
         currentPath.includes("desa-hutan")
@@ -363,14 +363,14 @@ export default function Sidebar({ activeMenu }) {
             </div>
           )}
 
-          {/* BAGIAN PERHITUNGAN INDEKS */}
+          {/* BAGIAN Perhitungan Tipologi */}
           {visibleCalculationMenus.length > 0 && (
             <div>
               <div
                 className={`px-4 mb-3 transition-all duration-200 ${isCollapsed ? "opacity-0 h-0 overflow-hidden" : "opacity-100"}`}
               >
                 <p className="text-[10px] font-bold tracking-[0.2em] text-[#4F7A65] uppercase">
-                  Perhitungan Indeks
+                  Perhitungan Tipologi
                 </p>
               </div>
               <ul className="space-y-2">

@@ -54,7 +54,7 @@ const parseListItems = (raw, defaultList) => {
           typeof item === "string" ? { title: item } : item
         );
       }
-    } catch {}
+    } catch { }
   }
 
   // Jika input dari RichTextEditor mengandung tag <li>
@@ -87,7 +87,7 @@ const parseMilestones = (raw, defaultList) => {
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
   return defaultList;
 };
@@ -102,7 +102,7 @@ const parseMilestoneTarget = (raw, defaultList) => {
       if (Array.isArray(parsed) && parsed.length > 0) {
         return parsed;
       }
-    } catch {}
+    } catch { }
   }
   return defaultList;
 };
@@ -173,7 +173,7 @@ const DEFAULT_NODE_DETAILS = {
   direktur: {
     title: "Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan",
     role: "Pimpinan Puncak / Pengambil Keputusan",
-    desc: "Bertanggung jawab memimpin seluruh pelaksanaan kebijakan teknis, koordinasi perumusan strategi, serta penerapan pengembangan sosial ekonomi masyarakat hutan."
+    desc: "Mempunyai tugas melaksanakan pengembangan sosial ekonomi masyarakat hutan."
   },
   tu: {
     title: "Subbagian Tata Usaha",
@@ -315,6 +315,42 @@ const AboutUs = () => {
               </>
             )}
           </div>
+          {/* MILESTONE SECTION */}
+          <div className="mb-16">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
+                <Calendar size={18} strokeWidth={2.5} />
+              </div>
+              <h3 className="text-lg md:text-xl font-bold text-slate-800">
+                {about.about_milestone_title ||
+                  "Tolok Ukur Pencapaian (Milestone) Pengembangan Sosial Ekonomi Masyarakat Hutan termasuk Cadangan Pangan, Energi, dan Peningkatan Kemandirian Desa"}
+              </h3>
+            </div>
+
+            <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
+              <div className="relative border-l-2 border-emerald-200/80 ml-3 md:ml-5 pl-6 md:pl-8 space-y-6">
+                {milestoneTarget.map((item, index) => (
+                  <div key={index} className="relative group">
+                    {/* Timeline Node */}
+                    <div className="absolute -left-[37px] md:-left-[45px] top-0 w-8 h-8 md:w-9 md:h-9 bg-emerald-600 text-white font-extrabold text-xs rounded-full border-4 border-white shadow-md flex items-center justify-center group-hover:scale-110 transition-transform">
+                      {index + 1}
+                    </div>
+
+                    <div className="bg-slate-50/70 hover:bg-emerald-50/40 p-5 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-mono">
+                          Tahun {item.year}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 text-xs md:text-sm leading-relaxed font-medium text-justify">
+                        {item.desc}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* TWO COLUMN GRID: TUPOKSI & MILITARY HISTORY TIMELINE */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-16">
@@ -322,7 +358,7 @@ const AboutUs = () => {
             {/* KIRI: Tugas Pokok & Fungsi (Tupoksi) */}
             <div className="lg:col-span-7 bg-white p-8 rounded-[2rem] border border-slate-100 shadow-[0_10px_35px_rgba(0,0,0,0.01)] flex flex-col justify-between">
               <div>
-                <div className="flex items-center gap-3 mb-6">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
                     <Briefcase size={18} strokeWidth={2.5} />
                   </div>
@@ -330,6 +366,11 @@ const AboutUs = () => {
                     {about.about_tupoksi_title || "Fungsi P2SEMH"}
                   </h3>
                 </div>
+
+                <p className="text-slate-600 text-xs md:text-sm leading-relaxed font-medium text-justify mb-6">
+                  {about.about_tupoksi_desc ||
+                    "Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan mempunyai tugas melaksanakan pengembangan sosial ekonomi masyarakat hutan. Untuk melaksanakan tugasnya, Pusat Pengembangan Sosial Ekonomi Masyarakat Hutan menyelenggarakan fungsi:"}
+                </p>
 
                 <div className="space-y-5">
                   {tupoksi.map((item, idx) => (
@@ -384,42 +425,6 @@ const AboutUs = () => {
 
           </div>
 
-          {/* MILESTONE SECTION */}
-          <div className="mb-16">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-9 h-9 bg-emerald-100 text-emerald-700 rounded-lg flex items-center justify-center shrink-0">
-                <Calendar size={18} strokeWidth={2.5} />
-              </div>
-              <h3 className="text-lg md:text-xl font-bold text-slate-800">
-                {about.about_milestone_title ||
-                  "Tolok Ukur Pencapaian (Milestone) Pengembangan Sosial Ekonomi Masyarakat Hutan termasuk Cadangan Pangan, Energi, dan Peningkatan Kemandirian Desa"}
-              </h3>
-            </div>
-
-            <div className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-slate-100 shadow-[0_4px_20px_rgba(0,0,0,0.015)]">
-              <div className="relative border-l-2 border-emerald-200/80 ml-3 md:ml-5 pl-6 md:pl-8 space-y-6">
-                {milestoneTarget.map((item, index) => (
-                  <div key={index} className="relative group">
-                    {/* Timeline Node */}
-                    <div className="absolute -left-[37px] md:-left-[45px] top-0 w-8 h-8 md:w-9 md:h-9 bg-emerald-600 text-white font-extrabold text-xs rounded-full border-4 border-white shadow-md flex items-center justify-center group-hover:scale-110 transition-transform">
-                      {index + 1}
-                    </div>
-
-                    <div className="bg-slate-50/70 hover:bg-emerald-50/40 p-5 rounded-2xl border border-slate-100 hover:border-emerald-200 transition-all">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-xs font-extrabold px-3 py-1 bg-emerald-100 text-emerald-800 rounded-lg font-mono">
-                          Tahun {item.year}
-                        </span>
-                      </div>
-                      <p className="text-slate-600 text-xs md:text-sm leading-relaxed font-medium text-justify">
-                        {item.desc}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
 
           <p className="text-slate-600 text-sm md:text-base leading-relaxed text-justify mb-10 font-semibold">
             {about.about_struktur_desc ||

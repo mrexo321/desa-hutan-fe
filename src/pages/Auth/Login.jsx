@@ -273,8 +273,7 @@ const Login = () => {
         <div
           className="absolute inset-0 bg-cover bg-center transform hover:scale-105 transition-transform duration-1000 ease-out"
           style={{
-            backgroundImage:
-              "url('https://images.unsplash.com/photo-1511497584788-876760111969?q=80&w=2000&auto=format&fit=crop')",
+            backgroundImage: "url('/login_bg.jpg')",
           }}
         ></div>
 

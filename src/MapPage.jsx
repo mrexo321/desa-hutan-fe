@@ -611,14 +611,21 @@ export default function MapPage() {
                                     {cat.sub.map((item, itemIdx) => (
                                       <div
                                         key={itemIdx}
-                                        className="flex items-center justify-between text-xs bg-white p-2 rounded-lg border border-gray-100 shadow-2xs"
+                                        className="text-xs bg-white p-2.5 rounded-xl border border-gray-100 shadow-2xs flex flex-col gap-1.5"
                                       >
-                                        <span className="font-semibold text-gray-700 truncate pr-2">
-                                          {item.nama}
-                                        </span>
-                                        <span className="font-bold text-gray-900 shrink-0 font-mono text-[11px]">
-                                          {item.nilai ?? "-"} {item.unit || ""}
-                                        </span>
+                                        <div className="flex items-start justify-between gap-2">
+                                          <span className="font-semibold text-gray-700 leading-snug">
+                                            {item.nama}
+                                          </span>
+                                          {item.unit && item.unit !== "-" && (
+                                            <span className="text-[10px] font-medium text-slate-500 bg-slate-50 border border-slate-100 px-2 py-0.5 rounded-md shrink-0">
+                                              {item.unit}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <div className="bg-slate-50/80 border border-slate-100 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 font-medium leading-relaxed break-words whitespace-pre-wrap">
+                                          {item.nilai !== null && item.nilai !== undefined && item.nilai !== "" ? item.nilai : "-"}
+                                        </div>
                                       </div>
                                     ))}
                                   </div>

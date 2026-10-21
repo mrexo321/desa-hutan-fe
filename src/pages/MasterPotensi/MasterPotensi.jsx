@@ -689,23 +689,31 @@ const MasterPotensi = () => {
                                   {detailData.potensi[activeDetailTab].sub.map((subItem, subIdx) => (
                                     <div
                                       key={subIdx}
-                                      className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-slate-200/80 transition-all hover:scale-[1.01]"
+                                      className="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between hover:shadow-md hover:border-slate-200/80 transition-all"
                                     >
                                       <div>
-                                        <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono">Nama Indikator</span>
-                                        <h5 className="font-bold text-slate-800 text-sm mt-1 leading-snug">{subItem.nama}</h5>
-                                      </div>
-                                      
-                                      <div className="mt-5 pt-3 border-t border-slate-50 flex justify-between items-end">
-                                        <div>
-                                          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono">Satuan</span>
-                                          <span className="block text-xs font-semibold text-slate-500 mt-0.5">{subItem.unit}</span>
+                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                          <div className="flex-1">
+                                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono block">Nama Indikator</span>
+                                            <h5 className="font-bold text-slate-800 text-sm mt-0.5 leading-snug">{subItem.nama}</h5>
+                                          </div>
+                                          {subItem.unit && subItem.unit !== "-" && (
+                                            <div className="shrink-0 text-right">
+                                              <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider font-mono block">Satuan</span>
+                                              <span className="inline-block text-xs font-semibold text-slate-600 mt-0.5 bg-slate-50 border border-slate-100 px-2.5 py-0.5 rounded-lg">
+                                                {subItem.unit}
+                                              </span>
+                                            </div>
+                                          )}
                                         </div>
-                                        <div className="text-right">
-                                          <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider font-mono block mb-0.5">Nilai</span>
-                                          <span className="text-lg font-black text-slate-800 font-mono bg-slate-50 border border-slate-100 px-3.5 py-1 rounded-xl">
-                                            {subItem.nilai}
-                                          </span>
+                                      </div>
+
+                                      <div className="mt-3 pt-3 border-t border-slate-100">
+                                        <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider font-mono block mb-1.5">
+                                          Nilai
+                                        </span>
+                                        <div className="bg-slate-50/80 border border-slate-100 rounded-xl p-3 text-xs md:text-sm text-slate-700 font-medium leading-relaxed break-words whitespace-pre-wrap">
+                                          {subItem.nilai !== null && subItem.nilai !== undefined && subItem.nilai !== "" ? subItem.nilai : "-"}
                                         </div>
                                       </div>
                                     </div>

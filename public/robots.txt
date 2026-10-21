@@ -4,5 +4,5 @@ Allow: /
 Disallow: /dashboard/
 Disallow: /auth/
 
-# Sitemap location (ganti https://grawana.id dengan domain aktif Anda)
-Sitemap: https://grawana-p2semh.kehutanan.go.id/
+# Sitemap location
+Sitemap: https://grawana-p2semh.kehutanan.go.id/sitemap.xml
